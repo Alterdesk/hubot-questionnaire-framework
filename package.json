@@ -1,12 +1,12 @@
 {
   "name": "messenger-api",
   "version": "1.0.0",
-  "description": "Messenger API module",
+  "description": "Hubot Messenger API module",
   "main": "messenger-api.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "Alterdesk",
   "license": "ISC",
   "dependencies": {
     "form-data": "^2.3.1"
