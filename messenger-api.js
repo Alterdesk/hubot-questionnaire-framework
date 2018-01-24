@@ -43,6 +43,7 @@ var apiDomain;
 var apiVersion;
 var apiPort;
 var apiUrl;
+var apiToken;
 
 module.exports = {
 
@@ -50,8 +51,8 @@ module.exports = {
     *   Messenger API helper functions
     */
 
-    loadSelf: function(botMessengerToken) {
-      this.get(robot, apiUrl, "me", botMessengerToken, function(success, json) {
+    loadSelf: function() {
+      this.get(robot, apiUrl, "me", function(success, json) {
         if(success) {
           botCompanyId = json["company_id"];
           console.log("Bot company id: " + botCompanyId);
@@ -65,9 +66,10 @@ module.exports = {
       return HttpClient.create(url);//, this.extend({}, this.globalHttpOptions, options));
     },
 
-    get: function(getUrl, messengerToken, callback) {
+    get: function(getUrl, callback, overrideToken) {
       console.log("Messenger::get() >> " + getUrl);
-      this.http(apiUrl + getUrl).header('Authorization', 'Bearer ' + messengerToken).header('Content-Type', 'application/json; charset=UTF-8').get()(function(err, resp, body) {
+      var token = overrideToken || apiToken;
+      this.http(apiUrl + getUrl).header('Authorization', 'Bearer ' + token).header('Content-Type', 'application/json; charset=UTF-8').get()(function(err, resp, body) {
         if (resp.statusCode === 200) {
           console.log("Messenger::get() << " + getUrl + ": " + body);
           var json = JSON.parse(body);
@@ -79,9 +81,10 @@ module.exports = {
       });
     },
 
-    post: function(postUrl, postJson, messengerToken, callback) {
+    post: function(postUrl, postJson, callback, overrideToken) {
       console.log("Messenger::post() >>" + postUrl + ": " + postJson);
-      this.http(apiUrl + postUrl).header('Authorization', 'Bearer ' + messengerToken).header('Content-Type', 'application/json; charset=UTF-8').post(postJson)(function(err, resp, body) {
+      var token = overrideToken || apiToken;
+      this.http(apiUrl + postUrl).header('Authorization', 'Bearer ' + token).header('Content-Type', 'application/json; charset=UTF-8').post(postJson)(function(err, resp, body) {
         if(resp.statusCode === 201) {
           console.log("Messenger::post() << " + postUrl + ": " + body);
           var json = JSON.parse(body);
@@ -93,8 +96,9 @@ module.exports = {
       });
     },
 
-    postMultipart: function(postUrl, postData, attachmentPaths, messengerToken, callback) {
+    postMultipart: function(postUrl, postData, attachmentPaths, callback, overrideToken) {
       console.log("Messenger::postMultipart() >> " + postUrl + " formData: " + postData);
+      var token = overrideToken || apiToken;
       // npm install --save form-data (https://github.com/form-data/form-data)
       var formData = new FormData();
       for(var propName in postData) {
@@ -108,7 +112,7 @@ module.exports = {
         }
       }
       var headers = formData.getHeaders();
-      headers["Authorization"] = ("Bearer " + messengerToken);
+      headers["Authorization"] = ("Bearer " + token);
       formData.submit({
         host: apiDomain,
         port: apiPort,
@@ -235,6 +239,10 @@ module.exports = {
       apiPort = port;// = 443;
       apiUrl = protocol + "://" + domain + "/" + version + "/";
       console.log("API Destination URL: " + apiUrl);
+    },
+
+    setApiToken: function(token) {
+      apiToken = token;
     },
 
     /*
