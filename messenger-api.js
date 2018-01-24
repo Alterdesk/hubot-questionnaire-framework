@@ -33,119 +33,181 @@ var stopRegex;
 var responseTimeoutText;
 var responseTimeoutMs = 60000;
 var catchAllCommands = false;
-var catchAllText = "Command not found";
+var catchAllText = "COMMAND_NOT_FOUND_TEXT";
 var catchHelpCommand = false;
-var catchHelpText = "Help";
-
-// API destination settings
-var apiProtocol;
-var apiDomain;
-var apiVersion;
-var apiPort;
-var apiUrl;
-var apiToken;
+var catchHelpText = "HELP_TEXT";
 
 module.exports = {
 
-    /*
-    *   Messenger API helper functions
-    */
+    // Api connection class
+    Api: class {
 
-    loadSelf: function() {
-      this.get(robot, apiUrl, "me", function(success, json) {
-        if(success) {
-          botCompanyId = json["company_id"];
-          console.log("Bot company id: " + botCompanyId);
-        } else {
-          console.error("Unable to retrieve bot account");
-        }
-      });
-    },
+        /*
+        *   High level messenger API helper functions
+        */
 
-    http: function(url) {//, options) {
-      return HttpClient.create(url);//, this.extend({}, this.globalHttpOptions, options));
-    },
-
-    get: function(getUrl, callback, overrideToken) {
-      console.log("Messenger::get() >> " + getUrl);
-      var token = overrideToken || apiToken;
-      this.http(apiUrl + getUrl).header('Authorization', 'Bearer ' + token).header('Content-Type', 'application/json; charset=UTF-8').get()(function(err, resp, body) {
-        if (resp.statusCode === 200) {
-          console.log("Messenger::get() << " + getUrl + ": " + body);
-          var json = JSON.parse(body);
-          callback(true, json);
-        } else {
-          console.error("Messenger::get() << " + getUrl + ": " + resp.statusCode + ": " + body);
-          callback(false, null);
-        }
-      });
-    },
-
-    post: function(postUrl, postJson, callback, overrideToken) {
-      console.log("Messenger::post() >>" + postUrl + ": " + postJson);
-      var token = overrideToken || apiToken;
-      this.http(apiUrl + postUrl).header('Authorization', 'Bearer ' + token).header('Content-Type', 'application/json; charset=UTF-8').post(postJson)(function(err, resp, body) {
-        if(resp.statusCode === 201) {
-          console.log("Messenger::post() << " + postUrl + ": " + body);
-          var json = JSON.parse(body);
-          callback(true, json);
-        } else {
-          console.error("Messenger::post() << " + postUrl + ": " + resp.statusCode + ": " + body);
-          callback(false, null);
-        }
-      });
-    },
-
-    postMultipart: function(postUrl, postData, attachmentPaths, callback, overrideToken) {
-      console.log("Messenger::postMultipart() >> " + postUrl + " formData: " + postData);
-      var token = overrideToken || apiToken;
-      // npm install --save form-data (https://github.com/form-data/form-data)
-      var formData = new FormData();
-      for(var propName in postData) {
-        formData.append(propName, postData[propName]);
-      }
-      for(var i in attachmentPaths) {
-        try {
-          formData.append('files', FileSystem.createReadStream(attachmentPaths[i]));
-        } catch(err) {
-          console.error(err);
-        }
-      }
-      var headers = formData.getHeaders();
-      headers["Authorization"] = ("Bearer " + token);
-      formData.submit({
-        host: apiDomain,
-        port: apiPort,
-        protocol: apiProtocol + ":",
-        path: "/" + apiVersion + "/" + postUrl,
-        headers: headers}, function(err, res) {
-          if(err != null) {
-            console.error(err);
+        invite(inviteUserData, callback) {
+          var inviteData = {};
+          inviteData["create_conversation"] = inviteUserData.createConversation;
+          inviteData["email"] = inviteUserData.email;
+          inviteData["first_name"] = inviteUserData.firstName;
+          inviteData["last_name"] = inviteUserData.lastName;
+          if(answers.inviteMessage != null) {
+            inviteData["invite_text"] = inviteUserData.inviteMessage;  // Only used when creating conversation
           }
-          if(res == null) {
+          var invitePostJson = JSON.stringify(inviteData);
+
+          if(inviteUserData.inviteType == "coworker") {
+              this.post("users/invite/coworker", invitePostJson, callback);
+          } else if(inviteUserData.inviteType == "contact") {
+              this.post("users/invite/contact", invitePostJson, callback);
+          } else if(inviteUserData.inviteType == "private_user") {
+              this.post("users/invite/private", invitePostJson, callback);
+          } else {
+            console.error("Unknown invite type on invite: \"" + inviteUserData.inviteType + "\"")
             callback(false, null);
-            return;
           }
-          var body = "";
-          // Read incoming data
-          res.on('readable', function() {
-            body += res.read();
+        };
+
+        createGroups(groups, callback) {
+          for(var groupData in groups) {
+            createGroup(groupData, function(success, json) {
+              if(!success) {
+                callback(false, null);
+                return;
+              }
+            });
+          }
+          callback(true, null);
+        };
+
+        createGroup(groupData, callback) {
+
+        };
+
+
+        /*
+        *   Messenger API helper functions
+        */
+
+        loadSelf() {
+          this.get(robot, this.apiUrl, "me", function(success, json) {
+            if(success) {
+              botCompanyId = json["company_id"];
+              console.log("Bot company id: " + botCompanyId);
+            } else {
+              console.error("Unable to retrieve bot account");
+            }
           });
-          // Incoming data ended
-          res.on('end', function() {
-            if(res.statusCode === 201) {
-              console.log("Messenger::postMultipart() << " + postUrl + ": " + body);
+        };
+
+        http(url) {//, options) {
+          return HttpClient.create(url);//, this.extend({}, this.globalHttpOptions, options));
+        };
+
+        get(getUrl, callback, overrideToken) {
+          console.log("Messenger::get() >> " + getUrl);
+          var token = overrideToken || this.apiToken;
+          this.http(this.apiUrl + getUrl).header('Authorization', 'Bearer ' + token).header('Content-Type', 'application/json; charset=UTF-8').get()(function(err, resp, body) {
+            if (resp.statusCode === 200) {
+              console.log("Messenger::get() << " + getUrl + ": " + body);
               var json = JSON.parse(body);
               callback(true, json);
             } else {
-              console.error("Messenger::postMultipart() << " + postUrl + ": " + res.statusCode + ": " + body);
+              console.error("Messenger::get() << " + getUrl + ": " + resp.statusCode + ": " + body);
               callback(false, null);
             }
           });
-        });
+        }
+
+        post(postUrl, postJson, callback, overrideToken) {
+          console.log("Messenger::post() >>" + postUrl + ": " + postJson);
+          var token = overrideToken || this.apiToken;
+          this.http(this.apiUrl + postUrl).header('Authorization', 'Bearer ' + token).header('Content-Type', 'application/json; charset=UTF-8').post(postJson)(function(err, resp, body) {
+            if(resp.statusCode === 201) {
+              console.log("Messenger::post() << " + postUrl + ": " + body);
+              var json = JSON.parse(body);
+              callback(true, json);
+            } else {
+              console.error("Messenger::post() << " + postUrl + ": " + resp.statusCode + ": " + body);
+              callback(false, null);
+            }
+          });
+        };
+
+        postMultipart(postUrl, postData, attachmentPaths, callback, overrideToken) {
+          console.log("Messenger::postMultipart() >> " + postUrl + " formData: " + postData);
+          var token = overrideToken || this.apiToken;
+          // npm install --save form-data (https://github.com/form-data/form-data)
+          var formData = new FormData();
+          for(var propName in postData) {
+            formData.append(propName, postData[propName]);
+          }
+          for(var i in attachmentPaths) {
+            try {
+              formData.append('files', FileSystem.createReadStream(attachmentPaths[i]));
+            } catch(err) {
+              console.error(err);
+            }
+          }
+          var headers = formData.getHeaders();
+          headers["Authorization"] = ("Bearer " + token);
+          formData.submit({
+            host: this.apiDomain,
+            port: this.apiPort,
+            protocol: this.apiProtocol + ":",
+            path: "/" + this.apiVersion + "/" + postUrl,
+            headers: headers}, function(err, res) {
+              if(err != null) {
+                console.error(err);
+              }
+              if(res == null) {
+                callback(false, null);
+                return;
+              }
+              var body = "";
+              // Read incoming data
+              res.on('readable', function() {
+                body += res.read();
+              });
+              // Incoming data ended
+              res.on('end', function() {
+                if(res.statusCode === 201) {
+                  console.log("Messenger::postMultipart() << " + postUrl + ": " + body);
+                  var json = JSON.parse(body);
+                  callback(true, json);
+                } else {
+                  console.error("Messenger::postMultipart() << " + postUrl + ": " + res.statusCode + ": " + body);
+                  callback(false, null);
+                }
+              });
+            });
+        };
+
+
+        /*
+        *   API destination settings
+        */
+
+        setApiDestination(protocol, domain, version, port) {
+          this.apiProtocol = protocol;// = "https";
+          this.apiDomain = domain;// = "localapi.alterdesk.com";
+          this.apiVersion = version;// = "v1";
+          this.apiPort = port;// = 443;
+          this.apiUrl = protocol + "://" + domain + "/" + version + "/";
+          console.log("API Destination URL: " + this.apiUrl);
+        };
+
+        setApiToken(token) {
+          this.apiToken = token;
+        };
     },
 
-    // Override the default receiver
+
+    /*
+    *   Override the default receiver
+    */
+
     setRobotReceiver: function(robot) {
       robot.defaultRobotReceiver = robot.receive;
         robot.receive = function(message) {
@@ -188,76 +250,78 @@ module.exports = {
         };
     },
 
+    // Listeners for followup questions
     addListener: function(userId, listener) {
       messengerBotListeners[userId] = listener;
     },
-
     removeListener: function(userId) {
       delete messengerBotListeners[userId];
     },
-
     hasListener: function(userId) {
       return messengerBotListeners[userId] != null;
     },
-
     getListener: function(userId) {
       return messengerBotListeners[userId];
     },
 
+    // Regex to check if user wants to stop the current process
     setStopRegex: function(s) {
       stopRegex = s;
     },
 
+    // Response timeout configuration
     setResponseTimeoutText: function(t) {
       responseTimeoutText = t;
     },
-
     setResponseTimeoutMs: function(ms) {
       responseTimeoutMs = ms;
     },
 
+    // Catch all given commands and send default message when command is unknown
     setCatchAll: function(catchAll) {
       catchAllCommands = catchAll;
     },
-
     setCatchAllText: function(text) {
       catchAllText = text;
     },
 
+    // Configuration to override default hubot help
     setCatchHelp: function(catchHelp) {
       catchHelpCommand = catchHelp;
     },
-
     setCatchHelpText: function(text) {
       catchHelpText = text;
     },
 
-    setApiDestination: function(protocol, domain, version, port) {
-      apiProtocol = protocol;// = "https";
-      apiDomain = domain;// = "localapi.alterdesk.com";
-      apiVersion = version;// = "v1";
-      apiPort = port;// = 443;
-      apiUrl = protocol + "://" + domain + "/" + version + "/";
-      console.log("API Destination URL: " + apiUrl);
-    },
-
-    setApiToken: function(token) {
-      apiToken = token;
-    },
 
     /*
     *   Classes
     */
 
+    // Data container for inviting users
+    InviteUserData: class {
+        constructor() {
+            this.createConversation = false;
+        };
+    },
+
     // Data container for creating group chats
     CreateGroupData: class {
         constructor() {
+            // Users to invite
+            this.inviteUsers = [];
+
+            // Default thread settings
             this.allowContacts = true;
             this.autoCloseAfter = 0;
             this.autoExpireAfter = 0;
             this.hybridMessaging = false;
             this.membersCanInvite = false;
-        }
+        };
+
+        addInvite(inviteUserData) {
+            this.inviteUsers.push(inviteUserData);
+        };
     },
 
     // Data container of answers that the user has given
