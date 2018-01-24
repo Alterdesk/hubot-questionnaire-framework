@@ -3,7 +3,7 @@
 //
 // Dependencies:
 //   form-data
-//   http
+//   scoped-http-client
 //   fs
 //
 // Configuration:
@@ -16,7 +16,7 @@
 
 // Requirements
 var FormData = require('form-data');
-var Http = require('http');
+var HttpClient = require('scoped-http-client');
 var FileSystem = require('fs');
 const {TextMessage, LeaveMessage} = require('hubot');
 
@@ -29,6 +29,7 @@ var phoneRegex = new RegExp("/^\\+(9[976]\\d|8[987530]\\d|6[987]\\d|5[90]\\d|42\
 var emailRegex = new RegExp("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", 'i');
 var stopRegex;
 
+// Response settings
 var responseTimeoutText;
 var responseTimeoutMs = 60000;
 var catchAllCommands = false;
@@ -36,15 +37,37 @@ var catchAllText = "Command not found";
 var catchHelpCommand = false;
 var catchHelpText = "Help";
 
+// API destination settings
+var apiProtocol;
+var apiDomain;
+var apiVersion;
+var apiPort;
+var apiUrl;
+
 module.exports = {
 
     /*
     *   Messenger API helper functions
     */
 
-    get: function(msg, apiUrl, getUrl, messengerToken, callback) {
+    loadSelf: function(botMessengerToken) {
+      this.get(robot, apiUrl, "me", botMessengerToken, function(success, json) {
+        if(success) {
+          botCompanyId = json["company_id"];
+          console.log("Bot company id: " + botCompanyId);
+        } else {
+          console.error("Unable to retrieve bot account");
+        }
+      });
+    },
+
+    http: function(url) {//, options) {
+      return HttpClient.create(url);//, this.extend({}, this.globalHttpOptions, options));
+    },
+
+    get: function(getUrl, messengerToken, callback) {
       console.log("Messenger::get() >> " + getUrl);
-      msg.http(apiUrl + getUrl).header('Authorization', 'Bearer ' + messengerToken).header('Content-Type', 'application/json; charset=UTF-8').get()(function(err, resp, body) {
+      this.http(apiUrl + getUrl).header('Authorization', 'Bearer ' + messengerToken).header('Content-Type', 'application/json; charset=UTF-8').get()(function(err, resp, body) {
         if (resp.statusCode === 200) {
           console.log("Messenger::get() << " + getUrl + ": " + body);
           var json = JSON.parse(body);
@@ -56,9 +79,9 @@ module.exports = {
       });
     },
 
-    post: function(msg, apiUrl, postUrl, postJson, messengerToken, callback) {
+    post: function(postUrl, postJson, messengerToken, callback) {
       console.log("Messenger::post() >>" + postUrl + ": " + postJson);
-      msg.http(apiUrl + postUrl).header('Authorization', 'Bearer ' + messengerToken).header('Content-Type', 'application/json; charset=UTF-8').post(postJson)(function(err, resp, body) {
+      this.http(apiUrl + postUrl).header('Authorization', 'Bearer ' + messengerToken).header('Content-Type', 'application/json; charset=UTF-8').post(postJson)(function(err, resp, body) {
         if(resp.statusCode === 201) {
           console.log("Messenger::post() << " + postUrl + ": " + body);
           var json = JSON.parse(body);
@@ -70,7 +93,7 @@ module.exports = {
       });
     },
 
-    postMultipart: function(msg, apiDomain, apiPort, apiProtocol, apiVersion, postUrl, postData, attachmentPaths, messengerToken, callback) {
+    postMultipart: function(postUrl, postData, attachmentPaths, messengerToken, callback) {
       console.log("Messenger::postMultipart() >> " + postUrl + " formData: " + postData);
       // npm install --save form-data (https://github.com/form-data/form-data)
       var formData = new FormData();
@@ -203,6 +226,15 @@ module.exports = {
 
     setCatchHelpText: function(text) {
       catchHelpText = text;
+    },
+
+    setApiDestination: function(protocol, domain, version, port) {
+      apiProtocol = protocol;// = "https";
+      apiDomain = domain;// = "localapi.alterdesk.com";
+      apiVersion = version;// = "v1";
+      apiPort = port;// = 443;
+      apiUrl = protocol + "://" + domain + "/" + version + "/";
+      console.log("API Destination URL: " + apiUrl);
     },
 
     /*
