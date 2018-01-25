@@ -83,7 +83,7 @@ module.exports = {
           for(var inviteIndex in groupData.inviteUsers) {
              var invite = groupData.inviteUsers[inviteIndex];
              var inviteData = {};
-             inviteData["create_conversation"] = false;
+             inviteData["create_conversation"] = invite.createConversation;
              inviteData["email"] = invite.email;
              inviteData["first_name"] = invite.firstName;
              inviteData["last_name"] = invite.lastName;
