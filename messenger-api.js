@@ -201,6 +201,75 @@ module.exports = {
         setApiToken(token) {
           this.apiToken = token;
         };
+
+
+        /*
+        *   Limit bot access to userIds, coworkers or everyone
+        */
+
+        limitUsage(limitType, limitData) {
+          this.limitType = limitType;
+          this.limitData = limitData;
+
+          if(limitType == "coworkers") {
+            var api = this;
+            this.get("me", function(success, json) {
+              if(success) {
+                api.botCompanyId = json["company_id"];
+                console.log("Bot company id: " + api.botCompanyId);
+              } else {
+                console.error("Unable to retrieve bot account");
+              }
+            });
+          }
+        };
+
+        userAllowed(userId, callback) {
+          console.log("userAllowed: userId: " + userId + " limitType: " + this.limitType + " limitData: " + this.limitData);
+          if(this.limitType == null) {
+            console.error("Usage limit not configured");
+            callback(false);
+          } else if(this.limitType == "everyone") {
+            callback(true);
+          } else if(this.limitType == "coworkers") {
+            if(api.botCompanyId == null) {
+              console.error("Bot company id not set");
+              callback(false);
+              return;
+            }
+            var api = this;
+            this.get("users/" + userId, function(success, json) {
+              if(success) {
+                var userCompanyId = json["company_id"];
+                var isCoworker = api.botCompanyId == userCompanyId && userCompanyId != null;
+                console.log("Coworker check: isCoworker: " + isCoworker + "bot: " + api.botCompanyId + " user: " + userCompanyId);
+                callback(isCoworker);
+              } else {
+                console.error("Unable to retrieve user by id on userAllowed: " + userId);
+                callback(false);
+              }
+            });
+          } else if(this.limitType == "userIds") {
+            if(this.limitData == null) {
+              console.error("Limit data not set when using type \"userIds\" on userAllowed");
+              callback(false);
+              return;
+            }
+            for(var index in this.limitData) {
+              var id = this.limitData[index];
+              if(userId == id) {
+                console.log("UserId found in allowed user ids list on userAllowed");
+                callback(true);
+                return;
+              }
+            }
+            console.log("UserId not found in allowed user ids list on userAllowed");
+            callback(false);
+          } else {
+            console.error("Unknown limit type on userAllowed: \"" + this.limitType + "\"");
+            callback(false);
+          }
+        };
     },
 
 
@@ -234,7 +303,7 @@ module.exports = {
                 response.send(catchHelpText);
                 return;
               }
-              if(catchAllCommands && message != "uitnodigen" && message != "test") {
+              if(catchAllCommands && message != "uitnodigen" && message != "test" && message != "toegang") {    // TODO
                 var response = new robot.Response(robot, message, true);
                 response.send(catchAllText);
                 return;
