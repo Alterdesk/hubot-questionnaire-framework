@@ -69,37 +69,58 @@ module.exports = {
           }
         };
 
-        createGroups(groups, callback) {
-          for(var groupData in groups) {
-            createGroup(groupData, function(success, json) {
-              if(!success) {
-                callback(false, null);
-                return;
-              }
-            });
+        createGroup(groupData, callback) {
+          // Group chat settings
+          var settingsPostData = {};
+          settingsPostData["allow_contacts"] = groupData.allowContacts;
+          settingsPostData["auto_close_after"] = groupData.autoCloseAfter;
+          settingsPostData["auto_expire_after"] = groupData.autoExpireAfter;
+          settingsPostData["hybrid_messaging"] = groupData.hybridMessaging;
+          settingsPostData["members_can_invite"] = groupData.membersCanInvite;
+
+          // Invite user data
+          var inviteUsersData = [];
+          for(var inviteIndex in groupData.inviteUsers) {
+             var invite = groupData.inviteUsers[inviteIndex];
+             var inviteData = {};
+             inviteData["create_conversation"] = false;
+             inviteData["email"] = invite.email;
+             inviteData["first_name"] = invite.firstName;
+             inviteData["last_name"] = invite.lastName;
+             if(invite.inviteMessage != null) {
+               inviteData["invite_text"] = invite.inviteMessage;  // Only used when creating conversation
+             }
+             inviteData["invite_type"] = invite.inviteType;
+             inviteUsersData.push(inviteData);
           }
-          callback(true, null);
+
+          // Group data
+          var groupPostData = {};
+          groupPostData["invite_users"] = inviteUsersData;
+          groupPostData["members"] = groupData.memberIds;
+          groupPostData["settings"] = settingsPostData;
+          groupPostData["subject"] = groupData.subject;
+
+          var groupPostJson = JSON.stringify(groupPostData);
+          this.post("groupchats", groupPostJson, callback, groupData.overrideToken);
         };
 
-        createGroup(groupData, callback) {
-
+        sendGroupMessage(groupId, messageData, callback) {
+            var messagePostData = {};
+            if(messageData.attachmentPaths != null) {
+              messagePostData["message"] = messageData.message;
+              this.postMultipart("groupchats/" + groupId + "/attachments", messagePostData, messageData.attachmentPaths, callback, messageData.overrideToken);
+            } else {
+              messagePostData["body"] = messageData.message;
+              var messageJson = JSON.stringify(messagePostData);
+              this.post("groupchats/" + groupId + "/messages", messageJson, callback, messageData.overrideToken);
+            }
         };
 
 
         /*
         *   Messenger API helper functions
         */
-
-        loadSelf() {
-          this.get(robot, this.apiUrl, "me", function(success, json) {
-            if(success) {
-              botCompanyId = json["company_id"];
-              console.log("Bot company id: " + botCompanyId);
-            } else {
-              console.error("Unable to retrieve bot account");
-            }
-          });
-        };
 
         http(url) {//, options) {
           return HttpClient.create(url);//, this.extend({}, this.globalHttpOptions, options));
@@ -393,31 +414,37 @@ module.exports = {
         };
     },
 
+    SendMessageData: class {
+      constructor() {
+        this.attachmentPaths = [];
+      };
+
+      addAttachmentPath(path) {
+        this.attachmentPaths.push(path);
+      };
+    },
+
     // Data container of answers that the user has given
     Answers: class {
     },
 
     // Listener class for consecutive questions
     Listener: class {
-      constructor(r, m, c, a, checkFor) {
-    //    console.info("constructor: robot: " + r + " message: " + m + " callback: " + c + " answers: " + a + " checkFor: " + checkFor);
+      constructor(rob, msg, call, ans, reg) {
         this.call = this.call.bind(this);
-        this.robot = r;
-        this.callback = c;
-        this.answers = a;
-        if(checkFor == "text") {
-          this.regex = textRegex;
-        } else if(checkFor == "phoneNumber") {
-          this.regex = phoneRegex;
-        } else if(checkFor == "email") {
-          this.regex = emailRegex;
+        this.robot = rob;
+        this.callback = call;
+        this.answers = ans;
+        if(reg != null) {
+          this.regex = reg;
         } else {
-          if (r.enableSlash) {
-            this.regex = new RegExp(`^(?:\/|${r.name}:?)\\s*(.*?)\\s*$`, 'i');
-          } else {
-            this.regex = new RegExp(`^${r.name}:?\\s*(.*?)\\s*$`, 'i');
-          }
+          this.regex = textRegex;
         }
+//        if (r.enableSlash) {
+//          this.regex = new RegExp(`^(?:\/|${rob.name}:?)\\s*(.*?)\\s*$`, 'i');
+//        } else {
+//          this.regex = new RegExp(`^${rob.name}:?\\s*(.*?)\\s*$`, 'i');
+//        }
         this.matcher = (message) => {
           if (message.text != null) {
             return message.text.match(this.regex);
@@ -429,10 +456,10 @@ module.exports = {
           }
         };
         this.timer = setTimeout(function () {
-            console.log("Response timeout: user: " + m.message.user.id);
-            delete messengerBotListeners[m.message.user.id];
+            console.log("Response timeout: user: " + msg.message.user.id);
+            delete messengerBotListeners[msg.message.user.id];
             if(responseTimeoutText != null) {
-              m.send(responseTimeoutText);
+              msg.send(responseTimeoutText);
             }
         }, responseTimeoutMs);
       }
@@ -444,5 +471,20 @@ module.exports = {
         this.callback(new this.robot.Response(this.robot, message, true), this);
         return true;
       }
+    },
+
+
+    /*
+    *   Regex
+    */
+
+    getTextRegex: function() {
+      return textRegex;
+    },
+    getPhoneRegex: function() {
+      return phoneRegex;
+    },
+    getEmailRegex: function() {
+      return emailRegex;
     }
 }
