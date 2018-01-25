@@ -1,14 +1,11 @@
 {
-  "name": "messenger-api",
+  "name": "hubot-questionnaire-framework",
   "version": "1.0.0",
-  "description": "Hubot Messenger API module",
-  "main": "messenger-api.js",
+  "description": "Hubot Questionnaire Framework",
+  "main": "questionnaire.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Alterdesk",
-  "license": "ISC",
-  "dependencies": {
-    "form-data": "^2.3.1"
-  }
+  "license": "ISC"
 }
