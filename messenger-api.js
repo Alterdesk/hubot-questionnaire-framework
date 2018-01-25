@@ -48,7 +48,11 @@ module.exports = {
         invite(inviteUserData, callback) {
           var inviteData = {};
           inviteData["create_conversation"] = inviteUserData.createConversation;
-          inviteData["email"] = inviteUserData.email;
+          if(inviteUserData.email != null) {
+            inviteData["email"] = inviteUserData.email;
+          } else if(inviteUsersData.phoneNumber != null) {
+//            inviteData["phone_number"] = inviteUserData.phoneNumber; // TODO
+          }
           inviteData["first_name"] = inviteUserData.firstName;
           inviteData["last_name"] = inviteUserData.lastName;
           if(answers.inviteMessage != null) {
