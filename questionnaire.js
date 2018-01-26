@@ -200,5 +200,35 @@ module.exports = {
     },
     getEmailRegex: function() {
       return emailRegex;
+    },
+
+    /*
+    *   Other helper functions
+    */
+
+    // Only capitalize last word in the name: "de Boer"
+    capitalizeLastName: function(string) {
+      if(string == null || string == "") {
+        return string;
+      }
+      var words = string.split(" ");
+      var result = "";
+      for(var index in words) {
+        var word = words[index];
+        var nextIndex = parseInt(index) + 1;
+        if(nextIndex < words.length) {
+          result +=  " " + word;
+        } else {
+          result += " " + this.capitalizeFirstLetter(word);
+        }
+      }
+      return result;
+    },
+
+    capitalizeFirstLetter: function(string) {
+      if(string == null || string == "") {
+        return string;
+      }
+      return string.charAt(0).toUpperCase() + string.slice(1);
     }
 }
