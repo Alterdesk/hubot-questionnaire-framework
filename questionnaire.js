@@ -195,6 +195,9 @@ module.exports = {
     getTextRegex: function() {
       return textRegex;
     },
+    getNumberRegex: function() {
+      return numberRegex;
+    },
     getPhoneRegex: function() {
       return phoneRegex;
     },
