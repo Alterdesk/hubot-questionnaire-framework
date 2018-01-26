@@ -182,6 +182,7 @@ module.exports = {
       call(message) {
         clearTimeout(this.timer);
         this.matches = this.matcher(message);
+        console.log("Matches on call: " + this.matches);
         this.stop = this.stopMatcher(message);
         this.callback(new this.robot.Response(this.robot, message, true), this);
         return true;
