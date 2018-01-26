@@ -18,6 +18,7 @@ const {TextMessage, LeaveMessage} = require('hubot');
 var messengerBotListeners = {};
 
 var textRegex = new RegExp(/\w+/, 'i');
+var numberRegex = new RegExp(/\d+/, 'i');
 var phoneRegex = new RegExp(/^\+(9[976]\d|8[987530]\d|6[987]\d|5[90]\d|42\d|3[875]\d| 2[98654321]\d|9[8543210]|8[6421]|6[6543210]|5[87654321]| 4[987654310]|3[9643210]|2[70]|7|1)\d{1,14}$/);
 var emailRegex = new RegExp(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}$/, 'i');
 var stopRegex;
@@ -29,6 +30,7 @@ var catchAllCommands = false;
 var catchAllText = "COMMAND_NOT_FOUND_TEXT";
 var catchHelpCommand = false;
 var catchHelpText = "HELP_TEXT";
+var acceptedCommands;
 
 module.exports = {
 
@@ -37,7 +39,7 @@ module.exports = {
     */
 
     setRobotReceiver: function(robot) {
-      robot.defaultRobotReceiver = robot.receive;
+      robot.defaultRobotReceiver = robot.receive;   // TODO Make array of receivers to allow multiple scripts using Questionnaire
         robot.receive = function(message) {
           var userId;
           if(message.user != null) {
@@ -62,7 +64,16 @@ module.exports = {
                 response.send(catchHelpText);
                 return;
               }
-              if(catchAllCommands && message != "uitnodigen" && message != "test" && message != "toegang") {    // TODO
+              var unknownCommand = true;
+              if(acceptedCommands != null) {
+                for(var index in acceptedCommands) {
+                  if(message == acceptedCommands[index]) {
+                    unknownCommand = false;
+                    break;
+                  }
+                }
+              }
+              if(catchAllCommands && unknownCommand) {
                 var response = new robot.Response(robot, message, true);
                 response.send(catchAllText);
                 return;
@@ -113,14 +124,16 @@ module.exports = {
       catchAllText = text;
     },
 
-    // Configuration to override default hubot help
+    // Configuration to override default hubot help and commands that it does accept
     setCatchHelp: function(catchHelp) {
       catchHelpCommand = catchHelp;
     },
     setCatchHelpText: function(text) {
       catchHelpText = text;
     },
-
+    setAcceptedCommands(commands) {
+      acceptedCommands = commands;
+    },
 
     /*
     *   Classes
