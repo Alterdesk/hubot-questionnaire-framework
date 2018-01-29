@@ -24,13 +24,13 @@ var emailRegex = new RegExp(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}$/, 'i');
 var stopRegex;
 
 // Response settings
-var responseTimeoutText;
-var responseTimeoutMs = 60000;
-var catchAllCommands = false;
-var catchAllText = "COMMAND_NOT_FOUND_TEXT";
-var catchHelpCommand = false;
-var catchHelpText = "HELP_TEXT";
-var acceptedCommands;
+var responseTimeoutText = process.env.HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT_TEXT || "RESPONSE_TIMEOUT_TEXT";
+var responseTimeoutMs = process.env.HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT || 60000;
+var catchAllCommands = process.env.HUBOT_QUESTIONNAIRE_CATCH_ALL || false;
+var catchAllText = process.env.HUBOT_QUESTIONNAIRE_CATCH_ALL_TEXT || "COMMAND_NOT_FOUND_TEXT";
+var catchHelpCommand = process.env.HUBOT_QUESTIONNAIRE_CATCH_HELP || false;
+var catchHelpText = process.env.HUBOT_QUESTIONNAIRE_CATCH_HELP_TEXT || "HELP_TEXT";
+var acceptedCommands = [];
 
 module.exports = {
 
@@ -38,17 +38,21 @@ module.exports = {
     *   Override the default receiver
     */
 
-    setRobotReceiver: function(robot) {
-      robot.defaultRobotReceiver = robot.receive;   // TODO Make array of receivers to allow multiple scripts using Questionnaire
+    overrideReceiver: function(robot) {
+      if(robot.defaultRobotReceiver != null) {
+        // Already overridden
+        return;
+      }
+      robot.defaultRobotReceiver = robot.receive;
         robot.receive = function(message) {
-          var userId;
-          if(message.user != null) {
-            userId = message.user.id;
+          if(message.user == null) {
+            return robot.defaultRobotReceiver(message);
           }
+          var userId = message.user.id;
           if(message instanceof TextMessage) {
 //              console.log("receive: " + message);
               var lst;
-              if (userId != null && messengerBotListeners[userId] != null) {
+              if (messengerBotListeners[userId] != null) {
 //                console.log("user: " + userId);
                 lst = messengerBotListeners[userId];
                 delete messengerBotListeners[userId];
@@ -80,7 +84,7 @@ module.exports = {
               }
           } else if(message instanceof LeaveMessage) {
               console.log("Leave detected");
-              if(userId != null && messengerBotListeners[userId] != null) {
+              if(messengerBotListeners[userId] != null) {
                 delete messengerBotListeners[userId];
               }
           }
@@ -131,8 +135,10 @@ module.exports = {
     setCatchHelpText: function(text) {
       catchHelpText = text;
     },
-    setAcceptedCommands(commands) {
-      acceptedCommands = commands;
+    addAcceptedCommands(commands) {
+      for(var index in commands) {
+        acceptedCommands.push(commands[index]);
+      }
     },
 
     /*
