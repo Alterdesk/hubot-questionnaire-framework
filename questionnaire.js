@@ -30,6 +30,7 @@ var catchAllCommands = process.env.HUBOT_QUESTIONNAIRE_CATCH_ALL || false;
 var catchAllText = process.env.HUBOT_QUESTIONNAIRE_CATCH_ALL_TEXT || "COMMAND_NOT_FOUND_TEXT";
 var catchHelpCommand = process.env.HUBOT_QUESTIONNAIRE_CATCH_HELP || false;
 var catchHelpText = process.env.HUBOT_QUESTIONNAIRE_CATCH_HELP_TEXT || "HELP_TEXT";
+var removeListenerOnLeave = process.env.HUBOT_QUESTIONNAIRE_REMOVE_ON_LEAVE || false;
 var acceptedCommands = [];
 
 module.exports = {
@@ -51,6 +52,7 @@ module.exports = {
           var userId = message.user.id;
           if(message instanceof TextMessage) {
 //              console.log("receive: " + message);
+              var messageString = message.toString().toLowerCase();
               var lst;
               if (messengerBotListeners[userId] != null) {
 //                console.log("user: " + userId);
@@ -62,7 +64,7 @@ module.exports = {
                 // Put back to process next message
                 messengerBotListeners[userId] = lst;
               }
-              if(catchHelpCommand && (message == robot.name + " help" || message == "help")) {  // TODO Maybe use regex
+              if(catchHelpCommand && (messageString == robot.name.toLowerCase() + " help" || messageString == "help")) {  // TODO Maybe use regex
 //                console.log("Captured help");
                 var response = new robot.Response(robot, message, true);
                 response.send(catchHelpText);
@@ -71,7 +73,7 @@ module.exports = {
               var unknownCommand = true;
               if(acceptedCommands != null) {
                 for(var index in acceptedCommands) {
-                  if(message == acceptedCommands[index]) {
+                  if(messageString == acceptedCommands[index]) {
                     unknownCommand = false;
                     break;
                   }
@@ -84,7 +86,7 @@ module.exports = {
               }
           } else if(message instanceof LeaveMessage) {
               console.log("Leave detected");
-              if(messengerBotListeners[userId] != null) {
+              if(removeListenerOnLeave && messengerBotListeners[userId] != null) {
                 delete messengerBotListeners[userId];
               }
           }
@@ -137,7 +139,7 @@ module.exports = {
     },
     addAcceptedCommands(commands) {
       for(var index in commands) {
-        acceptedCommands.push(commands[index]);
+        acceptedCommands.push(commands[index].toLowerCase());
       }
     },
 
