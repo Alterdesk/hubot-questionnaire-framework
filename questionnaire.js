@@ -51,19 +51,21 @@ module.exports = {
             return robot.defaultRobotReceiver(message);
           }
           var userId = message.user.id;
+          var roomId = message.room;
+          var listenerId = roomId + userId;
           if(message instanceof TextMessage) {
 //              console.log("receive: " + message);
               var messageString = message.toString().toLowerCase();
               var lst;
-              if (messengerBotListeners[userId] != null) {
+              if (messengerBotListeners[listenerId] != null) {
 //                console.log("user: " + userId);
-                lst = messengerBotListeners[userId];
-                delete messengerBotListeners[userId];
+                lst = messengerBotListeners[listenerId];
+                delete messengerBotListeners[listenerId];
                 if (lst.call(message)) {
                   return;
                 }
                 // Put back to process next message
-                messengerBotListeners[userId] = lst;
+                messengerBotListeners[listenerId] = lst;
               }
               if(catchHelpCommand && (messageString == robot.name.toLowerCase() + " help" || messageString == "help")) {  // TODO Maybe use regex
 //                console.log("Captured help");
@@ -87,8 +89,8 @@ module.exports = {
               }
           } else if(message instanceof LeaveMessage) {
               console.log("Leave detected");
-              if(removeListenerOnLeave && messengerBotListeners[userId] != null) {
-                delete messengerBotListeners[userId];
+              if(removeListenerOnLeave && messengerBotListeners[listenerId] != null) {
+                delete messengerBotListeners[listenerId];
               }
           }
       //    console.log("Passing through original receive");
@@ -97,17 +99,17 @@ module.exports = {
     },
 
     // Listeners for followup questions
-    addListener: function(userId, listener) {
-      messengerBotListeners[userId] = listener;
+    addListener: function(roomId, userId, listener) {
+      messengerBotListeners[roomId + userId] = listener;
     },
-    removeListener: function(userId) {
-      delete messengerBotListeners[userId];
+    removeListener: function(roomId, userId) {
+      delete messengerBotListeners[roomId + userId];
     },
-    hasListener: function(userId) {
-      return messengerBotListeners[userId] != null;
+    hasListener: function(roomId, userId) {
+      return messengerBotListeners[roomId + userId] != null;
     },
-    getListener: function(userId) {
-      return messengerBotListeners[userId];
+    getListener: function(roomId, userId) {
+      return messengerBotListeners[roomId + userId];
     },
 
     // Regex to check if user wants to stop the current process
@@ -180,8 +182,8 @@ module.exports = {
           }
         };
         this.timer = setTimeout(function () {
-            console.log("Response timeout: user: " + msg.message.user.id);
-            delete messengerBotListeners[msg.message.user.id];
+            console.log("Response timeout: room: " + msg.message.room + " user: " + msg.message.user.id);
+            delete messengerBotListeners[msg.message.room + msg.message.user.id];
             if(responseTimeoutText != null) {
               msg.send(responseTimeoutText);
             }
