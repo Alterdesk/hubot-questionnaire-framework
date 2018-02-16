@@ -252,8 +252,9 @@ module.exports = {
         return Math.round(value * multiplier) / multiplier;
     },
 
-    formatDate: function(date, customFormat) {
-        var format = customFormat || "LLLL";  // TODO Language
-        return Moment(date).format(format);
+    formatDate: function(date, customLocale, customFormat) {
+        var format = customFormat || "LLLL";
+        var locale = customLocale || "en-US";
+        return Moment(date).locale(locale).format(format);
     }
 }
