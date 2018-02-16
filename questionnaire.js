@@ -12,6 +12,7 @@
 //   Alterdesk
 
 // Requirements
+var Moment = require('moment');
 const {TextMessage, LeaveMessage} = require('hubot');
 
 // Listeners for the bot
@@ -247,5 +248,10 @@ module.exports = {
     round: function(value, precision) {
         var multiplier = Math.pow(10, precision || 0);
         return Math.round(value * multiplier) / multiplier;
+    },
+
+    formatDate: function(date, customFormat) {
+        var format = customFormat || "LLLL";  // TODO Language
+        return Moment(date).format(format);
     }
 }
