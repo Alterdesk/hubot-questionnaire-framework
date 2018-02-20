@@ -50,8 +50,16 @@ module.exports = {
           if(message.user == null) {
             return robot.defaultRobotReceiver(message);
           }
-          var userId = message.user.id;
+//          console.log("MESSAGE:\n", message);
+          var userId;
+          // Alterdesk adapter uses separate user id field
+          if(message.user.user_id != null) {
+            userId = message.user.user_id;
+          } else {
+            userId = message.user.id;
+          }
           var roomId = message.room;
+          var isGroup = message.user.is_groupchat;
           var listenerId = roomId + userId;
           if(message instanceof TextMessage) {
 //              console.log("receive: " + message);
@@ -67,17 +75,35 @@ module.exports = {
                 // Put back to process next message
                 messengerBotListeners[listenerId] = lst;
               }
-              if(catchHelpCommand && (messageString == robot.name.toLowerCase() + " help" || messageString == "help")) {  // TODO Maybe use regex
+              var isMentioned = false;
+              if(isGroup && message.mentions != null) {
+                for(var index in message.mentions) {
+                  var mention = message.mentions[index];
+                  if(robot.user.id === mention["id"]) {
+                    isMentioned = true;
+                    break;
+                  }
+                }
+              }
+              if(isGroup && !isMentioned) {
+                // Ignoring message, not mentioned and no listeners for user in room
+                console.log("Ignoring message, not mentioned and no listeners for user in room");
+                return;
+              }
+              if(catchHelpCommand && (messageString === "help" || messageString === "[mention=" + robot.user.id + "] help")) {
 //                console.log("Captured help");
                 var response = new robot.Response(robot, message, true);
                 response.send(catchHelpText);
+                console.log("Help detected");
                 return;
               }
               var unknownCommand = true;
               if(acceptedCommands != null) {
                 for(var index in acceptedCommands) {
-                  if(messageString == acceptedCommands[index]) {
+                  var command = acceptedCommands[index];
+                  if(messageString === command || messageString === "[mention=" + robot.user.id + "] " + command) {
                     unknownCommand = false;
+                    console.log("Command detected: " + command);
                     break;
                   }
                 }
@@ -99,18 +125,26 @@ module.exports = {
     },
 
     // Listeners for followup questions
-    addListener: function(roomId, userId, listener) {
-      messengerBotListeners[roomId + userId] = listener;
+    addListener: function(roomId, user, listener) {
+      if(user.user_id != null) {
+        messengerBotListeners[roomId + user.user_id] = listener;
+      } else {
+        messengerBotListeners[roomId + user.id] = listener;
+      }
     },
-    removeListener: function(roomId, userId) {
-      delete messengerBotListeners[roomId + userId];
+    removeListener: function(roomId, user) {
+      if(user.user_id != null) {
+        delete messengerBotListeners[roomId + user.user_id];
+      } else {
+        delete messengerBotListeners[roomId + user.id];
+      }
     },
-    hasListener: function(roomId, userId) {
-      return messengerBotListeners[roomId + userId] != null;
-    },
-    getListener: function(roomId, userId) {
-      return messengerBotListeners[roomId + userId];
-    },
+//    hasListener: function(roomId, userId) {
+//      return messengerBotListeners[roomId + userId] != null;
+//    },
+//    getListener: function(roomId, userId) {
+//      return messengerBotListeners[roomId + userId];
+//    },
 
     // Regex to check if user wants to stop the current process
     setStopRegex: function(s) {
@@ -183,7 +217,11 @@ module.exports = {
         };
         this.timer = setTimeout(function () {
             console.log("Response timeout: room: " + msg.message.room + " user: " + msg.message.user.id);
-            delete messengerBotListeners[msg.message.room + msg.message.user.id];
+            if(msg.message.user.user_id != null) {
+              delete messengerBotListeners[msg.message.room + msg.message.user.user_id];
+            } else {
+              delete messengerBotListeners[msg.message.room + msg.message.user.id];
+            }
             if(responseTimeoutText != null) {
               msg.send(responseTimeoutText);
             }
@@ -220,6 +258,14 @@ module.exports = {
     /*
     *   Other helper functions
     */
+
+    // Alterdesk adapter uses separate user id field(user.id in groups consists of (group_id + user_id)
+    getUserId: function(user) {
+      if(user.user_id != null) {
+        return user.user_id;
+      }
+      return user.id;
+    },
 
     // Only capitalize last word in the name: "de Boer"
     capitalizeLastName: function(string) {
