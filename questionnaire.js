@@ -191,21 +191,12 @@ module.exports = {
 
     // Listener class for consecutive questions
     Listener: class {
-      constructor(rob, msg, call, ans, reg) {
+      constructor(rob, msg, call, ans, reg, overrideTimeoutMs, overrideTimeoutCallback) {
         this.call = this.call.bind(this);
         this.robot = rob;
         this.callback = call;
         this.answers = ans;
-        if(reg != null) {
-          this.regex = reg;
-        } else {
-          this.regex = textRegex;
-        }
-//        if (r.enableSlash) {
-//          this.regex = new RegExp(`^(?:\/|${rob.name}:?)\\s*(.*?)\\s*$`, 'i');
-//        } else {
-//          this.regex = new RegExp(`^${rob.name}:?\\s*(.*?)\\s*$`, 'i');
-//        }
+        this.regex = reg || textRegex;
         this.matcher = (message) => {
           if (message.text != null) {
             return message.text.match(this.regex);
@@ -216,17 +207,20 @@ module.exports = {
             return message.text.match(stopRegex);
           }
         };
+        var useTimeoutMs = overrideTimeoutMs || responseTimeoutMs;
         this.timer = setTimeout(function () {
-            console.log("Response timeout: room: " + msg.message.room + " user: " + msg.message.user.id);
-            if(msg.message.user.user_id != null) {
-              delete messengerBotListeners[msg.message.room + msg.message.user.user_id];
-            } else {
-              delete messengerBotListeners[msg.message.room + msg.message.user.id];
-            }
-            if(responseTimeoutText != null) {
-              msg.send(responseTimeoutText);
-            }
-        }, responseTimeoutMs);
+          console.log("Response timeout: room: " + msg.message.room + " user: " + msg.message.user.id);
+          if(msg.message.user.user_id != null) {
+            delete messengerBotListeners[msg.message.room + msg.message.user.user_id];
+          } else {
+            delete messengerBotListeners[msg.message.room + msg.message.user.id];
+          }
+          if(overrideTimeoutCallback != null) {
+            overrideTimeoutCallback();
+          } else if(responseTimeoutText != null) {
+            msg.send(responseTimeoutText);
+          }
+        }, useTimeoutMs);
       }
 
       call(message) {
