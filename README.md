@@ -21,13 +21,14 @@ Data container class that holds the answers given by a user in a questionnaire
 The example given below uses the Hubot Questionnaire Framework in a Hubot script
 ```javascript
 var questionnaire = require('hubot-questionnaire-framework');
+const {Control, Listener, Answers} = require('hubot-questionnaire-framework');
 
 // Questionnaire control instance
 var control;
 
 module.exports = function(robot) {
     // Override the default robot message receiver
-    control = new questionnaire.Control();
+    control = new Control();
     control.overrideReceiver(robot);
     
     // Check if the start command of the questionnaire is heard
@@ -38,8 +39,8 @@ module.exports = function(robot) {
                 // Ask the first question
                 msg.send("What is the answer for question one?");
                 // Object to contain the answers of the questionnaire
-                var answers = new questionnaire.Answers();
-                var listener = new questionnaire.Listener(robot, msg, callbackOne, answers);
+                var answers = new Answers();
+                var listener = new Listener(msg, callbackOne, answers);
                 // Add the listener
                 return control.addListener(msg.message, listener);
             } else {
@@ -67,13 +68,13 @@ var callbackOne = function(response, listener) {
     // Check if rexex accepted the answer
     if(listener.matches == null) {
         response.send("Answer not accepted by regex, What is the answer for question one?");
-        return control.addListener(response.message, new questionnaire.Listener(response.robot, response, callbackOne, listener.answers));
+        return control.addListener(response.message, new Listener(response, callbackOne, listener.answers));
     }
     // Valid answer, store in the answers object
     listener.answers.answerOne = response.message.text;
     
     response.send("What is the answer for question two?");
-    return control.addListener(response.message, new questionnaire.Listener(response.robot, response, callbackTwo, listener.answers));
+    return control.addListener(response.message, new Listener(response, callbackTwo, listener.answers));
 };
 
 // Check and store the answer for the second question and show summary when valid
@@ -87,7 +88,7 @@ var callbackTwo = function(response, listener) {
     // Check if rexex accepted the answer
     if(listener.matches == null) {
         response.send("Answer not accepted by regex, What is the answer for question two?");
-        return control.addListener(response.message, new questionnaire.Listener(response.robot, response, callbackTwo, listener.answers));
+        return control.addListener(response.message, new Listener(response, callbackTwo, listener.answers));
     }
     // Valid answer, store in the answers object
     listener.answers.answerTwo = response.message.text;
