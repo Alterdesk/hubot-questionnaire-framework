@@ -9,12 +9,16 @@ The control class can override the default Hubot message receiver to:
 * Override the default Hubot help command
 * Adding/Removing message listeners per user per room
 
+
+
 ### Listener
 The listener class is used to await an answer from the user, containing answer regex and timeout information.
 
 ### Answers
 Data container class that holds the answers given by a user in a questionnaire
 
+# Example script
+The example given below uses the Hubot Questionnaire Framework in a Hubot script
 ```javascript
 var questionnaire = require('hubot-questionnaire-framework');
 
@@ -90,5 +94,12 @@ var callbackTwo = function(response, listener) {
     
     // Show summary of answers
     response.send("Thank you, your answers were: " + listener.answers.answerOne + " and " + listener.answers.answerTwo);
+    
+    // Preform an action based on the given answers
+    executeCommand(listener.answers);
+};
+
+var executeCommand = function(answers) {
+    // Do something
 };
 ```
