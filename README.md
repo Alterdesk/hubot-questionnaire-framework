@@ -1,9 +1,9 @@
-#Hubot Questionnaire Framework
+# Hubot Questionnaire Framework
 
 Framework for creating a questionnaire(follow up questions) isolated per user and per room for [Hubot](https://hubot.github.com/) scripts
 
-##Classes
-###Listener
+## Classes
+### Listener
 The listener class is used to await an answer from the user, containing answer regex and timeout information.
 
 ```javascript
