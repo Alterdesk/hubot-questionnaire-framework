@@ -230,43 +230,68 @@ module.exports = {
 
     // Listener class for consecutive questions
     Listener: class {
-      constructor(rob, msg, call, ans, reg, overrideTimeoutMs, overrideTimeoutCallback) {
+      constructor(msg, callback, answers, regex, timeoutMs, timeoutCallback) {
         this.call = this.call.bind(this);
-        this.robot = rob;
-        this.callback = call;
-        this.answers = ans;
-        this.regex = reg || textRegex;
+        this.robot = msg.robot;
+        this.callback = callback;
+        this.answers = answers;
+        this.regex = regex || textRegex;
+
+        // Matcher for given regex
         this.matcher = (message) => {
           if (message.text != null) {
             return message.text.match(this.regex);
           }
         };
+
+        // Matcher for stop regex
         this.stopMatcher = (message) => {
           if (message.text != null && stopRegex != null) {
             return message.text.match(stopRegex);
           }
         };
-        var useTimeoutMs = overrideTimeoutMs || responseTimeoutMs;
+
+        // Timeout milliseconds and callback
+        var useTimeoutMs = timeoutMs || responseTimeoutMs;
+        if(timeoutCallback == null) {
+            timeoutCallback = function() {
+                if(responseTimeoutText != null) {
+                    msg.send(responseTimeoutText);
+                }
+            };
+        };
+
+        // Set timer for timeout
         this.timer = setTimeout(function () {
-          console.log("Response timeout: room: " + msg.message.room + " user: " + msg.message.user.id);
+          var userId;
           if(msg.message.user.user_id != null) {
-            delete questionnaireListeners[msg.message.room + msg.message.user.user_id];
+              userId = msg.message.user.user_id;
           } else {
-            delete questionnaireListeners[msg.message.room + msg.message.user.id];
+              userId = msg.message.user.id;
           }
-          if(overrideTimeoutCallback != null) {
-            overrideTimeoutCallback();
-          } else if(responseTimeoutText != null) {
-            msg.send(responseTimeoutText);
-          }
+          console.log("Response timeout from user " + userId + " in room " + msg.message.room);
+
+          // Delete listener
+          delete questionnaireListeners[msg.message.room + userId];
+
+          // Call timeout callback
+          timeoutCallback();
         }, useTimeoutMs);
       }
 
       call(message) {
+        console.log("call: text: \"" + message.text + "\"");
+
+        // Cancel timeout timer
         clearTimeout(this.timer);
+
+        // Check if given regex matches
         this.matches = this.matcher(message);
-        console.log("Matches on call: " + this.matches);
+
+        // Check if stop regex maches
         this.stop = this.stopMatcher(message);
+
+        // Call callback
         this.callback(new Response(this.robot, message, true), this);
       }
     },
