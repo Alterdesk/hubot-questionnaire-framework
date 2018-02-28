@@ -13,11 +13,15 @@
 
 // Requirements
 var Moment = require('moment');
-const {TextMessage, LeaveMessage} = require('hubot');
+const {Response, TextMessage, LeaveMessage} = require('hubot');
 
-// Listeners for the bot
-var messengerBotListeners = {};
+// Listeners for active questionnaires
+var questionnaireListeners = {};
 
+// Accepted commands
+var acceptedCommands = [];
+
+// Regular expressions
 var textRegex = new RegExp(/\w+/, 'i');
 var numberRegex = new RegExp(/\d+/, 'i');
 var phoneRegex = new RegExp(/^\+(9[976]\d|8[987530]\d|6[987]\d|5[90]\d|42\d|3[875]\d| 2[98654321]\d|9[8543210]|8[6421]|6[6543210]|5[87654321]| 4[987654310]|3[9643210]|2[70]|7|1)\d{1,14}$/);
@@ -26,127 +30,156 @@ var mentionedAllRegex = new RegExp(/\[mention=@all\]/, 'i');
 var stopRegex = new RegExp(/stop/, 'i');
 var helpRegex = new RegExp(/help/, 'i');
 
-// Response settings
-var responseTimeoutText = process.env.HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT_TEXT || "RESPONSE_TIMEOUT_TEXT";
+// Response timeout milliseconds
 var responseTimeoutMs = process.env.HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT || 60000;
+// Response timeout text to send on timeout
+var responseTimeoutText = process.env.HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT_TEXT || "RESPONSE_TIMEOUT_TEXT";
+
+// Catch commands that are not present in the accepted commands list
 var catchAllCommands = process.env.HUBOT_QUESTIONNAIRE_CATCH_ALL || false;
+// Catch all text to send on unaccepted command
 var catchAllText = process.env.HUBOT_QUESTIONNAIRE_CATCH_ALL_TEXT || "COMMAND_NOT_FOUND_TEXT";
+
+// Override default hubot help command
 var catchHelpCommand = process.env.HUBOT_QUESTIONNAIRE_CATCH_HELP || false;
+// Help text to send when default hubot help command is overridden
 var catchHelpText = process.env.HUBOT_QUESTIONNAIRE_CATCH_HELP_TEXT || "HELP_TEXT";
+
+// Remove a questionnaire listener when a user leave is detected
 var removeListenerOnLeave = process.env.HUBOT_QUESTIONNAIRE_REMOVE_ON_LEAVE || false;
-var acceptedCommands = [];
 
 module.exports = {
 
-    /*
-    *   Override the default receiver
-    */
 
-    overrideReceiver: function(robot) {
-      if(robot.defaultRobotReceiver != null) {
-        // Already overridden
-        return;
-      }
-      robot.defaultRobotReceiver = robot.receive;
-        robot.receive = function(message) {
-          if(message.user == null) {
-            return robot.defaultRobotReceiver(message);
-          }
-//          console.log("MESSAGE:\n", message);
-          var userId;
-          // Alterdesk adapter uses separate user id field
-          if(message.user.user_id != null) {
-            userId = message.user.user_id;
-          } else {
-            userId = message.user.id;
-          }
-          var roomId = message.room;
-          var isGroup = message.user.is_groupchat;
-          var listenerId = roomId + userId;
-          if(message instanceof TextMessage) {
-//              console.log("receive: " + message);
-              var messageString = message.toString().toLowerCase();
-              var lst;
-              if (messengerBotListeners[listenerId] != null) {
-//                console.log("user: " + userId);
-                lst = messengerBotListeners[listenerId];
-                delete messengerBotListeners[listenerId];
-                if (lst.call(message)) {
-                  return;
-                }
-                // Put back to process next message
-                messengerBotListeners[listenerId] = lst;
-              }
-              var isMentioned = false;
-              if(isGroup && message.mentions != null) {
-                for(var index in message.mentions) {
-                  var mention = message.mentions[index];
-                  if(robot.user.id === mention["id"]) {
-                    isMentioned = true;
-                    break;
-                  }
-                }
-              }
-              if(isGroup && !isMentioned) {
-                // Ignoring message, not mentioned and no listeners for user in room
-                console.log("Ignoring message, not mentioned and no listeners for user in room");
+    Control: class {
+
+        /*
+        *   Override the default receiver
+        */
+        overrideReceiver(robot) {
+            // Check if robot receiver is already overridden
+            if(robot.defaultRobotReceiver != null) {
+                console.error("Robot receiver already overridden!")
                 return;
-              }
-              if(catchHelpCommand && messageString.match(helpRegex)) {
-//                console.log("Captured help");
-                var response = new robot.Response(robot, message, true);
-                response.send(catchHelpText);
-                console.log("Help detected");
-                return;
-              }
-              var unknownCommand = true;
-              if(acceptedCommands != null) {
-                for(var index in acceptedCommands) {
-                  var command = acceptedCommands[index];
-                  if(messageString === command || messageString === "[mention=" + robot.user.id + "] " + command) {
-                    unknownCommand = false;
-                    console.log("Command detected: " + command);
-                    break;
-                  }
+            }
+
+            var control = this;
+
+            // Store default robot receiver in separate variable
+            robot.defaultRobotReceiver = robot.receive;
+
+            // Override receive function
+            robot.receive = function(message) {
+
+                if(message instanceof TextMessage) {
+
+                    // Check for listeners waiting for a message
+                    if (control.hasListener(message)) {
+                        var listener = control.getListener(message);
+                        control.removeListener(message);
+                        listener.call(message);
+                        return;
+                    }
+
+                    var userId = control.getUserId(message.user);
+                    var roomId = message.room;
+                    var isGroup = control.isUserInGroup(message.user);
+                    var messageString = message.toString().toLowerCase();
+
+                    var isMentionedInGroup = false;
+                    if(isGroup && message.mentions != null) {
+                        for(var index in message.mentions) {
+                            var mention = message.mentions[index];
+                            if(robot.user.id === mention["id"]) {
+                                isMentionedInGroup = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Only listen for messages in groups when mentioned
+                    if(isGroup && !isMentionedInGroup) {
+                        // Ignoring message, not mentioned and no listeners for user in room
+                        console.log("Ignoring message, not mentioned and no listeners for user in room");
+                        return;
+                    }
+
+                    // Check if the user has sent the help command
+                    if(catchHelpCommand && messageString.match(helpRegex)) {
+                        var response = new Response(robot, message, true);
+                        response.send(catchHelpText);
+                        console.log("Help detected");
+                        return;
+                    }
+
+                    // Check if an accepted command was sent
+                    var unknownCommand = true;
+                    if(acceptedCommands != null) {
+                        for(var index in acceptedCommands) {
+                            var command = acceptedCommands[index];
+                            if(messageString === command || messageString === "[mention=" + robot.user.id + "] " + command) {
+                                unknownCommand = false;
+                                console.log("Command detected: " + command);
+                                break;
+                            }
+                        }
+                    }
+
+                    // Stop if catch all is enabled and an unknown command was sent
+                    if(catchAllCommands && unknownCommand) {
+                        var response = new Response(robot, message, true);
+                        response.send(catchAllText);
+                        return;
+                    }
+
+                } else if(message instanceof LeaveMessage) {
+                    console.log("Leave detected");
+                    if(removeListenerOnLeave && control.hasListener(message)) {
+                        control.removeListener(msg);
+                    }
                 }
-              }
-              if(catchAllCommands && unknownCommand) {
-                var response = new robot.Response(robot, message, true);
-                response.send(catchAllText);
-                return;
-              }
-          } else if(message instanceof LeaveMessage) {
-              console.log("Leave detected");
-              if(removeListenerOnLeave && messengerBotListeners[listenerId] != null) {
-                delete messengerBotListeners[listenerId];
-              }
+
+                // Pass through default robot receiver
+                return robot.defaultRobotReceiver(message);
+            };
+        };
+
+        // Listeners for followup questions
+        addListener(msg, listener) {
+            var userId = this.getUserId(msg.user);
+            console.log("Adding listener for user " + userId + " in room " + msg.room);
+            questionnaireListeners[msg.room + userId] = listener;
+        };
+
+        removeListener(msg) {
+            var userId = this.getUserId(msg.user);
+            console.log("Removing listener for user " + userId + " in room " + msg.room);
+            delete questionnaireListeners[msg.room + userId];
+        };
+
+        getListener(msg) {
+          return questionnaireListeners[msg.room + this.getUserId(msg.user)];
+        };
+
+        hasListener(msg) {
+          return questionnaireListeners[msg.room + this.getUserId(msg.user)] != null;
+        };
+
+        // Alterdesk adapter uses separate user id field(user.id in groups consists of (group_id + user_id)
+        getUserId(user) {
+          if(user.user_id != null) {
+            return user.user_id;
           }
-      //    console.log("Passing through original receive");
-          return robot.defaultRobotReceiver(message);
+          return user.id;
+        };
+
+        isUserInGroup(user) {
+            if(user.is_groupchat != null) {
+                return user.is_groupchat;
+            }
+            return false;
         };
     },
-
-    // Listeners for followup questions
-    addListener: function(roomId, user, listener) {
-      if(user.user_id != null) {
-        messengerBotListeners[roomId + user.user_id] = listener;
-      } else {
-        messengerBotListeners[roomId + user.id] = listener;
-      }
-    },
-    removeListener: function(roomId, user) {
-      if(user.user_id != null) {
-        delete messengerBotListeners[roomId + user.user_id];
-      } else {
-        delete messengerBotListeners[roomId + user.id];
-      }
-    },
-//    hasListener: function(roomId, userId) {
-//      return messengerBotListeners[roomId + userId] != null;
-//    },
-//    getListener: function(roomId, userId) {
-//      return messengerBotListeners[roomId + userId];
-//    },
 
     // Regex to check if user wants to stop the current process
     setStopRegex: function(s) {
@@ -217,9 +250,9 @@ module.exports = {
         this.timer = setTimeout(function () {
           console.log("Response timeout: room: " + msg.message.room + " user: " + msg.message.user.id);
           if(msg.message.user.user_id != null) {
-            delete messengerBotListeners[msg.message.room + msg.message.user.user_id];
+            delete questionnaireListeners[msg.message.room + msg.message.user.user_id];
           } else {
-            delete messengerBotListeners[msg.message.room + msg.message.user.id];
+            delete questionnaireListeners[msg.message.room + msg.message.user.id];
           }
           if(overrideTimeoutCallback != null) {
             overrideTimeoutCallback();
@@ -234,8 +267,7 @@ module.exports = {
         this.matches = this.matcher(message);
         console.log("Matches on call: " + this.matches);
         this.stop = this.stopMatcher(message);
-        this.callback(new this.robot.Response(this.robot, message, true), this);
-        return true;
+        this.callback(new Response(this.robot, message, true), this);
       }
     },
 
@@ -262,14 +294,6 @@ module.exports = {
     /*
     *   Other helper functions
     */
-
-    // Alterdesk adapter uses separate user id field(user.id in groups consists of (group_id + user_id)
-    getUserId: function(user) {
-      if(user.user_id != null) {
-        return user.user_id;
-      }
-      return user.id;
-    },
 
     // Only capitalize last word in the name: "de Boer"
     capitalizeLastName: function(string) {
