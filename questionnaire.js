@@ -4,11 +4,6 @@
 // Dependencies:
 //   hubot
 //
-// Configuration:
-//   OAuth token
-//
-// Commands:
-//
 // Author:
 //   Alterdesk
 
@@ -201,6 +196,11 @@ module.exports = {
         }
         setCatchHelpText(text) {
             this.catchHelpText = text;
+        }
+
+        // Should a listener for a user be removed when a leave is detected
+        setRemoveListenerOnLeave(remove) {
+            this.removeListenerOnLeave = remove;
         }
 
         // Add commands that the overridden receiver will accept
