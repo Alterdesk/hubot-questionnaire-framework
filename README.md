@@ -191,18 +191,17 @@ var executeCommand = function(answers) {
 ## Environment variables
 Certain settings can also be set through environment variables if desired
 
-
 * Response timeout milliseconds
-HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT (int)
+...HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT (int)
 * Response timeout text to send on timeout
-HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT_TEXT (string)
+...HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT_TEXT (string)
 * Catch commands that are not present in the accepted commands list
-HUBOT_QUESTIONNAIRE_CATCH_ALL (boolean);
+...HUBOT_QUESTIONNAIRE_CATCH_ALL (boolean);
 * Catch all text to send on unaccepted command
-HUBOT_QUESTIONNAIRE_CATCH_ALL_TEXT (string)
+...HUBOT_QUESTIONNAIRE_CATCH_ALL_TEXT (string)
 * Override default hubot help command
-HUBOT_QUESTIONNAIRE_CATCH_HELP (boolean)
+...HUBOT_QUESTIONNAIRE_CATCH_HELP (boolean)
 * Help text to send when default hubot help command is overridden
-HUBOT_QUESTIONNAIRE_CATCH_HELP_TEXT (string)
+...HUBOT_QUESTIONNAIRE_CATCH_HELP_TEXT (string)
 * Remove a questionnaire listener when a user leave is detected
-HUBOT_QUESTIONNAIRE_REMOVE_ON_LEAVE (boolean)
+...HUBOT_QUESTIONNAIRE_REMOVE_ON_LEAVE (boolean)
