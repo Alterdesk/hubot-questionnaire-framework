@@ -131,13 +131,14 @@ module.exports = {
             };
         };
 
-        // Listeners for followup questions
+        // Add a listeners for followup questions
         addListener(msg, listener) {
             var userId = this.getUserId(msg.user);
             console.log("Adding listener for user " + userId + " in room " + msg.room);
             questionnaireListeners[msg.room + userId] = listener;
         };
 
+        // Remove a listener that was added before
         removeListener(msg) {
             var userId = this.getUserId(msg.user);
             console.log("Removing listener for user " + userId + " in room " + msg.room);
@@ -146,6 +147,7 @@ module.exports = {
             return listener;
         };
 
+        // Check if a listener is present for a user in a room
         hasListener(msg) {
             return questionnaireListeners[msg.room + this.getUserId(msg.user)] != null;
         };
@@ -158,6 +160,7 @@ module.exports = {
             return user.id;
         };
 
+        // Alterdesk adapter uses user.is_groupchat variable to pass group chat id when message was sent in group
         isUserInGroup(user) {
             if(user.is_groupchat != null) {
                 return user.is_groupchat;
@@ -268,6 +271,7 @@ module.exports = {
             }, useTimeoutMs);
         }
 
+        // Called when a message was received for the listener
         call(message) {
             console.log("call: text: \"" + message.text + "\"");
 
