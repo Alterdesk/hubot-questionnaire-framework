@@ -36,14 +36,17 @@ control.addListener(msg, new Listener(response, callbackOne, new Answers()));
 control.addListener(response.message, new Listener(response, callbackTwo, listener.answers));
 ```
 
-#### Override some defaults when adding a Listener
+#### Override regex and timeout defaults when adding a Listener
 You can also use a Lister with your own regex and timeout settings
 ```javascript
 // Adding a listener which checks message with "myRegex", times out after three minutes and uses a custom timeout callback
 control.addListener(response.message, new Listener(response, callbackThree, listener.answers, myRegex, 180000, myTimeoutCallback));
 ```
 
-#### Example of a listener callback
+#### Listener callback
+The callback function that is given to the Listener constructor is called when a message was received.
+
+Example of a listener callback
 ```javascript
 var callbackOne = function(response, listener) {
     // Check if the stop regex was triggered
@@ -66,7 +69,16 @@ var callbackOne = function(response, listener) {
 ```
 
 ### Answers
-Data container class that holds the answers given by a user in a questionnaire
+Data container class can hold data that is collected in a questionnaire
+An Answer instance is passed along by a Listener, 
+so each Listener callback can use or modify the data for the questionnaire.
+
+For example
+* Answers given by the user
+* Start date of the current questionnaire
+* File path
+* URL
+* Other data containers
 
 ## Example script
 The example given below uses the Hubot Questionnaire Framework in a Hubot script
