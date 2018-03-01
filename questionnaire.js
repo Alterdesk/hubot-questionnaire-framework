@@ -2,6 +2,7 @@
 //   Hubot Questionnaire Framework
 //
 // Dependencies:
+//   hubot
 //
 // Configuration:
 //   OAuth token
@@ -12,7 +13,6 @@
 //   Alterdesk
 
 // Requirements
-var Moment = require('moment');
 const {Response, TextMessage, LeaveMessage} = require('hubot');
 
 // Listeners for active questionnaires
@@ -23,10 +23,6 @@ var acceptedCommands = [];
 
 // Regular expressions
 var textRegex = new RegExp(/\w+/, 'i');
-var numberRegex = new RegExp(/\d+/, 'i');
-var phoneRegex = new RegExp(/^\+(9[976]\d|8[987530]\d|6[987]\d|5[90]\d|42\d|3[875]\d| 2[98654321]\d|9[8543210]|8[6421]|6[6543210]|5[87654321]| 4[987654310]|3[9643210]|2[70]|7|1)\d{1,14}$/);
-var emailRegex = new RegExp(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}$/, 'i');
-var mentionedAllRegex = new RegExp(/\[mention=@all\]/, 'i');
 var stopRegex = new RegExp(/stop/, 'i');
 var helpRegex = new RegExp(/help/, 'i');
 
@@ -49,7 +45,6 @@ var catchHelpText = process.env.HUBOT_QUESTIONNAIRE_CATCH_HELP_TEXT || "HELP_TEX
 var removeListenerOnLeave = process.env.HUBOT_QUESTIONNAIRE_REMOVE_ON_LEAVE || false;
 
 module.exports = {
-
 
     Control: class {
 
@@ -214,6 +209,8 @@ module.exports = {
     setCatchHelpText: function(text) {
       catchHelpText = text;
     },
+
+    // Add commands that the overridden receiver will accept
     addAcceptedCommands(commands) {
       for(var index in commands) {
         acceptedCommands.push(commands[index].toLowerCase());
@@ -294,66 +291,6 @@ module.exports = {
         // Call callback
         this.callback(new Response(this.robot, message, true), this);
       }
-    },
-
-    /*
-    *   Regex
-    */
-
-    getTextRegex: function() {
-      return textRegex;
-    },
-    getNumberRegex: function() {
-      return numberRegex;
-    },
-    getPhoneRegex: function() {
-      return phoneRegex;
-    },
-    getEmailRegex: function() {
-      return emailRegex;
-    },
-    getMentionedAllRegex: function() {
-      return mentionedAllRegex;
-    },
-
-    /*
-    *   Other helper functions
-    */
-
-    // Only capitalize last word in the name: "de Boer"
-    capitalizeLastName: function(string) {
-      if(string == null || string == "") {
-        return string;
-      }
-      var words = string.split(" ");
-      var result = "";
-      for(var index in words) {
-        var word = words[index];
-        var nextIndex = parseInt(index) + 1;
-        if(nextIndex < words.length) {
-          result +=  " " + word;
-        } else {
-          result += " " + this.capitalizeFirstLetter(word);
-        }
-      }
-      return result;
-    },
-
-    capitalizeFirstLetter: function(string) {
-      if(string == null || string == "") {
-        return string;
-      }
-      return string.charAt(0).toUpperCase() + string.slice(1);
-    },
-
-    round: function(value, precision) {
-        var multiplier = Math.pow(10, precision || 0);
-        return Math.round(value * multiplier) / multiplier;
-    },
-
-    formatDate: function(date, customLocale, customFormat) {
-        var format = customFormat || "LLLL";
-        var locale = customLocale || "en-US";
-        return Moment(date).locale(locale).format(format);
     }
+
 }
