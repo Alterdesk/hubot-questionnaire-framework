@@ -10,6 +10,7 @@ The control class can override the default Hubot message receiver to:
 * Adding/Removing message listeners per user per room
 
 #### Minimal setup for Control
+To intercept messages with the control instance the following code is needed
 ```javascript
 var control;
 
@@ -26,6 +27,7 @@ The listener class is used to await an answer from a user in a room
 * Automatically times out if a response takes too long
 
 #### Adding a Listener
+Adding a listener to the control instance
 ```javascript
 // Adding a listener after a start command was heard
 control.addListener(msg, new Listener(response, callbackOne, new Answers()));
@@ -35,6 +37,7 @@ control.addListener(response.message, new Listener(response, callbackTwo, listen
 ```
 
 #### Override some defaults when adding a Listener
+You can also use a Lister with your own regex and timeout settings
 ```javascript
 // Adding a listener which checks message with "myRegex", times out after three minutes and uses a custom timeout callback
 control.addListener(response.message, new Listener(response, callbackThree, listener.answers, myRegex, 180000, myTimeoutCallback));
@@ -75,32 +78,33 @@ const {Control, Listener, Answers} = require('hubot-questionnaire-framework');
 var control;
 
 module.exports = function(robot) {
-    
-    // Override the stop regex to "abort" instead of "stop"
-    questionnaire.setStopRegex(new RegExp(/abort/, 'i'));
-    
-    // Override default hubot help command
-    questionnaire.setCatchHelp(true);
-    // Override the help regex to "what" instead of "help"
-    questionnaire.setHelpRegex(/what/, 'i');
-    // Set the text to send when help was requested
-    questionnaire.setCatchHelpText("You can send \"command\" to start the questionnaire");
-    
-    // Wait for two minutes for a reply from a user
-    questionnaire.setResponseTimeoutMs(120000);
-    // Set the text to send when a user is too late
-    questionnaire.setResponseTimeoutText("You waited too long to answer, stopped listening");
-    
-    // When an unknown command was heard, do not pass it along to the default hubot receiver
-    questionnaire.setCatchAll(true);
-    // Set the text to send when an unknown command was heard
-    questionnaire.setCatchAllText(catchAllText);
-    
-    // Mark the words "command" and "ping" as an accepted commands
-    questionnaire.addAcceptedCommands(["command", "ping"]);
 
     // Create a control instance
     control = new Control();
+    
+    // Override the stop regex to "abort" instead of "stop"
+    control.setStopRegex(new RegExp(/abort/, 'i'));
+    
+    // Override default hubot help command
+    control.setCatchHelp(true);
+    // Override the help regex to "what" instead of "help"
+    control.setHelpRegex(/what/, 'i');
+    // Set the text to send when help was requested
+    control.setCatchHelpText("You can send \"command\" to start the questionnaire");
+    
+    // Wait for two minutes for a reply from a user
+    control.setResponseTimeoutMs(120000);
+    // Set the text to send when a user is too late
+    control.setResponseTimeoutText("You waited too long to answer, stopped listening");
+    
+    // When an unknown command was heard, do not pass it along to the default hubot receiver
+    control.setCatchAll(true);
+    // Set the text to send when an unknown command was heard
+    control.setCatchAllText(catchAllText);
+    
+    // Mark the words "command" and "ping" as an accepted commands
+    control.addAcceptedCommands(["command", "ping"]);
+
     // Override the default robot message receiver
     control.overrideReceiver(robot);
     
@@ -113,6 +117,7 @@ module.exports = function(robot) {
                 msg.send("What is the answer for question one?");
                 // Object to contain the answers of the questionnaire
                 var answers = new Answers();
+                // Create a listener to await response for the user in this room
                 var listener = new Listener(msg, callbackOne, answers);
                 // Add the listener
                 return control.addListener(msg.message, listener);
