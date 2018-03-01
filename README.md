@@ -187,21 +187,34 @@ var executeCommand = function(answers) {
     // Do something with the given answers
 };
 ```
+## Other
 
-## Environment variables
+### Environment variables
 Certain settings can also be set through environment variables if desired
 
-* Response timeout milliseconds
-...HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT (int)
-* Response timeout text to send on timeout
-...HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT_TEXT (string)
-* Catch commands that are not present in the accepted commands list
-...HUBOT_QUESTIONNAIRE_CATCH_ALL (boolean);
-* Catch all text to send on unaccepted command
-...HUBOT_QUESTIONNAIRE_CATCH_ALL_TEXT (string)
-* Override default hubot help command
-...HUBOT_QUESTIONNAIRE_CATCH_HELP (boolean)
-* Help text to send when default hubot help command is overridden
-...HUBOT_QUESTIONNAIRE_CATCH_HELP_TEXT (string)
-* Remove a questionnaire listener when a user leave is detected
-...HUBOT_QUESTIONNAIRE_REMOVE_ON_LEAVE (boolean)
+#### Response timeout milliseconds
+HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT (int)
+#### Response timeout text to send on timeout
+HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT_TEXT (string)
+#### Catch commands that are not present in the accepted commands list
+HUBOT_QUESTIONNAIRE_CATCH_ALL (boolean);
+#### Catch all text to send on unaccepted command
+HUBOT_QUESTIONNAIRE_CATCH_ALL_TEXT (string)
+#### Override default hubot help command
+HUBOT_QUESTIONNAIRE_CATCH_HELP (boolean)
+#### Help text to send when default hubot help command is overridden
+HUBOT_QUESTIONNAIRE_CATCH_HELP_TEXT (string)
+#### Remove a questionnaire listener when a user leave is detected
+HUBOT_QUESTIONNAIRE_REMOVE_ON_LEAVE (boolean)
+
+#### Set an environment variable
+You can set an environment variable in your hubot startup script like this
+```sh
+#!/bin/sh
+
+set -e
+
+export HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT=60000
+
+exec node_modules/.bin/hubot --name "hubot" "$@"
+```
