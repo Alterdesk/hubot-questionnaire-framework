@@ -20,11 +20,13 @@ var questionnaireListeners = {};
 
 // Accepted commands
 var acceptedCommands = [];
+var acceptedRegex = [];
 
 // Regular expressions
 var textRegex = new RegExp(/\w+/, 'i');
 var stopRegex = new RegExp(/stop/, 'i');
 var helpRegex = new RegExp(/help/, 'i');
+var robotMentionRegex;
 
 // Response timeout milliseconds
 var responseTimeoutMs = process.env.HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT || 60000;
@@ -63,15 +65,16 @@ module.exports = {
             // Store default robot receiver in separate variable
             robot.defaultRobotReceiver = robot.receive;
 
+            // Set the robot mention tag regex
+            robotMentionRegex = new RegExp("\\[mention=" + robot.user.id + "\\]+", 'i');
+
             // Override receive function
             robot.receive = function(message) {
 
                 if(message instanceof TextMessage) {
-
                     // Check for listeners waiting for a message
                     if (control.hasListener(message)) {
-                        var listener = control.getListener(message);
-                        control.removeListener(message);
+                        var listener = control.removeListener(message);
                         listener.call(message);
                         return;
                     }
@@ -81,26 +84,15 @@ module.exports = {
                     var isGroup = control.isUserInGroup(message.user);
                     var messageString = message.toString().toLowerCase();
 
-                    var isMentionedInGroup = false;
-                    if(isGroup && message.mentions != null) {
-                        for(var index in message.mentions) {
-                            var mention = message.mentions[index];
-                            if(robot.user.id === mention["id"]) {
-                                isMentionedInGroup = true;
-                                break;
-                            }
-                        }
-                    }
-
                     // Only listen for messages in groups when mentioned
-                    if(isGroup && !isMentionedInGroup) {
+                    if(isGroup && messageString.match(robotMentionRegex) == null) {
                         // Ignoring message, not mentioned and no listeners for user in room
                         console.log("Ignoring message, not mentioned and no listeners for user in room");
                         return;
                     }
 
                     // Check if the user has sent the help command
-                    if(catchHelpCommand && messageString.match(helpRegex)) {
+                    if(catchHelpCommand && messageString.match(helpRegex) != null) {
                         var response = new Response(robot, message, true);
                         response.send(catchHelpText);
                         console.log("Help detected");
@@ -109,12 +101,12 @@ module.exports = {
 
                     // Check if an accepted command was sent
                     var unknownCommand = true;
-                    if(acceptedCommands != null) {
-                        for(var index in acceptedCommands) {
-                            var command = acceptedCommands[index];
-                            if(messageString === command || messageString === "[mention=" + robot.user.id + "] " + command) {
+                    if(acceptedRegex != null) {
+                        for(var index in acceptedRegex) {
+                            var match = messageString.match(acceptedRegex[index]);
+                            if(match != null) {
                                 unknownCommand = false;
-                                console.log("Command detected: " + command);
+                                console.log("Command detected: " + match);
                                 break;
                             }
                         }
@@ -149,23 +141,21 @@ module.exports = {
         removeListener(msg) {
             var userId = this.getUserId(msg.user);
             console.log("Removing listener for user " + userId + " in room " + msg.room);
+            var listener = questionnaireListeners[msg.room + userId];
             delete questionnaireListeners[msg.room + userId];
-        };
-
-        getListener(msg) {
-          return questionnaireListeners[msg.room + this.getUserId(msg.user)];
+            return listener;
         };
 
         hasListener(msg) {
-          return questionnaireListeners[msg.room + this.getUserId(msg.user)] != null;
+            return questionnaireListeners[msg.room + this.getUserId(msg.user)] != null;
         };
 
         // Alterdesk adapter uses separate user id field(user.id in groups consists of (group_id + user_id)
         getUserId(user) {
-          if(user.user_id != null) {
-            return user.user_id;
-          }
-          return user.id;
+            if(user.user_id != null) {
+                return user.user_id;
+            }
+            return user.id;
         };
 
         isUserInGroup(user) {
@@ -178,43 +168,45 @@ module.exports = {
 
     // Regex to check if user wants to stop the current process
     setStopRegex: function(s) {
-      stopRegex = s;
+        stopRegex = s;
     },
 
     // Regex to check if user wants help
     setHelpRegex: function(r) {
-      helpRegex = r;
+        helpRegex = r;
     },
 
     // Response timeout configuration
     setResponseTimeoutText: function(t) {
-      responseTimeoutText = t;
+        responseTimeoutText = t;
     },
     setResponseTimeoutMs: function(ms) {
-      responseTimeoutMs = ms;
+        responseTimeoutMs = ms;
     },
 
     // Catch all given commands and send default message when command is unknown
     setCatchAll: function(catchAll) {
-      catchAllCommands = catchAll;
+        catchAllCommands = catchAll;
     },
     setCatchAllText: function(text) {
-      catchAllText = text;
+        catchAllText = text;
     },
 
     // Configuration to override default hubot help and commands that it does accept
     setCatchHelp: function(catchHelp) {
-      catchHelpCommand = catchHelp;
+        catchHelpCommand = catchHelp;
     },
     setCatchHelpText: function(text) {
-      catchHelpText = text;
+        catchHelpText = text;
     },
 
     // Add commands that the overridden receiver will accept
     addAcceptedCommands(commands) {
-      for(var index in commands) {
-        acceptedCommands.push(commands[index].toLowerCase());
-      }
+        for(var index in commands) {
+            var command = commands[index].toLowerCase();
+            acceptedCommands.push(command);
+            acceptedRegex.push(new RegExp(command + "+", 'i'));
+        }
     },
 
     /*
@@ -227,70 +219,70 @@ module.exports = {
 
     // Listener class for consecutive questions
     Listener: class {
-      constructor(msg, callback, answers, regex, timeoutMs, timeoutCallback) {
-        this.call = this.call.bind(this);
-        this.robot = msg.robot;
-        this.callback = callback;
-        this.answers = answers;
-        this.regex = regex || textRegex;
+        constructor(msg, callback, answers, regex, timeoutMs, timeoutCallback) {
+            this.call = this.call.bind(this);
+            this.robot = msg.robot;
+            this.callback = callback;
+            this.answers = answers;
+            this.regex = regex || textRegex;
 
-        // Matcher for given regex
-        this.matcher = (message) => {
-          if (message.text != null) {
-            return message.text.match(this.regex);
-          }
-        };
-
-        // Matcher for stop regex
-        this.stopMatcher = (message) => {
-          if (message.text != null && stopRegex != null) {
-            return message.text.match(stopRegex);
-          }
-        };
-
-        // Timeout milliseconds and callback
-        var useTimeoutMs = timeoutMs || responseTimeoutMs;
-        if(timeoutCallback == null) {
-            timeoutCallback = function() {
-                if(responseTimeoutText != null) {
-                    msg.send(responseTimeoutText);
+            // Matcher for given regex
+            this.matcher = (message) => {
+                if (message.text != null) {
+                    return message.text.match(this.regex);
                 }
             };
-        };
 
-        // Set timer for timeout
-        this.timer = setTimeout(function () {
-          var userId;
-          if(msg.message.user.user_id != null) {
-              userId = msg.message.user.user_id;
-          } else {
-              userId = msg.message.user.id;
-          }
-          console.log("Response timeout from user " + userId + " in room " + msg.message.room);
+            // Matcher for stop regex
+            this.stopMatcher = (message) => {
+                if (message.text != null && stopRegex != null) {
+                    return message.text.match(stopRegex);
+                }
+            };
 
-          // Delete listener
-          delete questionnaireListeners[msg.message.room + userId];
+            // Timeout milliseconds and callback
+            var useTimeoutMs = timeoutMs || responseTimeoutMs;
+            if(timeoutCallback == null) {
+                timeoutCallback = function() {
+                    if(responseTimeoutText != null) {
+                        msg.send(responseTimeoutText);
+                    }
+                };
+            };
 
-          // Call timeout callback
-          timeoutCallback();
-        }, useTimeoutMs);
-      }
+            // Set timer for timeout
+            this.timer = setTimeout(function () {
+                var userId;
+                if(msg.message.user.user_id != null) {
+                    userId = msg.message.user.user_id;
+                } else {
+                    userId = msg.message.user.id;
+                }
+                console.log("Response timeout from user " + userId + " in room " + msg.message.room);
 
-      call(message) {
-        console.log("call: text: \"" + message.text + "\"");
+                // Delete listener
+                delete questionnaireListeners[msg.message.room + userId];
 
-        // Cancel timeout timer
-        clearTimeout(this.timer);
+                // Call timeout callback
+                timeoutCallback();
+            }, useTimeoutMs);
+        }
 
-        // Check if given regex matches
-        this.matches = this.matcher(message);
+        call(message) {
+            console.log("call: text: \"" + message.text + "\"");
 
-        // Check if stop regex maches
-        this.stop = this.stopMatcher(message);
+            // Cancel timeout timer
+            clearTimeout(this.timer);
 
-        // Call callback
-        this.callback(new Response(this.robot, message, true), this);
-      }
+            // Check if given regex matches
+            this.matches = this.matcher(message);
+
+            // Check if stop regex maches
+            this.stop = this.stopMatcher(message);
+
+            // Call callback
+            this.callback(new Response(this.robot, message, true), this);
+        }
     }
 
 }
