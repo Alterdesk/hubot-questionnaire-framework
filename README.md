@@ -3,21 +3,69 @@
 Framework for creating a questionnaire(follow up questions) isolated per user and per room for [Hubot](https://hubot.github.com/) scripts
 
 ## Classes
-## Control
+### Control
 The control class can override the default Hubot message receiver to:
 * Manage accepted commands
 * Override the default Hubot help command
 * Adding/Removing message listeners per user per room
 
+#### Minimal setup for Control
+```javascript
+var control;
 
+module.exports = function(robot) {
+    control = new Control();
+    control.overrideReceiver(robot);
+};
+```
 
 ### Listener
-The listener class is used to await an answer from the user, containing answer regex and timeout information.
+The listener class is used to await an answer from a user in a room
+* Answer regex to check the message that was received
+* Passes along the Answers object
+* Automatically times out if a response takes too long
+
+#### Adding a Listener
+```javascript
+// Adding a listener after a start command was heard
+control.addListener(msg, new Listener(response, callbackOne, new Answers()));
+
+// Adding a listener after a response
+control.addListener(response.message, new Listener(response, callbackTwo, listener.answers));
+```
+
+#### Override some defaults when adding a Listener
+```javascript
+// Adding a listener which checks message with "myRegex", times out after three minutes and uses a custom timeout callback
+control.addListener(response.message, new Listener(response, callbackThree, listener.answers, myRegex, 180000, myTimeoutCallback));
+```
+
+#### Example of a listener callback
+```javascript
+var callbackOne = function(response, listener) {
+    // Check if the stop regex was triggered
+    if(listener.stop) {
+        response.send("Stopped the questionnaire");
+        return;
+    }
+    
+    // Check if rexex accepted the answer
+    if(listener.matches == null) {
+        response.send("Answer not accepted by regex, What is the answer for question one?");
+        return control.addListener(response.message, new Listener(response, callbackOne, listener.answers));
+    }
+    // Valid answer, store in the answers object
+    listener.answers.answerOne = response.message.text;
+    
+    response.send("What is the answer for question two?");
+    return control.addListener(response.message, new Listener(response, callbackTwo, listener.answers));
+};
+```
 
 ### Answers
 Data container class that holds the answers given by a user in a questionnaire
 
-# Example script
+## Example script
 The example given below uses the Hubot Questionnaire Framework in a Hubot script
 ```javascript
 var questionnaire = require('hubot-questionnaire-framework');
