@@ -76,7 +76,7 @@ module.exports = function(robot) {
     
     // Example simple command that does not use the questionnaire
     robot.hear(/ping/i, function(msg) {
-        msg.send("PONG!);
+        msg.send("PONG!");
     }
 };
 
