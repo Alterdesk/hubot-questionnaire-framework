@@ -62,11 +62,13 @@ module.exports = {
             // Store default robot receiver in separate variable
             robot.defaultRobotReceiver = robot.receive;
 
-            // Set the robot mention tag regex
-            this.robotMentionRegex = new RegExp("\\[mention=" + robot.user.id + "\\]+", 'i');
-
             // Override receive function
             robot.receive = function(message) {
+
+                if(control.robotMentionRegex == null && robot.user != null) {
+                    // Set the robot mention tag regex
+                    control.robotMentionRegex = new RegExp("\\[mention=" + robot.user.id + "\\]+", 'i');
+                }
 
                 if(message instanceof TextMessage) {
                     // Check for listeners waiting for a message
@@ -81,8 +83,15 @@ module.exports = {
                     var isGroup = control.isUserInGroup(message.user);
                     var messageString = message.toString().toLowerCase();
 
+                    var isMentioned;
+                    if(control.robotMentionRegex != null) {
+                        isMentioned = messageString.match(control.robotMentionRegex) != null;
+                    } else {
+                        isMentioned = false;
+                    }
+
                     // Only listen for messages in groups when mentioned
-                    if(isGroup && messageString.match(control.robotMentionRegex) == null) {
+                    if(isGroup && !isMentioned) {
                         // Ignoring message, not mentioned and no listeners for user in room
                         console.log("Ignoring message, not mentioned and no listeners for user in room");
                         return;
@@ -109,6 +118,7 @@ module.exports = {
 
                     // Stop if catch all is enabled and an unknown command was sent
                     if(control.catchAllCommands && unknownCommand) {
+                        console.log("Catched unknown command");
                         var response = new Response(robot, message, true);
                         response.send(control.catchAllText);
                         return;
