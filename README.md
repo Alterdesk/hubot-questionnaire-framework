@@ -26,11 +26,19 @@ The listener class is used to await an answer from a user in a room
 * Passes along the Answers object
 * Automatically times out if a response takes too long
 
+Listener Constructor parameters
+* Response or msg
+* Callback function when an answer is received
+* Answers object for collection answers and other data
+* Regex to check answer with *(optional)*
+* Timeout milliseconds *(optional)*
+* Timeout callback *(optional)*
+
 #### Adding a Listener
-Adding a listener to the control instance
+Adding a listener to the control instance by message
 ```javascript
 // Adding a listener after a start command was heard
-control.addListener(msg, new Listener(response, callbackOne, new Answers()));
+control.addListener(msg.message, new Listener(msg, callbackOne, new Answers()));
 
 // Adding a listener after a response
 control.addListener(response.message, new Listener(response, callbackTwo, listener.answers));
