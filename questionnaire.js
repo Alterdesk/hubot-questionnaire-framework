@@ -70,7 +70,16 @@ module.exports = {
                     control.robotMentionRegex = new RegExp("\\[mention=" + robot.user.id + "\\]+", 'i');
                 }
 
-                if(message instanceof TextMessage) {
+                var className;
+                if(message.constructor != null) {
+                    className = message.constructor.name;
+                    console.log("Received " + className);
+                } else {
+                    className = null;
+                    console.error("Unable to retrieve classname for: ", message);
+                }
+
+                if(className === "TextMessage" || message instanceof TextMessage) {
                     // Check for listeners waiting for a message
                     if (control.hasListener(message)) {
                         var listener = control.removeListener(message);
@@ -124,7 +133,7 @@ module.exports = {
                         return;
                     }
 
-                } else if(message instanceof LeaveMessage) {
+                } else if(className === "LeaveMessage" || message instanceof LeaveMessage) {
                     console.log("Leave detected");
                     if(control.removeListenerOnLeave && control.hasListener(message)) {
                         control.removeListener(msg);
@@ -132,6 +141,7 @@ module.exports = {
                 }
 
                 // Pass through default robot receiver
+                console.log("Passing through to default receiver");
                 return robot.defaultRobotReceiver(message);
             };
         }

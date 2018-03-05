@@ -137,12 +137,12 @@ module.exports = function(robot) {
                 msg.send("Sorry you have no access to command");
             }
         });
-    },
+    }),
     
     // Example simple command that does not use the questionnaire
     robot.hear(/ping/i, function(msg) {
         msg.send("PONG!");
-    }
+    })
 };
 
 // Check if user has permission
