@@ -91,7 +91,6 @@ For example
 ## Example script
 The example given below uses the Hubot Questionnaire Framework in a Hubot script
 ```javascript
-var questionnaire = require('hubot-questionnaire-framework');
 const {Control, Listener, Answers} = require('hubot-questionnaire-framework');
 
 // Questionnaire control instance
