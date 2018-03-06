@@ -12,6 +12,8 @@ The control class can override the default Hubot message receiver to:
 #### Minimal setup for Control
 To intercept messages with the control instance the following code is needed
 ```javascript
+const {Control} = require('hubot-questionnaire-framework');
+
 var control;
 
 module.exports = function(robot) {
