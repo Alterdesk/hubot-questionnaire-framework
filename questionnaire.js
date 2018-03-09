@@ -325,6 +325,19 @@ module.exports = {
             // Call callback
             this.callback(new Response(this.msg.robot, responseMessage, true), this);
         }
-    }
+    },
 
+    Flow: class {
+        constructor(stopText, errorText, timeoutText) {
+        }
+
+        setStartQuestion(question) {
+            this.startQuestion = question;
+        }
+    },
+
+    TextQuestion: class {
+        constructor(flow, answersField) {
+        }
+    }
 }
