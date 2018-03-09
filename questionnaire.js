@@ -24,6 +24,7 @@ module.exports = {
             // Accepted commands
             this.acceptedCommands = [];
             this.acceptedRegex = [];
+            this.acceptedHelpTexts = {};
 
             // Regular expressions
             this.stopRegex = new RegExp(/stop/, 'i');
@@ -108,9 +109,13 @@ module.exports = {
 
                     // Check if the user has sent the help command
                     if(control.catchHelpCommand && messageString.match(control.helpRegex) != null) {
-                        var response = new Response(robot, message, true);
-                        response.send(control.catchHelpText);
                         console.log("Help detected");
+                        var response = new Response(robot, message, true);
+                        var helpText = control.catchHelpText;
+                        for(var field in control.acceptedHelpTexts) {
+                            helpText += "\n • \'" + field + "\' - " + control.acceptedHelpTexts[field];
+                        }
+                        response.send(helpText);
                         return;
                     }
 
@@ -231,7 +236,7 @@ module.exports = {
         }
 
         // Add a command that the overridden receiver will accept
-        addAcceptedCommand(command) {
+        addAcceptedCommand(command, helpText) {
             var c = command.toLowerCase();
             var configured = false;
             for(var index in this.acceptedCommands) {
@@ -247,6 +252,9 @@ module.exports = {
             console.log("Command configured as accepted: " + c);
             this.acceptedCommands.push(c);
             this.acceptedRegex.push(new RegExp(c + "+", 'i'));
+            if(helpText != null) {
+                this.acceptedHelpTexts[command] = helpText;
+            }
         }
     },
 
