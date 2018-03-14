@@ -11,5 +11,8 @@
     "url": "https://github.com/Alterdesk/hubot-questionnaire-framework"
   },
   "author": "Alterdesk",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "hubot": "^2.19.0"
+  }
 }
