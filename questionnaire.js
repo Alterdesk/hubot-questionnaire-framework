@@ -439,24 +439,22 @@ class Flow {
             return;
         }
 
-        var answers = listener.answers;
-
         // Let the Question check and parse the message
         var answerValue = question.checkAndParseAnswer(listener.matches, response.message.text);
         if(answerValue == null) {
             response.send(question.invalidText + " " + question.questionText);
-            return flow.control.addListener(response.message, new Listener(response, this.callback, answers, question.regex), question);
+            return flow.control.addListener(response.message, new Listener(response, this.callback, this.answers, question.regex), question);
         }
 
         // Valid answer, store in the answers object
-        answers.add(question.answerKey, answerValue);
+        this.answers.add(question.answerKey, answerValue);
 
         // Trigger sub flow if set in question, otherwise continue
         if(question.subFlow != null) {
             question.subFlow.finish(function(response, answers) {
                 flow.next(response);
             });
-            question.subFlow.start(response, answers);
+            question.subFlow.start(response, this.answers);
         } else {
             flow.next(response);
         }
