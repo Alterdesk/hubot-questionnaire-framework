@@ -352,15 +352,61 @@ class Flow {
         this.stopText = stopText;
         this.errorText = errorText;
         this.timeoutText = control.responseTimeoutText;
+        this.currentStep = 0;
+        this.steps = [];
     }
 
-    setStartQuestion(question) {
+    add(question) {
         question.setFlow(this);
-        this.startQuestion = question;
+        this.steps.push(question);
+        return this;
     }
 
-    setFinishedCallback(finishedCallback) {
+    text(answerKey, questionText, invalidText) {
+        return this.add(new TextQuestion(answerKey, questionText, invalidText));
+    }
+
+    number(answerKey, questionText, invalidText, minValue, maxValue) {
+        var numberQuestion = new NumberQuestion(answerKey, questionText, invalidText);
+        numberQuestion.setRange(minValue, maxValue);
+        return this.add(numberQuestion);
+    }
+
+    email(answerKey, questionText, invalidText, allowedDomains) {
+        var emailQuestion = new EmailQuestion(answerKey, questionText, invalidText);
+        if(allowedDomains != null) {
+            for(var index in allowedDomains) {
+                emailQuestion.addAllowedDomain(allowedDomains[index]);
+            }
+        }
+        return this.add(emailQuestion);
+    }
+
+    phone(answerKey, questionText, invalidText, allowedCountryCodes) {
+        var phoneNumberQuestion = new PhoneNumberQuestion(answerKey, questionText, invalidText);
+        if(allowedCountryCodes != null) {
+            for(var index in allowedCountryCodes) {
+                phoneNumberQuestion.addAllowedCountryCode(allowedCountryCodes[index]);
+            }
+        }
+        return this.add(phoneNumberQuestion);
+    }
+
+    mention(answerKey, questionText, invalidText) {
+        var mentionQuestion = new MentionQuestion(answerKey, questionText, invalidText);
+        return this.add(mentionQuestion);
+    }
+
+    polar(answerKey, questionText, invalidText, positiveRegex, negativeRegex, positiveFlow, negativeFlow) {
+        var polarQuestion = new PolarQuestion(answerKey, questionText, invalidText);
+        polarQuestion.setPositive(positiveRegex, positiveFlow);
+        polarQuestion.setNegative(negativeRegex, negativeFlow);
+        return this.add(polarQuestion);
+    }
+
+    finish(finishedCallback) {
         this.finishedCallback = finishedCallback;
+        return this;
     }
 
     setTimeoutText(timeoutText) {
@@ -369,21 +415,19 @@ class Flow {
 
     start(msg, answers) {
         console.log("Flow started");
-        if(this.startQuestion == null) {
-            console.error("Start question is null on start");
+        if(this.steps.length === 0) {
+            console.error("No steps for flow on start");
             msg.send(this.errorText);
             return;
         }
-        if(answers == null) {
-            answers = new Answers();
-        }
-        this.triggerQuestion(this.startQuestion, msg, answers);
+        this.answers = answers || new Answers();
+        this.next(msg);
     }
 
-    triggerQuestion(question, msg, answers) {
+    triggerQuestion(question, msg) {
         console.log("Triggering flow question: " + question.questionText);
         msg.send(question.questionText);
-        this.control.addListener(msg.message, new Listener(msg, this.callback, answers, question.regex), question);
+        this.control.addListener(msg.message, new Listener(msg, this.callback, this.answers, question.regex), question);
     }
 
     callback(response, listener) {
@@ -408,18 +452,26 @@ class Flow {
         // Valid answer, store in the answers object
         answers.add(question.answerKey, answerValue);
 
-        // Trigger followup question if present, otherwise finish the flow
-        if(question.followupQuestion != null) {
-            flow.triggerQuestion(question.followupQuestion, response, answers);
+        // Trigger sub flow if set in question, otherwise continue
+        if(question.subFlow != null) {
+            question.subFlow.finish(function(response, answers) {
+                flow.next(response);
+            });
+            question.subFlow.start(response, answers);
         } else {
-            flow.finish(response, answers);
+            flow.next(response);
         }
     }
 
-    finish(response, answers) {
-        console.log("Flow finished");
-        if(this.finishedCallback != null) {
-            this.finishedCallback(response, answers);
+    next(response) {
+        if(this.currentStep < this.steps.length) {
+            console.log("Flow next");
+            this.triggerQuestion(this.steps[this.currentStep++], response);
+        } else {
+            console.log("Flow finished");
+            if(this.finishedCallback != null) {
+                this.finishedCallback(response, this.answers);
+            }
         }
     }
 };
@@ -435,9 +487,8 @@ class Question {
         this.flow = flow;
     }
 
-    setFollowupQuestion(question) {
-        question.setFlow(this.flow);
-        this.followupQuestion = question;
+    setSubFlow(subFlow) {
+        this.subFlow = subFlow;
     }
 
     checkAndParseAnswer(matches, text) {
@@ -490,42 +541,6 @@ class NumberQuestion extends Question {
             return value <= this.max;
         }
         return true;
-    }
-};
-
-class PolarQuestion extends Question {
-    constructor(answerKey, questionText, invalidText) {
-        super(answerKey, questionText, invalidText);
-        this.regex = Extra.getTextRegex();
-    }
-
-    setPositive(text, followupQuestion) {
-        this.positiveRegex = new RegExp(text + "+", 'i');
-        if(followupQuestion != null) {
-            followupQuestion.setFlow(this.flow);
-            this.positiveFollowupQuestion = followupQuestion;
-        }
-    }
-
-    setNegative(text, followupQuestion) {
-        this.negativeRegex = new RegExp(text + "+", 'i');
-        if(followupQuestion != null) {
-            followupQuestion.setFlow(this.flow);
-            this.negativeFollowupQuestion = followupQuestion;
-        }
-    }
-
-    checkAndParseAnswer(matches, text) {
-        if(matches == null || text == null) {
-            return null;
-        }else if(text.match(this.positiveRegex)) {
-            this.setFollowupQuestion(this.positiveFollowupQuestion);
-            return true;
-        } else if(text.match(this.negativeRegex)) {
-            this.setFollowupQuestion(this.negativeFollowupQuestion);
-            return false;
-        }
-        return null;
     }
 };
 
@@ -623,6 +638,36 @@ class MentionQuestion extends Question {
         }
         if(value.length != 0) {
             return value;
+        }
+        return null;
+    }
+};
+
+class PolarQuestion extends Question {
+    constructor(answerKey, questionText, invalidText) {
+        super(answerKey, questionText, invalidText);
+        this.regex = Extra.getTextRegex();
+    }
+
+    setPositive(text, subFlow) {
+        this.positiveRegex = new RegExp(text + "+", 'i');
+        this.positiveFlow = subFlow;
+    }
+
+    setNegative(text, subFlow) {
+        this.negativeRegex = new RegExp(text + "+", 'i');
+        this.negativeFlow = subFlow;
+    }
+
+    checkAndParseAnswer(matches, text) {
+        if(matches == null || text == null) {
+            return null;
+        }else if(text.match(this.positiveRegex)) {
+            this.setSubFlow(this.positiveFlow);
+            return true;
+        } else if(text.match(this.negativeRegex)) {
+            this.setSubFlow(this.negativeFlow);
+            return false;
         }
         return null;
     }
