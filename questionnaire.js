@@ -374,6 +374,9 @@ class Flow {
             msg.send(this.errorText);
             return;
         }
+        if(answers == null) {
+            answers = new Answers();
+        }
         this.triggerQuestion(this.startQuestion, msg, answers);
     }
 
