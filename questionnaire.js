@@ -530,10 +530,33 @@ class EmailQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
         this.regex = Extra.getEmailRegex();
+        this.allowedDomains = [];
     }
 
-    checkAndParseAnswer(matches, text) { // TODO Only return email address
-        return text;    // TODO Add possibility to limit to a domain(".com")
+    checkAndParseAnswer(matches, text) {
+        if(matches == null || text == null) {
+            return null;
+        }
+        var email = matches[0];
+        if(this.allowedDomains.length === 0) {
+            return email;
+        }
+        for(var index in this.allowedDomains) {
+            if(email.endsWith(this.allowedDomains[index])) {
+                return email;
+            }
+        }
+        return null;
+    }
+
+    addAllowedDomain(domain) {
+        for(var index in this.allowedDomains) {
+            if(domain === this.allowedDomains[index]) {
+                console.error("Domain already configured as allowed for EmailQuestion: " + domain);
+                return;
+            }
+        }
+        this.allowedDomains.push(domain);
     }
 };
 
@@ -541,10 +564,33 @@ class PhoneNumberQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
         this.regex = Extra.getPhoneRegex();
+        this.allowedCountryCodes = [];
     }
 
-    checkAndParseAnswer(matches, text) {    // TODO Add possibility to limit to net number("+31")
-        return text;    // TODO Only return phone number
+    checkAndParseAnswer(matches, text) {
+        if(matches == null || text == null) {
+            return null;
+        }
+        var phone = matches[0];
+        if(this.allowedCountryCodes.length === 0) {
+            return phone;
+        }
+        for(var index in this.allowedCountryCodes) {
+            if(phone.startsWith(this.allowedCountryCodes[index])) {
+                return phone;
+            }
+        }
+        return null;
+    }
+
+    addAllowedCountryCode(code) {
+        for(var index in this.allowedCountryCodes) {
+            if(code === this.allowedCountryCodes[index]) {
+                console.error("Country code already configured as allowed for PhoneNumberQuestion: " + code);
+                return;
+            }
+        }
+        this.allowedCountryCodes.push(code);
     }
 };
 
@@ -568,7 +614,7 @@ class MentionQuestion extends Question {
             while((result = mentionedUserRegex.exec(text)) !== null) {
                 var uuid = result[0].match(uuidRegex);
                 if(uuid != null) {
-                    value.push(uuid[0]);
+                    value.push(uuid[0]);    // TODO Prevent possible duplicates
                 }
             }
         }
