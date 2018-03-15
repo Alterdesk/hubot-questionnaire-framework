@@ -28,13 +28,14 @@ class Answers {
 
 // Listener class for consecutive questions
 class Listener {
-    constructor(msg, callback, answers, regex, timeoutMs, timeoutCallback) {
+    constructor(msg, callback, answers, regex, timeoutMs, timeoutText, timeoutCallback) {
         this.call = this.call.bind(this);
         this.msg = msg;
         this.callback = callback;
         this.answers = answers;
         this.regex = regex || Extra.getTextRegex();
         this.timeoutMs = timeoutMs;
+        this.timeoutText = timeoutText;
         this.timeoutCallback = timeoutCallback;
 
         // Matcher for given regex
@@ -46,9 +47,8 @@ class Listener {
     }
 
     // Configure the listener for the given control instance
-    configure(control, question) {
+    configure(control) {
         this.control = control;
-        this.question = question;
         // Matcher for stop regex
         this.stopMatcher = (responseMessage) => {
             if (responseMessage.text != null && control.stopRegex != null) {
@@ -60,13 +60,12 @@ class Listener {
 
         // Timeout milliseconds and callback
         var useTimeoutMs = this.timeoutMs || control.responseTimeoutMs;
+        var useTimeoutText = this.timeoutText || control.responseTimeoutText;
         var useTimeoutCallback = this.timeoutCallback;
         if(useTimeoutCallback == null) {
             useTimeoutCallback = function() {
-                if(question != null && question.timeoutText != null) {
-                    msg.send(question.timeoutText);
-                } else if(control.responseTimeoutText != null) {
-                    msg.send(control.responseTimeoutText);
+                if(useTimeoutText != null) {
+                    msg.send(useTimeoutText);
                 }
             };
         };
@@ -83,6 +82,10 @@ class Listener {
             // Call timeout callback
             useTimeoutCallback();
         }, useTimeoutMs);
+    }
+
+    setQuestion(question) {
+        this.question = question;
     }
 
     // Called when a message was received for the listener
@@ -241,7 +244,8 @@ class Control {
 
     // Add a listeners for followup questions
     addListener(message, listener, question) {
-        listener.configure(this, question);
+        listener.configure(this);
+        listener.setQuestion(question);
         var userId = this.getUserId(message.user);
         console.log("Adding listener for user " + userId + " in room " + message.room);
         this.questionnaireListeners[message.room + userId] = listener;
@@ -351,7 +355,6 @@ class Flow {
         this.control = control;
         this.stopText = stopText;
         this.errorText = errorText;
-        this.timeoutText = control.responseTimeoutText;
         this.currentStep = 0;
         this.steps = [];
     }
@@ -409,10 +412,6 @@ class Flow {
         return this;
     }
 
-    setTimeoutText(timeoutText) {
-        this.timeoutText = timeoutText;
-    }
-
     start(msg, answers) {
         console.log("Flow started");
         if(this.steps.length === 0) {
@@ -427,7 +426,7 @@ class Flow {
     triggerQuestion(question, msg) {
         console.log("Triggering flow question: " + question.questionText);
         msg.send(question.questionText);
-        this.control.addListener(msg.message, new Listener(msg, this.callback, this.answers, question.regex), question);
+        this.control.addListener(msg.message, new Listener(msg, this.callback, this.answers, question.regex, question.timeoutMs, question.timeoutText, question.timeoutCallback), question);
     }
 
     callback(response, listener) {
@@ -489,6 +488,12 @@ class Question {
 
     setSubFlow(subFlow) {
         this.subFlow = subFlow;
+    }
+
+    setTimeout(ms, text, callback) {
+        this.timeoutMs = ms;
+        this.timeoutText = text;
+        this.timeoutCallback = callback;
     }
 
     checkAndParseAnswer(matches, text) {
