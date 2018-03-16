@@ -17,10 +17,12 @@ class Answers {
         this.data = {};
     }
 
+    // Add a value by key
     add(key, value) {
         this.data[key] = value;
     }
 
+    // Get a value by key
     get(key) {
         return this.data[key];
     }
@@ -84,6 +86,7 @@ class Listener {
         }, useTimeoutMs);
     }
 
+    // Set the corresponding question
     setQuestion(question) {
         this.question = question;
     }
@@ -350,6 +353,7 @@ class Control {
     }
 }
 
+// Class for a flow of questions
 class Flow {
     constructor(control, stopText, errorText) {
         this.control = control;
@@ -359,22 +363,26 @@ class Flow {
         this.steps = [];
     }
 
+    // Add a question to the flow
     add(question) {
         question.setFlow(this);
         this.steps.push(question);
         return this;
     }
 
+    // Add new TextQuestion
     text(answerKey, questionText, invalidText) {
         return this.add(new TextQuestion(answerKey, questionText, invalidText));
     }
 
+    // Add new NumberQuestion
     number(answerKey, questionText, invalidText, minValue, maxValue) {
         var numberQuestion = new NumberQuestion(answerKey, questionText, invalidText);
         numberQuestion.setRange(minValue, maxValue);
         return this.add(numberQuestion);
     }
 
+    // Add new EmailQuestion
     email(answerKey, questionText, invalidText, allowedDomains) {
         var emailQuestion = new EmailQuestion(answerKey, questionText, invalidText);
         if(allowedDomains != null) {
@@ -385,6 +393,7 @@ class Flow {
         return this.add(emailQuestion);
     }
 
+    // Add new PhoneNumberQuestion
     phone(answerKey, questionText, invalidText, allowedCountryCodes) {
         var phoneNumberQuestion = new PhoneNumberQuestion(answerKey, questionText, invalidText);
         if(allowedCountryCodes != null) {
@@ -395,11 +404,13 @@ class Flow {
         return this.add(phoneNumberQuestion);
     }
 
+    // Add new MentionQuestion
     mention(answerKey, questionText, invalidText) {
         var mentionQuestion = new MentionQuestion(answerKey, questionText, invalidText);
         return this.add(mentionQuestion);
     }
 
+    // Add new PolarQuestion
     polar(answerKey, questionText, invalidText, positiveRegex, negativeRegex, positiveFlow, negativeFlow) {
         var polarQuestion = new PolarQuestion(answerKey, questionText, invalidText);
         polarQuestion.setPositive(positiveRegex, positiveFlow);
@@ -407,11 +418,13 @@ class Flow {
         return this.add(polarQuestion);
     }
 
+    // Set the flow finished callback function
     finish(finishedCallback) {
         this.finishedCallback = finishedCallback;
         return this;
     }
 
+    // Start the flow
     start(msg, answers) {
         console.log("Flow started");
         if(this.steps.length === 0) {
@@ -423,12 +436,7 @@ class Flow {
         this.next(msg);
     }
 
-    triggerQuestion(question, msg) {
-        console.log("Triggering flow question: " + question.questionText);
-        msg.send(question.questionText);
-        this.control.addListener(msg.message, new Listener(msg, this.callback, this.answers, question.regex, question.timeoutMs, question.timeoutText, question.timeoutCallback), question);
-    }
-
+    // Callback function that is used with Listeners
     callback(response, listener) {
         var question = listener.question;
         var flow = question.flow;
@@ -460,10 +468,13 @@ class Flow {
         }
     }
 
+    // Execute next question
     next(response) {
         if(this.currentStep < this.steps.length) {
-            console.log("Flow next");
-            this.triggerQuestion(this.steps[this.currentStep++], response);
+            var question = this.steps[this.currentStep++];
+            console.log("Flow nex question: " + question.questionText);
+            response.send(question.questionText);
+            this.control.addListener(response.message, new Listener(response, this.callback, this.answers, question.regex, question.timeoutMs, question.timeoutText, question.timeoutCallback), question);
         } else {
             console.log("Flow finished");
             if(this.finishedCallback != null) {
@@ -473,6 +484,7 @@ class Flow {
     }
 };
 
+// Class for defining questions
 class Question {
     constructor(answerKey, questionText, invalidText) {
         this.answerKey = answerKey;
@@ -480,25 +492,30 @@ class Question {
         this.invalidText = invalidText;
     }
 
+    // Set the parent flow
     setFlow(flow) {
         this.flow = flow;
     }
 
+    // Set the sub flow to execute after this question
     setSubFlow(subFlow) {
         this.subFlow = subFlow;
     }
 
+    // Use non-default timeout settings for this question
     setTimeout(ms, text, callback) {
         this.timeoutMs = ms;
         this.timeoutText = text;
         this.timeoutCallback = callback;
     }
 
+    // Answer given by the user is parsed and checked here
     checkAndParseAnswer(matches, text) {
         return null;
     }
 };
 
+// Text Question, accepts non empty text
 class TextQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
@@ -513,17 +530,20 @@ class TextQuestion extends Question {
     }
 };
 
+// Number Question, accepts numbers, can limit to accepted range
 class NumberQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
         this.regex = Extra.getNumberRegex();
     }
 
+    // Limit the valid answer to range
     setRange(min, max) {
         this.min = min;
         this.max = max;
     }
 
+    // Parse given number as float and only accept if in range
     checkAndParseAnswer(matches, text) {
         if(matches == null || text == null) {
             return null;
@@ -535,6 +555,7 @@ class NumberQuestion extends Question {
         return null;
     }
 
+    // Check if the value is in range
     inRange(value) {
         if(this.min != null && this.max != null) {
             return value >= this.min && value <= this.max;
@@ -547,6 +568,7 @@ class NumberQuestion extends Question {
     }
 };
 
+// Email Question, accepts email addresses, able to limit to domains
 class EmailQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
@@ -554,6 +576,7 @@ class EmailQuestion extends Question {
         this.allowedDomains = [];
     }
 
+    // Check for valid email and if domain is allowed
     checkAndParseAnswer(matches, text) {
         if(matches == null || text == null) {
             return null;
@@ -570,6 +593,7 @@ class EmailQuestion extends Question {
         return null;
     }
 
+    // Add a domain to limit accepted answers to
     addAllowedDomain(domain) {
         for(var index in this.allowedDomains) {
             if(domain === this.allowedDomains[index]) {
@@ -581,6 +605,7 @@ class EmailQuestion extends Question {
     }
 };
 
+// Phone Number Question, accepts phone numbers, able to limit to country codes
 class PhoneNumberQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
@@ -588,6 +613,7 @@ class PhoneNumberQuestion extends Question {
         this.allowedCountryCodes = [];
     }
 
+    // Check if valid phone number and if country code is allowed
     checkAndParseAnswer(matches, text) {
         if(matches == null || text == null) {
             return null;
@@ -604,6 +630,7 @@ class PhoneNumberQuestion extends Question {
         return null;
     }
 
+    // Add a country code to limit accepted answers to
     addAllowedCountryCode(code) {
         for(var index in this.allowedCountryCodes) {
             if(code === this.allowedCountryCodes[index]) {
@@ -615,12 +642,14 @@ class PhoneNumberQuestion extends Question {
     }
 };
 
+// Mention Question, accepts mentioned all and mentioned user tags
 class MentionQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
         this.regex = Extra.getMentionedRegex();
     }
 
+    // Parse mentioned users or mentioned all tags
     checkAndParseAnswer(matches, text) {
         if(matches == null || text == null) {
             return null;
@@ -646,17 +675,20 @@ class MentionQuestion extends Question {
     }
 };
 
+// Polar Question, accepts by positive or negative regex, and can set sub flow for an answer
 class PolarQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
         this.regex = Extra.getTextRegex();
     }
 
+    // Set the positive answer and optional sub flow to start when a positive answer was given
     setPositive(text, subFlow) {
         this.positiveRegex = new RegExp(text + "+", 'i');
         this.positiveFlow = subFlow;
     }
 
+    // Set the negative answer and optional sub flow to start when a negative answer was given
     setNegative(text, subFlow) {
         this.negativeRegex = new RegExp(text + "+", 'i');
         this.negativeFlow = subFlow;
