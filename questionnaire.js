@@ -660,11 +660,21 @@ class MentionQuestion extends Question {
         } else {
             var mentionedUserRegex = Extra.getMentionedUserRegex();
             var uuidRegex = Extra.getUuidRegex();
-            var result;
-            while((result = mentionedUserRegex.exec(text)) !== null) {
-                var uuid = result[0].match(uuidRegex);
-                if(uuid != null) {
-                    value.push(uuid[0]);    // TODO Prevent possible duplicates
+            var mentionResult;
+            while((mentionResult = mentionedUserRegex.exec(text)) !== null) {
+                var userResult = mentionResult[0].match(uuidRegex);
+                if(userResult != null) {
+                    var userId = userResult[0];
+                    var add = true;
+                    for(var index in value) {
+                        if(userId === value[index]) {
+                            add = false;
+                            break;
+                        }
+                    }
+                    if(add) {
+                        value.push(userId);
+                    }
                 }
             }
         }
@@ -682,18 +692,19 @@ class PolarQuestion extends Question {
         this.regex = Extra.getTextRegex();
     }
 
-    // Set the positive answer and optional sub flow to start when a positive answer was given
-    setPositive(text, subFlow) {
-        this.positiveRegex = new RegExp(text + "+", 'i');
+    // Set the positive answer regex and optional sub flow to start when a positive answer was given
+    setPositive(regex, subFlow) {
+        this.positiveRegex = regex
         this.positiveFlow = subFlow;
     }
 
-    // Set the negative answer and optional sub flow to start when a negative answer was given
-    setNegative(text, subFlow) {
-        this.negativeRegex = new RegExp(text + "+", 'i');
+    // Set the negative answer regex and optional sub flow to start when a negative answer was given
+    setNegative(regex, subFlow) {
+        this.negativeRegex = regex
         this.negativeFlow = subFlow;
     }
 
+    // Check if the positive regex or negative regex matches, and set corresponding sub flow to execute
     checkAndParseAnswer(matches, text) {
         if(matches == null || text == null) {
             return null;
