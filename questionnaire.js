@@ -29,7 +29,7 @@ class Answers {
 }
 
 // Listener class for consecutive questions
-class Listener {
+class Listener {    // TODO Replace regex and timeout parameters with question and remove function setQuestion()
     constructor(msg, callback, answers, regex, timeoutMs, timeoutText, timeoutCallback) {
         this.call = this.call.bind(this);
         this.msg = msg;
