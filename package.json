@@ -13,6 +13,7 @@
   "author": "Alterdesk",
   "license": "MIT",
   "dependencies": {
-    "hubot": "^2.19.0"
+    "hubot": "^2.19.0",
+    "node-messenger-extra": "https://github.com/Alterdesk/node-messenger-extra.git"
   }
 }
