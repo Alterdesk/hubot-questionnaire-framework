@@ -44,7 +44,9 @@ You can chain functions like text() to add questions to the flow. The finish() f
 that is called when the flow is finished in which you can use the given answers to preform a task.
 ```javascript
 var callbackFormFinished = function(response, answers) {
-    response.send("Your name is " + answers.get("firstName") + " " + answers.get("lastName"));
+    var firstName = answers.get("firstName");
+    var lastName = answers.get("lastName");
+    response.send("Your name is " + firstName + " " + lastName);
 };
 ```
 
@@ -57,7 +59,7 @@ Question constructor
 * Question text to send to the user
 * Text to send when a given answer is invalid
 
-Each Question sub class has a convience method in the Flow class, but you can manually add questions to a flow before 
+Each Question sub class has a convenience function in the Flow class, but you can manually add questions to a flow before 
 the flow is started like this
 ```javascript
 // Create a question
@@ -79,7 +81,7 @@ flow.text("myKey", "Can you send me some text?", "Invalid text.");
 
 ### NumberQuestion
 Adding a question that only accepts numbers, the NumberQuestion can be used. You can optionally use a range of accepted 
-values
+values. Adding a NumberQuestion can be done with the convenience function number().
 ```javascript
 // Ask the user for a number and store with key "number"
 flow.number("number", "Can you send me a number?", "Invalid number.");
@@ -89,9 +91,59 @@ flow.number("limited", "Can you send me a number between 2 and 5?", "Invalid num
 ```
 
 ### EmailQuestion
+The EmailQuestion class is used to ask a user for an email address, you can optionally limit the accepted answers by 
+domain by passing an array of accepted domains. Add an EmailQuestion by calling email() on the flow instance.
+```javascript
+// Ask for any email address
+flow.email("email", "What is your email address?", "Invalid email");
+
+// Only accept domains "alterdesk.com" and ".nl"
+flow.email("email", "What is your email address?", "Invalid email or domain not allowed", ["alterdesk.com", "nl]);
+```
+
 ### PhoneNumberQuestion
+Aks the user for a phone number by using the PhoneNumberQuestion, which can be configured to only accept given country 
+codes by passing an array of accepted codes. Add a phone number question by using number().
+```javascript
+// Ask for any phone number
+flow.number("phone", "What is your phone number?, "Invalid phone number");
+
+// Only accept Dutch phone numbers
+flow.number("dutch", "What is your phone number?, "Not a Dutch phone number", ["+31"]);
+```
+
 ### PolarQuestion
+To let the user make a decision by answering either positively or negatively to a question, the PolarQuestion can be 
+used. This allows for "Yes/No" questions and optionally start a sub flow of questions for an answer.
+To add a polar question, you can use the convenience function polar() with the following parameters
+* Answer key to use when storing boolean(positive/negative) in Answers object
+* Question text to ask
+* Invalid answer text
+* Positive answer regex
+* Negative answer regex
+* Sub flow to start when a positive answer was given *(optional)*
+* Sub flow to start when a negative answer was given *(optional)*
+
+```javascript
+// Regular expressions to use to parse positive and negative answers with
+var positiveRegex = new RegExp(/yes/, 'i');
+var negativeRegex = new RegExp(/no/, 'i');
+
+var positiveFlow = new Flow(control, "Positive sub flow has stopped.", "Error occured during positive sub flow");
+positiveFlow.email("email", "What is your email address?", "Invalid email address");
+
+var negativeFlow = new Flow(control, "Negative sub flow has stopped.", "Error occured during negative sub flow");
+negativeFlow.text("reason", "That is to bad, can you give us a reason?", "Invalid answer");
+
+flow.polar("startedSubFlow", "Do you want to subscribe to our newsletter? (Yes or no)", "Invalid answer.", postiveRegex, negativeRegex, positiveFlow, negativeFlow);
+```
+
 ### MentionQuestion
+You can ask a user to tag chat members in a flow, the user can use '@' to start a mention tag in the messenger. Ask a
+MentionQuestion by using mention().
+```javascript
+flow.mention("tagged", "Which users do you want to include? (Use '@' to mention users), "Invalid mention.")
+```
 
 ### Listener
 The listener class is used to await an answer from a user in a room
