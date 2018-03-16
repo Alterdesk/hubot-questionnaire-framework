@@ -420,10 +420,28 @@ class Flow {
         return this.add(polarQuestion);
     }
 
+    multiple(answerKey, questionText, invalidText) {
+        var multipleChoiceQuestion = new MultipleChoiceQuestion(answerKey, questionText, invalidText);
+        return this.add(multipleChoiceQuestion);
+    }
+
+    option(regex, subFlow) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow to add multiple choice option to on option()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof MultipleChoiceQuestion)) {
+            console.error("Last added Question is not an instance of MultipleChoiceQuestion on option()");
+            return this;
+        }
+        this.lastAddedQuestion.addOption(regex, subFlow);
+        return this;
+    }
+
     // Summarize the given answers after last added question
     summary(summaryFunction) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow to add summary function to");
+            console.error("No Question added to flow to add summary function to on summary()");
             return this;
         }
         this.lastAddedQuestion.setSummaryFunction(summaryFunction);
@@ -433,7 +451,7 @@ class Flow {
     // Use non-default timeout for last added question
     timeout(ms, text, callback) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow to set override timeout settings to");
+            console.error("No Question added to flow to set override timeout settings to on timeout()");
             return this;
         }
         this.lastAddedQuestion.setTimeout(ms, text, callback);
@@ -754,7 +772,7 @@ class PolarQuestion extends Question {
     checkAndParseAnswer(matches, text) {
         if(matches == null || text == null) {
             return null;
-        }else if(text.match(this.positiveRegex)) {
+        } else if(text.match(this.positiveRegex)) {
             this.setSubFlow(this.positiveFlow);
             return true;
         } else if(text.match(this.negativeRegex)) {
@@ -764,6 +782,39 @@ class PolarQuestion extends Question {
         return null;
     }
 };
+
+class MultipleChoiceQuestion extends Question {
+    constructor(answerKey, questionText, invalidText) {
+        super(answerKey, questionText, invalidText);
+        this.regex = Extra.getTextRegex();
+        this.options = [];
+    }
+
+    addOption(regex, subFlow) {
+        this.options.push(new MultipleChoiceOption(regex, subFlow));
+    }
+
+    checkAndParseAnswer(matches, text) {
+        if(matches == null || text == null) {
+            return null;
+        }
+        var choice = matches[0];
+        for(var index in this.options) {
+            var option = this.options[index];
+            if(choice.match(option.regex)) {
+                this.setSubFlow(option.subFlow);
+                return choice;
+            }
+        }
+    }
+};
+
+class MultipleChoiceOption {
+    constructor(regex, subFlow) {
+        this.regex = regex;
+        this.subFlow = subFlow;
+    }
+}
 
 // TODO AcceptQuestion(accept/reject, two outputs, multiuser)
 
@@ -775,9 +826,9 @@ module.exports = {
     Flow : Flow,
     TextQuestion : TextQuestion,
     NumberQuestion : NumberQuestion,
-    PolarQuestion : PolarQuestion,
     EmailQuestion : EmailQuestion,
     PhoneNumberQuestion : PhoneNumberQuestion,
-    MentionQuestion : MentionQuestion
-
+    MentionQuestion : MentionQuestion,
+    PolarQuestion : PolarQuestion,
+    MultipleChoiceQuestion : MultipleChoiceQuestion
 }

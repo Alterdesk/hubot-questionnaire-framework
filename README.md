@@ -133,6 +133,13 @@ flow.number("phone", "What is your phone number?, "Invalid phone number");
 flow.number("dutch", "What is your phone number?, "Not a Dutch phone number", ["+31"]);
 ```
 
+### MentionQuestion
+You can ask a user to tag chat members in a flow, the user can use '@' to start a mention tag in the messenger. Ask a
+MentionQuestion by using mention().
+```javascript
+flow.mention("tagged", "Which users do you want to include? (Use '@' to mention users), "Invalid mention.")
+```
+
 ### PolarQuestion
 To let the user make a decision by answering either positively or negatively to a question, the PolarQuestion can be 
 used. This allows for "Yes/No" questions and optionally start a sub flow of questions for an answer.
@@ -159,11 +166,20 @@ negativeFlow.text("reason", "That is to bad, can you give us a reason?", "Invali
 flow.polar("startedSubFlow", "Do you want to subscribe to our newsletter? (Yes or no)", "Invalid answer.", postiveRegex, negativeRegex, positiveFlow, negativeFlow);
 ```
 
-### MentionQuestion
-You can ask a user to tag chat members in a flow, the user can use '@' to start a mention tag in the messenger. Ask a
-MentionQuestion by using mention().
+### MultipleChoiceQuestion
+To let the user make a choice of multiple options, the MultipleChoiceQuestion can be used. Each option is set with a 
+corresponding regex and an optional sub flow. First call multiple() on the flow and for each option call option() after 
+that.
 ```javascript
-flow.mention("tagged", "Which users do you want to include? (Use '@' to mention users), "Invalid mention.")
+// Regular expressions to use to parse options with
+var emailRegex = new RegExp(/email/, 'i');
+var phoneRegex = new RegExp(/phone/, 'i');
+var skipRegex = new RegExp(/skip/, 'i');
+
+flow.multiple("registerBy", "Do you want to register by email, phone number or skip this question?", "Invalid choice.")
+.option(emailRegex, emailFlow)
+.option(phoneRegex, phoneFlow)
+.option(skipRegex);
 ```
 
 ### Listener
