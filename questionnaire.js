@@ -430,7 +430,9 @@ class Flow {
         console.log("Flow started");
         if(this.steps.length === 0) {
             console.error("No steps for flow on start");
-            msg.send(this.errorText);
+            if(this.errorText != null) {
+                msg.send(this.errorText);
+            }
             return;
         }
         this.answers = answers || new Answers();
@@ -444,7 +446,9 @@ class Flow {
 
         // Check if the stop regex was triggered
         if(listener.stop) {
-            response.send(flow.stopText);
+            if(flow.stopText != null) {
+                response.send(flow.stopText);
+            }
             return;
         }
 
@@ -460,10 +464,21 @@ class Flow {
 
         // Trigger sub flow if set in question, otherwise continue
         if(question.subFlow != null) {
-            question.subFlow.finish(function(response, answers) {
+            var subFlow = question.subFlow;
+            // Set stop text when null
+            if(subFlow.stopText == null) {
+                subFlow.stopText = flow.stopText;
+            }
+            // Set error text when null
+            if(subFlow.errorText == null) {
+                subFlow.errorText = flow.errorText;
+            }
+            // Continue current flow when sub flow finishes
+            subFlow.finish(function(response, answers) {
                 flow.next(response);
             });
-            question.subFlow.start(response, this.answers);
+            // Start the sub flow
+            subFlow.start(response, this.answers);
         } else {
             flow.next(response);
         }
@@ -488,9 +503,9 @@ class Flow {
 // Class for defining questions
 class Question {
     constructor(answerKey, questionText, invalidText) {
-        this.answerKey = answerKey;
-        this.questionText = questionText;
-        this.invalidText = invalidText;
+        this.answerKey = answerKey || "ANSWER_KEY";
+        this.questionText = questionText || "QUESTION_TEXT";
+        this.invalidText = invalidText || "INVALID_TEXT";
     }
 
     // Set the parent flow

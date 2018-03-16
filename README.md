@@ -37,8 +37,8 @@ robot.hear(/start/i, function(msg) {
 ```
 Flow constructor parameters
 * Control instance
-* Text to send when the user has stopped the flow
-* Text to send when an error occurs in the flow
+* Text to send when the user has stopped the flow *(optional)*
+* Text to send when an error occurs in the flow *(optional)*
 
 You can chain functions like text() to add questions to the flow. The finish() function will allow you to set a callback
 that is called when the flow is finished in which you can use the given answers to preform a task.
@@ -129,10 +129,10 @@ To add a polar question, you can use the convenience function polar() with the f
 var positiveRegex = new RegExp(/yes/, 'i');
 var negativeRegex = new RegExp(/no/, 'i');
 
-var positiveFlow = new Flow(control, "Positive sub flow has stopped.", "Error occured during positive sub flow");
+var positiveFlow = new Flow(control);
 positiveFlow.email("email", "What is your email address?", "Invalid email address");
 
-var negativeFlow = new Flow(control, "Negative sub flow has stopped.", "Error occured during negative sub flow");
+var negativeFlow = new Flow(control);
 negativeFlow.text("reason", "That is to bad, can you give us a reason?", "Invalid answer");
 
 flow.polar("startedSubFlow", "Do you want to subscribe to our newsletter? (Yes or no)", "Invalid answer.", postiveRegex, negativeRegex, positiveFlow, negativeFlow);
