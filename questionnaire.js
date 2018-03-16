@@ -368,6 +368,7 @@ class Flow {
     add(question) {
         question.setFlow(this);
         this.steps.push(question);
+        this.lastAddedQuestion = question;
         return this;
     }
 
@@ -419,6 +420,26 @@ class Flow {
         return this.add(polarQuestion);
     }
 
+    // Summarize the given answers after last added question
+    summary(summaryFunction) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow to add summary function to");
+            return this;
+        }
+        this.lastAddedQuestion.setSummaryFunction(summaryFunction);
+        return this;
+    }
+
+    // Use non-default timeout for last added question
+    timeout(ms, text, callback) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow to set override timeout settings to");
+            return this;
+        }
+        this.lastAddedQuestion.setTimeout(ms, text, callback);
+        return this;
+    }
+
     // Set the flow finished callback function
     finish(finishedCallback) {
         this.finishedCallback = finishedCallback;
@@ -461,6 +482,11 @@ class Flow {
 
         // Valid answer, store in the answers object
         this.answers.add(question.answerKey, answerValue);
+
+        // Call summary function if set
+        if(question.summaryFunction != null) {
+            response.send(question.summaryFunction(this.answers));
+        }
 
         // Trigger sub flow if set in question, otherwise continue
         if(question.subFlow != null) {
@@ -516,6 +542,10 @@ class Question {
     // Set the sub flow to execute after this question
     setSubFlow(subFlow) {
         this.subFlow = subFlow;
+    }
+
+    setSummaryFunction(summaryFunction) {
+        this.summaryFunction = summaryFunction;
     }
 
     // Use non-default timeout settings for this question
