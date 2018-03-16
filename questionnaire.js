@@ -3,6 +3,7 @@
 //
 // Dependencies:
 //   hubot
+//   node-messenger-extra
 //
 // Author:
 //   Alterdesk
