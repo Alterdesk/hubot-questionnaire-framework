@@ -53,9 +53,9 @@ Example of a summary function
 ```javascript
 var getSummary(answers) {
     var summary = "Is this correct?";
-    summary += "\n\nFirst name:\n" + answers.get("firstName"); 
-    summary += "\n\nLast name:\n" + answers.get("lastName"); 
-    summary += "\n\nEmail address:\n" + answers.get("email");
+    summary += "\n\nFirst name:\n    " + answers.get("firstName"); 
+    summary += "\n\nLast name:\n    " + answers.get("lastName"); 
+    summary += "\n\nEmail address:\n    " + answers.get("email");
     return summary; 
 }
 ```
@@ -119,7 +119,7 @@ domain by passing an array of accepted domains. Add an EmailQuestion by calling 
 flow.email("email", "What is your email address?", "Invalid email");
 
 // Only accept domains "alterdesk.com" and ".nl"
-flow.email("email", "What is your email address?", "Invalid email or domain not allowed", ["alterdesk.com", "nl]);
+flow.email("email", "What is your email address?", "Invalid email or domain not allowed", ["alterdesk.com", ".nl"]);
 ```
 
 ### PhoneNumberQuestion
@@ -127,17 +127,17 @@ Aks the user for a phone number by using the PhoneNumberQuestion, which can be c
 codes by passing an array of accepted codes. Add a phone number question by using number().
 ```javascript
 // Ask for any phone number
-flow.number("phone", "What is your phone number?, "Invalid phone number");
+flow.number("phone", "What is your phone number?", "Invalid phone number");
 
 // Only accept Dutch phone numbers
-flow.number("dutch", "What is your phone number?, "Not a Dutch phone number", ["+31"]);
+flow.number("dutch", "What is your phone number?", "Not a Dutch phone number", ["+31"]);
 ```
 
 ### MentionQuestion
 You can ask a user to tag chat members in a flow, the user can use '@' to start a mention tag in the messenger. Ask a
 MentionQuestion by using mention().
 ```javascript
-flow.mention("tagged", "Which users do you want to include? (Use '@' to mention users), "Invalid mention.")
+flow.mention("tagged", "Which users do you want to include? (Use '@' to mention users)", "Invalid mention.")
 ```
 
 ### PolarQuestion
