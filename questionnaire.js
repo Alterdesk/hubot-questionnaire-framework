@@ -155,6 +155,9 @@ class Control {
 
         var control = this;
 
+        // Store robot instance
+        control.robot = robot;
+
         // Store default robot receiver in separate variable
         robot.defaultRobotReceiver = robot.receive;
 
@@ -377,11 +380,39 @@ class Flow {
         return this.add(new TextQuestion(answerKey, questionText, invalidText));
     }
 
+    length(minLength, maxLength) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow to add accepted length to on length()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof TextQuestion)) {
+            console.error("Last added Question is not an instance of TextQuestion on length()");
+            return this;
+        }
+        this.lastAddedQuestion.setLength(minLength, maxLength);
+        return this;
+    }
+
     // Add new NumberQuestion
     number(answerKey, questionText, invalidText, minValue, maxValue) {
         var numberQuestion = new NumberQuestion(answerKey, questionText, invalidText);
-        numberQuestion.setRange(minValue, maxValue);
+        if(minValue !== null || maxValue !== null) {
+            numberQuestion.setRange(minValue, maxValue);
+        }
         return this.add(numberQuestion);
+    }
+
+    range(minValue, maxValue) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow to add number range to on range()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof NumberQuestion)) {
+            console.error("Last added Question is not an instance of NumberQuestion on range()");
+            return this;
+        }
+        this.lastAddedQuestion.setRange(minValue, maxValue);
+        return this;
     }
 
     // Add new EmailQuestion
@@ -395,6 +426,21 @@ class Flow {
         return this.add(emailQuestion);
     }
 
+    domains(allowedDomains) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow to add accepted domains to on domains()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof EmailQuestion)) {
+            console.error("Last added Question is not an instance of EmailQuestion on domains()");
+            return this;
+        }
+        if(allowedDomains != null) {
+            this.lastAddedQuestion.addAllowedDomains(allowedDomains);
+        }
+        return this;
+    }
+
     // Add new PhoneNumberQuestion
     phone(answerKey, questionText, invalidText, allowedCountryCodes) {
         var phoneNumberQuestion = new PhoneNumberQuestion(answerKey, questionText, invalidText);
@@ -406,18 +452,76 @@ class Flow {
         return this.add(phoneNumberQuestion);
     }
 
+    countryCodes(allowedCountryCodes) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow to add accepted country codes to on countryCodes()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof PhoneNumberQuestion)) {
+            console.error("Last added Question is not an instance of PhoneNumberQuestion on countryCodes()");
+            return this;
+        }
+        if(allowedCountryCodes != null) {
+            this.lastAddedQuestion.addAllowedCountryCodes(allowedCountryCodes);
+        }
+        return this;
+    }
+
     // Add new MentionQuestion
     mention(answerKey, questionText, invalidText) {
         var mentionQuestion = new MentionQuestion(answerKey, questionText, invalidText);
         return this.add(mentionQuestion);
     }
 
+    robotAllowed(allowed) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow to set robot mention allowed to on robotAllowed()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof MentionQuestion)) {
+            console.error("Last added Question is not an instance of MentionQuestion on robotAllowed()");
+            return this;
+        }
+        this.lastAddedQuestion.setRobotAllowed(allowed);
+        return this;
+    }
+
     // Add new PolarQuestion
     polar(answerKey, questionText, invalidText, positiveRegex, negativeRegex, positiveFlow, negativeFlow) {
         var polarQuestion = new PolarQuestion(answerKey, questionText, invalidText);
-        polarQuestion.setPositive(positiveRegex, positiveFlow);
-        polarQuestion.setNegative(negativeRegex, negativeFlow);
+        if(positiveRegex !== null) {
+            polarQuestion.setPositive(positiveRegex, positiveFlow);
+        }
+        if(negativeRegex !== null) {
+            polarQuestion.setNegative(negativeRegex, negativeFlow);
+        }
         return this.add(polarQuestion);
+    }
+
+    positive(regex, subFlow) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow to add positive regex to on positive()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof PolarQuestion)) {
+            console.error("Last added Question is not an instance of PolarQuestion on positive()");
+            return this;
+        }
+        this.lastAddedQuestion.setPositive(regex, subFlow);
+        return this;
+    }
+
+    negative(regex, subFlow) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow to add negative regex to on negative()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof PolarQuestion)) {
+            console.error("Last added Question is not an instance of PolarQuestion on negative()");
+            return this;
+        }
+        this.lastAddedQuestion.setNegative(regex, subFlow);
+        return this;
     }
 
     multiple(answerKey, questionText, invalidText) {
@@ -492,7 +596,7 @@ class Flow {
         }
 
         // Let the Question check and parse the message
-        var answerValue = question.checkAndParseAnswer(listener.matches, response.message.text);
+        var answerValue = question.checkAndParseAnswer(listener.matches, response.message);
         if(answerValue == null) {
             response.send(question.invalidText + " " + question.questionText);
             return flow.control.addListener(response.message, new Listener(response, this.callback, this.answers, question.regex), question);
@@ -574,7 +678,7 @@ class Question {
     }
 
     // Answer given by the user is parsed and checked here
-    checkAndParseAnswer(matches, text) {
+    checkAndParseAnswer(matches, message) {
         return null;
     }
 };
@@ -586,11 +690,30 @@ class TextQuestion extends Question {
         this.regex = Extra.getTextRegex();
     }
 
-    checkAndParseAnswer(matches, text) {
+    setLength(min, max) {
+        this.min = min;
+        this.max = max;
+    }
+
+    checkAndParseAnswer(matches, message) {
         if(matches == null) {
             return null;
         }
-        return text;
+        if(this.acceptedLength(message.text)) {
+            return message.text;
+        }
+        return null;
+    }
+
+    acceptedLength(text) {
+        if(this.min != null && this.max != null) {
+            return text.length >= this.min && text.length <= this.max;
+        } else if(this.min != null) {
+            return text.length >= this.min;
+        } else if(this.max != null) {
+            return text.length <= this.max;
+        }
+        return true;
     }
 };
 
@@ -608,11 +731,11 @@ class NumberQuestion extends Question {
     }
 
     // Parse given number as float and only accept if in range
-    checkAndParseAnswer(matches, text) {
-        if(matches == null || text == null) {
+    checkAndParseAnswer(matches, message) {
+        if(matches == null || message.text == null) {
             return null;
         }
-        var value = parseFloat(text);
+        var value = parseFloat(message.text);
         if(this.inRange(value)) {
             return value;
         }
@@ -641,8 +764,8 @@ class EmailQuestion extends Question {
     }
 
     // Check for valid email and if domain is allowed
-    checkAndParseAnswer(matches, text) {
-        if(matches == null || text == null) {
+    checkAndParseAnswer(matches, message) {
+        if(matches == null || message.text == null) {
             return null;
         }
         var email = matches[0];
@@ -667,6 +790,12 @@ class EmailQuestion extends Question {
         }
         this.allowedDomains.push(domain);
     }
+
+    addAllowedDomains(domains) {
+        for(var index in domains) {
+            this.addAllowedDomain(domains[index]);
+        }
+    }
 };
 
 // Phone Number Question, accepts phone numbers, able to limit to country codes
@@ -678,8 +807,8 @@ class PhoneNumberQuestion extends Question {
     }
 
     // Check if valid phone number and if country code is allowed
-    checkAndParseAnswer(matches, text) {
-        if(matches == null || text == null) {
+    checkAndParseAnswer(matches, message) {
+        if(matches == null || message.text == null) {
             return null;
         }
         var phone = matches[0];
@@ -704,6 +833,12 @@ class PhoneNumberQuestion extends Question {
         }
         this.allowedCountryCodes.push(code);
     }
+
+    addAllowedCountryCodes(codes) {
+        for(var index in codes) {
+            this.addAllowedCountryCode(codes[index]);
+        }
+    }
 };
 
 // Mention Question, accepts mentioned all and mentioned user tags
@@ -711,37 +846,77 @@ class MentionQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
         this.regex = Extra.getMentionedRegex();
+        this.robotAllowed = false;
+    }
+
+    // Change if it is allowed to mention robot
+    setRobotAllowed(allowed) {
+        this.robotAllowed = allowed;
     }
 
     // Parse mentioned users or mentioned all tags
-    checkAndParseAnswer(matches, text) {
-        if(matches == null || text == null) {
+    checkAndParseAnswer(matches, message) {
+        if(matches == null || message.text == null) {
             return null;
         }
         var value = [];
-        if(text.match(Extra.getMentionedAllRegex()) != null) {
-            value.push("@all");
+        if(message.text.match(Extra.getMentionedAllRegex()) != null) {
+            var mention = {};
+            mention["id"] = "@all";
+            value.push(mention);
+            return value;
+        }
+
+        var mentions;
+
+        console.log("Mentions parsed by gateway: " + (message.mentions !== null));
+        if(message.mentions != null) {
+            // Parsed by gateway
+            mentions = message.mentions;
         } else {
+            // Not parsed yet
+            mentions = [];
             var mentionedUserRegex = Extra.getMentionedUserRegex();
             var uuidRegex = Extra.getUuidRegex();
             var mentionResult;
-            while((mentionResult = mentionedUserRegex.exec(text)) !== null) {
+            while((mentionResult = mentionedUserRegex.exec(message.text)) !== null) {
                 var userResult = mentionResult[0].match(uuidRegex);
-                if(userResult != null) {
-                    var userId = userResult[0];
-                    var add = true;
-                    for(var index in value) {
-                        if(userId === value[index]) {
-                            add = false;
-                            break;
-                        }
-                    }
-                    if(add) {
-                        value.push(userId);
-                    }
+                if(userResult == null) {
+                    continue;
                 }
+                var mention = {};
+                mention["id"] = userResult[0];
+                mentions.push(mention);
             }
         }
+
+        // Retrieve robot id if available
+        var robotId = null;
+        if(this.flow.control.robot.user != null) {
+            robotId = this.flow.control.robot.user.id;
+        }
+
+        for(var index in mentions) {
+            var mention = mentions[index];
+            var userId = mention["id"];
+            if(!this.robotAllowed && robotId !== null && userId === robotId) {
+                console.log("Removed robot mention")
+                continue;
+            }
+            var add = true;
+            for(var index in value) {
+                if(userId === value[index]["id"]) {
+                    console.log("User id already mentioned: " + userId);
+                    add = false;
+                    break;
+                }
+            }
+            if(add) {
+                console.log("Adding mentioned user id: " + userId);
+                value.push(mention);
+            }
+        }
+
         if(value.length != 0) {
             return value;
         }
@@ -769,13 +944,13 @@ class PolarQuestion extends Question {
     }
 
     // Check if the positive regex or negative regex matches, and set corresponding sub flow to execute
-    checkAndParseAnswer(matches, text) {
-        if(matches == null || text == null) {
+    checkAndParseAnswer(matches, message) {
+        if(matches == null || message.text == null) {
             return null;
-        } else if(text.match(this.positiveRegex)) {
+        } else if(message.text.match(this.positiveRegex)) {
             this.setSubFlow(this.positiveFlow);
             return true;
-        } else if(text.match(this.negativeRegex)) {
+        } else if(message.text.match(this.negativeRegex)) {
             this.setSubFlow(this.negativeFlow);
             return false;
         }
@@ -794,8 +969,8 @@ class MultipleChoiceQuestion extends Question {
         this.options.push(new MultipleChoiceOption(regex, subFlow));
     }
 
-    checkAndParseAnswer(matches, text) {
-        if(matches == null || text == null) {
+    checkAndParseAnswer(matches, message) {
+        if(matches == null || message.text == null) {
             return null;
         }
         var choice = matches[0];
@@ -814,9 +989,7 @@ class MultipleChoiceOption {
         this.regex = regex;
         this.subFlow = subFlow;
     }
-}
-
-// TODO AcceptQuestion(accept/reject, two outputs, multiuser)
+};
 
 module.exports = {
 
@@ -831,4 +1004,4 @@ module.exports = {
     MentionQuestion : MentionQuestion,
     PolarQuestion : PolarQuestion,
     MultipleChoiceQuestion : MultipleChoiceQuestion
-}
+};
