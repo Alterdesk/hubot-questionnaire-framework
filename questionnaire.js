@@ -856,11 +856,11 @@ class MentionQuestion extends Question {
 
     // Parse mentioned users or mentioned all tags
     checkAndParseAnswer(matches, message) {
-        if(matches == null || message.text == null) {
+        if(matches === null || message.text === null) {
             return null;
         }
         var value = [];
-        if(message.text.match(Extra.getMentionedAllRegex()) != null) {
+        if(message.text.match(Extra.getMentionedAllRegex()) !== null) {
             var mention = {};
             mention["id"] = "@all";
             value.push(mention);
@@ -870,7 +870,7 @@ class MentionQuestion extends Question {
         var mentions;
 
         console.log("Mentions parsed by gateway: " + (message.mentions !== null));
-        if(message.mentions != null) {
+        if(message.mentions !== null) {
             // Parsed by gateway
             mentions = message.mentions;
         } else {
