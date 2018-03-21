@@ -481,6 +481,19 @@ class Flow {
         return this.add(mentionQuestion);
     }
 
+    allAllowed(allowed) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow to set all mentioned tag allowed to on allAllowed()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof MentionQuestion)) {
+            console.error("Last added Question is not an instance of MentionQuestion on allAllowed()");
+            return this;
+        }
+        this.lastAddedQuestion.setAllAllowed(allowed);
+        return this;
+    }
+
     robotAllowed(allowed) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow to set robot mention allowed to on robotAllowed()");
@@ -990,7 +1003,13 @@ class MentionQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
         this.regex = Extra.getMentionedRegex();
+        this.allAllowed = true;
         this.robotAllowed = false;
+    }
+
+    // Change if if the mentioned all tag is allowed
+    setAllAllowed(allowed) {
+        this.allAllowed = allowed;
     }
 
     // Change if it is allowed to mention robot
@@ -1005,6 +1024,9 @@ class MentionQuestion extends Question {
         }
         var value = [];
         if(message.text.match(Extra.getMentionedAllRegex()) !== null) {
+            if(!this.allAllowed) {
+                return null;
+            }
             var mention = {};
             mention["id"] = "@all";
             value.push(mention);
