@@ -390,7 +390,7 @@ class Flow {
 
     length(minLength, maxLength) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow to add accepted length to on length()");
+            console.error("No Question added to flow on length()");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof TextQuestion)) {
@@ -412,7 +412,7 @@ class Flow {
 
     range(minValue, maxValue) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow to add number range to on range()");
+            console.error("No Question added to flow on range()");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof NumberQuestion)) {
@@ -436,7 +436,7 @@ class Flow {
 
     domains(allowedDomains) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow to add accepted domains to on domains()");
+            console.error("No Question added to flow on domains()");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof EmailQuestion)) {
@@ -462,7 +462,7 @@ class Flow {
 
     countryCodes(allowedCountryCodes) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow to add accepted country codes to on countryCodes()");
+            console.error("No Question added to flow on countryCodes()");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof PhoneNumberQuestion)) {
@@ -483,7 +483,7 @@ class Flow {
 
     allAllowed(allowed) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow to set all mentioned tag allowed to on allAllowed()");
+            console.error("No Question added to flow on allAllowed()");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof MentionQuestion)) {
@@ -496,7 +496,7 @@ class Flow {
 
     robotAllowed(allowed) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow to set robot mention allowed to on robotAllowed()");
+            console.error("No Question added to flow on robotAllowed()");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof MentionQuestion)) {
@@ -521,7 +521,7 @@ class Flow {
 
     positive(regex, subFlow) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow to add positive regex to on positive()");
+            console.error("No Question added to flow on positive()");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof PolarQuestion)) {
@@ -534,7 +534,7 @@ class Flow {
 
     negative(regex, subFlow) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow to add negative regex to on negative()");
+            console.error("No Question added to flow on negative()");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof PolarQuestion)) {
@@ -552,7 +552,7 @@ class Flow {
 
     option(regex, subFlow) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow to add multiple choice option to on option()");
+            console.error("No Question added to flow on option()");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof MultipleChoiceQuestion)) {
@@ -565,7 +565,7 @@ class Flow {
 
     askMentions(mentionAnswerKey) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow to change to multi user question to on askMentions()");
+            console.error("No Question added to flow on askMentions()");
             return this;
         }
         this.lastAddedQuestion.setMentionAnswerKey(mentionAnswerKey);
@@ -574,7 +574,7 @@ class Flow {
 
     includeMentions(mentions) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow to change to multi user question to on includeMentions()");
+            console.error("No Question added to flow on includeMentions()");
             return this;
         }
         this.lastAddedQuestion.setIncludeMentions(mentions);
@@ -583,7 +583,7 @@ class Flow {
 
     askUserIds(userIds) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow to change to multi user question to on askUserIds()");
+            console.error("No Question added to flow on askUserIds()");
             return this;
         }
         this.lastAddedQuestion.setUserIds(userIds);
@@ -593,7 +593,7 @@ class Flow {
     // Summarize the given answers after last added question
     summary(summaryFunction) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow to add summary function to on summary()");
+            console.error("No Question added to flow on summary()");
             return this;
         }
         this.lastAddedQuestion.setSummaryFunction(summaryFunction);
@@ -603,7 +603,7 @@ class Flow {
     // Use non-default timeout for last added question
     timeout(ms, text, callback) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow to set override timeout settings to on timeout()");
+            console.error("No Question added to flow on timeout()");
             return this;
         }
         this.lastAddedQuestion.setTimeout(ms, text, callback);
