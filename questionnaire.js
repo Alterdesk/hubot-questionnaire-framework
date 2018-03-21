@@ -481,6 +481,19 @@ class Flow {
         return this.add(mentionQuestion);
     }
 
+    includeMentions(mentions) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on includeMentions()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof MentionQuestion)) {
+            console.error("Last added Question is not an instance of MentionQuestion on includeMentions()");
+            return this;
+        }
+        this.lastAddedQuestion.setIncludeMentions(mentions);
+        return this;
+    }
+
     allAllowed(allowed) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on allAllowed()");
@@ -572,21 +585,21 @@ class Flow {
         return this;
     }
 
-    includeMentions(mentions) {
-        if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on includeMentions()");
-            return this;
-        }
-        this.lastAddedQuestion.setIncludeMentions(mentions);
-        return this;
-    }
-
     askUserIds(userIds) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on askUserIds()");
             return this;
         }
         this.lastAddedQuestion.setUserIds(userIds);
+        return this;
+    }
+
+    multiUserSummary(multiUserSummaryFunction) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on multiUserSummary()");
+            return this;
+        }
+        this.lastAddedQuestion.setMultiUserSummaryFunction(multiUserSummaryFunction);
         return this;
     }
 
@@ -659,6 +672,12 @@ class Flow {
             }
             var userId = flow.control.getUserId(response.message.user);
             multiAnswers.add(userId, answerValue);
+
+            // Call multi user answers summary function if set
+            if(question.multiUserSummaryFunction != null) {
+                response.send(question.multiUserSummaryFunction(this.answers, userId));
+            }
+
             // Check if still waiting for more answers
             if(question.userIds.length > multiAnswers.size()) {
                 return;
@@ -745,13 +764,13 @@ class Question {
         this.isMultiUser = true;
     }
 
-    setIncludeMentions(mentions) {
-        this.includeMentions = mentions;
+    setUserIds(userIds) {
+        this.userIds = userIds;
         this.isMultiUser = true;
     }
 
-    setUserIds(userIds) {
-        this.userIds = userIds;
+    setMultiUserSummaryFunction(multiUserSummaryFunction) {
+        this.multiUserSummaryFunction = multiUserSummaryFunction;
         this.isMultiUser = true;
     }
 
@@ -772,26 +791,6 @@ class Question {
                         if(userId) {
                             this.userIds.push(userId);
                         }
-                    }
-                }
-            }
-
-            if(this.userIds && this.includeMentions !== null) {
-                for(var index in this.includeMentions) {
-                    var mention = this.includeMentions[index];
-                    var userId = mention["id"];
-                    if(!userId) {
-                        continue;
-                    }
-                    var add = true;
-                    for(var i in this.userIds) {
-                        if(userId == this.userIds[i]) {
-                            add = false;
-                            break;
-                        }
-                    }
-                    if(add) {
-                        this.userIds.push(userId);
                     }
                 }
             }
@@ -1007,6 +1006,11 @@ class MentionQuestion extends Question {
         this.robotAllowed = false;
     }
 
+    // Include these mentions after question is answered
+    setIncludeMentions(mentions) {
+        this.includeMentions = mentions;
+    }
+
     // Change if if the mentioned all tag is allowed
     setAllAllowed(allowed) {
         this.allAllowed = allowed;
@@ -1084,6 +1088,22 @@ class MentionQuestion extends Question {
         }
 
         if(value.length != 0) {
+            if(this.includeMentions != null) {
+                for(var index in this.includeMentions) {
+                    var includeMention = this.includeMentions[index];
+                    var userId = includeMention["id"];
+                    var add = true;
+                    for(var i in value) {
+                        if(userId === value[i]["id"]) {
+                            add = false;
+                            break;
+                        }
+                    }
+                    if(add) {
+                        value.push(includeMention);
+                    }
+                }
+            }
             return value;
         }
         return null;
