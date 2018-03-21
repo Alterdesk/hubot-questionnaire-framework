@@ -10,7 +10,7 @@
 
 // Requirements
 var Extra = require('node-messenger-extra');
-const {Response, TextMessage, LeaveMessage} = require('hubot');
+const {Response, User, Message, TextMessage, LeaveMessage} = require('hubot');
 
 // Data container of answers that the user has given
 class Answers {
@@ -26,6 +26,14 @@ class Answers {
     // Get a value by key
     get(key) {
         return this.data[key];
+    }
+
+    keys() {
+        return Object.keys(this.data);
+    }
+
+    size() {
+        return this.keys().length;
     }
 }
 
@@ -542,6 +550,33 @@ class Flow {
         return this;
     }
 
+    askMentions(mentionAnswerKey) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow to change to multi user question to on askMentions()");
+            return this;
+        }
+        this.lastAddedQuestion.setMentionAnswerKey(mentionAnswerKey);
+        return this;
+    }
+
+    includeMentions(mentions) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow to change to multi user question to on includeMentions()");
+            return this;
+        }
+        this.lastAddedQuestion.setIncludeMentions(mentions);
+        return this;
+    }
+
+    askUserIds(userIds) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow to change to multi user question to on askUserIds()");
+            return this;
+        }
+        this.lastAddedQuestion.setUserIds(userIds);
+        return this;
+    }
+
     // Summarize the given answers after last added question
     summary(summaryFunction) {
         if(this.lastAddedQuestion == null) {
@@ -602,8 +637,23 @@ class Flow {
             return flow.control.addListener(response.message, new Listener(response, this.callback, this.answers, question.regex), question);
         }
 
-        // Valid answer, store in the answers object
-        this.answers.add(question.answerKey, answerValue);
+        // Is the question asked to multiple users and not all users answered yet
+        if(question.isMultiUser) {
+            var multiAnswers = this.answers.get(question.answerKey);
+            if(!multiAnswers) {
+                multiAnswers = new Answers();
+                this.answers.add(question.answerKey, multiAnswers);
+            }
+            var userId = flow.control.getUserId(response.message.user);
+            multiAnswers.add(userId, answerValue);
+            // Check if still waiting for more answers
+            if(question.userIds.length > multiAnswers.size()) {
+                return;
+            }
+        } else {
+            // Valid answer, store in the answers object
+            this.answers.add(question.answerKey, answerValue);
+        }
 
         // Call summary function if set
         if(question.summaryFunction != null) {
@@ -637,8 +687,7 @@ class Flow {
         if(this.currentStep < this.steps.length) {
             var question = this.steps[this.currentStep++];
             console.log("Flow nex question: " + question.questionText);
-            response.send(question.questionText);
-            this.control.addListener(response.message, new Listener(response, this.callback, this.answers, question.regex, question.timeoutMs, question.timeoutText, question.timeoutCallback), question);
+            question.execute(this.control, response, this.callback, this.answers);
         } else {
             console.log("Flow finished");
             if(this.finishedCallback != null) {
@@ -654,6 +703,7 @@ class Question {
         this.answerKey = answerKey || "ANSWER_KEY";
         this.questionText = questionText || "QUESTION_TEXT";
         this.invalidText = invalidText || "INVALID_TEXT";
+        this.isMultiUser = false;
     }
 
     // Set the parent flow
@@ -675,6 +725,100 @@ class Question {
         this.timeoutMs = ms;
         this.timeoutText = text;
         this.timeoutCallback = callback;
+    }
+
+    setMentionAnswerKey(mentionAnswerKey) {
+        this.mentionAnswerKey = mentionAnswerKey;
+        this.isMultiUser = true;
+    }
+
+    setIncludeMentions(mentions) {
+        this.includeMentions = mentions;
+        this.isMultiUser = true;
+    }
+
+    setUserIds(userIds) {
+        this.userIds = userIds;
+        this.isMultiUser = true;
+    }
+
+    execute(control, response, callback, answers) {
+        response.send(this.questionText);
+        if(this.isMultiUser) {
+            if(!this.userIds && this.mentionAnswerKey) {
+                var mentions = answers.get(this.mentionAnswerKey);
+                if(mentions) {
+                    this.userIds = [];
+                    for(var index in mentions) {
+                        var mention = mentions[index];
+                        var userId = mention["id"];
+                        if(userId.toUpperCase() === "@ALL") {
+                            console.log("Skipping @All tag on execute()");
+                            continue;
+                        }
+                        if(userId) {
+                            this.userIds.push(userId);
+                        }
+                    }
+                }
+            }
+
+            if(this.userIds && this.includeMentions !== null) {
+                for(var index in this.includeMentions) {
+                    var mention = this.includeMentions[index];
+                    var userId = mention["id"];
+                    if(!userId) {
+                        continue;
+                    }
+                    var add = true;
+                    for(var i in this.userIds) {
+                        if(userId == this.userIds[i]) {
+                            add = false;
+                            break;
+                        }
+                    }
+                    if(add) {
+                        this.userIds.push(userId);
+                    }
+                }
+            }
+
+            if(this.userIds && this.userIds.length > 0) {
+                var question = this;
+                question.timedOut = false;
+                question.multiUserMessages = [];
+
+                for(var index in this.userIds) {
+                    var userId = this.userIds[index];
+                    var user = new User(userId);
+                    var userMessage = new Message(user);
+                    userMessage.room = response.message.room;
+
+                    question.multiUserMessages.push(userMessage);
+
+                    control.addListener(userMessage, new Listener(response, callback, answers, this.regex, this.timeoutMs, null, function() {
+                        if(question.timedOut) {
+                            return;
+                        }
+                        question.timedOut = true;
+                        for(var index in question.multiUserMessages) {
+                            control.removeListener(question.multiUserMessages[index]);
+                        }
+                        if(question.timeoutCallback) {
+                            question.timeoutCallback();
+                        } else {
+                            var timeoutText = question.timeoutText || control.responseTimeoutText;
+                            response.send(timeoutText);
+                        }
+                    }), this);
+                }
+                return;
+            }
+            console.error("Empty userId list for multi-user question");
+            response.send(this.flow.errorText);
+            return;
+        }
+        control.addListener(response.message, new Listener(response, callback, answers, this.regex, this.timeoutMs, this.timeoutText, this.timeoutCallback), this);
     }
 
     // Answer given by the user is parsed and checked here
