@@ -90,6 +90,11 @@ class Listener {    // TODO Replace regex and timeout parameters with question a
             // Delete listener
             control.removeListener(message);
 
+            // Call question cleanup if question is set
+            if(this.question != null) {
+                this.question.cleanup();
+            }
+
             // Call timeout callback
             useTimeoutCallback();
         }, useTimeoutMs);
@@ -650,6 +655,7 @@ class Flow {
 
         // Check if the stop regex was triggered
         if(listener.stop) {
+            question.cleanup();
             if(flow.stopText != null) {
                 response.send(flow.stopText);
             }
@@ -813,9 +819,7 @@ class Question {
                             return;
                         }
                         question.timedOut = true;
-                        for(var index in question.multiUserMessages) {
-                            control.removeListener(question.multiUserMessages[index]);
-                        }
+                        question.cleanup();
                         if(question.timeoutCallback) {
                             question.timeoutCallback();
                         } else {
@@ -831,6 +835,18 @@ class Question {
             return;
         }
         control.addListener(response.message, new Listener(response, callback, answers, this.regex, this.timeoutMs, this.timeoutText, this.timeoutCallback), this);
+    }
+
+    // Clean up question if timed out or stopped
+    cleanup() {
+        if(this.multiUserMessages != null) {
+            for(var index in this.multiUserMessages) {
+                var listener = this.flow.control.removeListener(this.multiUserMessages[index]);
+                if(listener != null && listener.timer != null) {
+                    clearTimeout(listener.timer);
+                }
+            }
+        }
     }
 
     // Answer given by the user is parsed and checked here
