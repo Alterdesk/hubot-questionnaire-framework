@@ -274,6 +274,9 @@ class Control {
     // Remove a listener that was added before
     removeListener(message) {
         var userId = this.getUserId(message.user);
+        if(this.questionnaireListeners[message.room + userId] == null) {
+            return null;
+        }
         console.log("Removing listener for user " + userId + " in room " + message.room);
         var listener = this.questionnaireListeners[message.room + userId];
         delete this.questionnaireListeners[message.room + userId];
