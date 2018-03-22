@@ -602,6 +602,15 @@ class Flow {
         return this;
     }
 
+    breakOnValue(value, stop) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on breakOnValue()");
+            return this;
+        }
+        this.lastAddedQuestion.setBreakOnValue(value, stop);
+        return this;
+    }
+
     multiUserSummary(multiUserSummaryFunction) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on multiUserSummary()");
@@ -682,13 +691,25 @@ class Flow {
             var userId = flow.control.getUserId(response.message.user);
             multiAnswers.add(userId, answerValue);
 
+            var breaking = question.breakOnValue != null && question.breakOnValue === answerValue;
+
             // Call multi user answers summary function if set
             if(question.multiUserSummaryFunction != null) {
-                response.send(question.multiUserSummaryFunction(this.answers, userId));
+                response.send(question.multiUserSummaryFunction(this.answers, userId, breaking));
+            }
+
+            if(breaking) {
+                question.cleanup();
+                if(question.stopOnBreak) {
+                    if(flow.stopText != null) {
+                        response.send(flow.stopText);
+                    }
+                    return;
+                }
             }
 
             // Check if still waiting for more answers
-            if(question.userIds.length > multiAnswers.size()) {
+            if(!breaking && question.userIds.length > multiAnswers.size()) {
                 return;
             }
         } else {
@@ -775,6 +796,12 @@ class Question {
 
     setUserIds(userIds) {
         this.userIds = userIds;
+        this.isMultiUser = true;
+    }
+
+    setBreakOnValue(value, stop) {
+        this.breakOnValue = value;
+        this.stopOnBreak = stop;
         this.isMultiUser = true;
     }
 
