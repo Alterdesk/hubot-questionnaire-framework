@@ -28,10 +28,12 @@ class Answers {
         return this.data[key];
     }
 
+    // Get the keys that are set
     keys() {
         return Object.keys(this.data);
     }
 
+    // Get the number of values that are set
     size() {
         return this.keys().length;
     }
@@ -396,6 +398,7 @@ class Flow {
         return this.add(new TextQuestion(answerKey, questionText, invalidText));
     }
 
+    // Set the minimum and/or maximum length of the last added TextQuestion
     length(minLength, maxLength) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on length()");
@@ -418,6 +421,7 @@ class Flow {
         return this.add(numberQuestion);
     }
 
+    // Set the minimum and/or maximum value range of the last added NumberQuestion
     range(minValue, maxValue) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on range()");
@@ -442,6 +446,7 @@ class Flow {
         return this.add(emailQuestion);
     }
 
+    // Set the allowed email domains of the last added EmailQuestion
     domains(allowedDomains) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on domains()");
@@ -468,6 +473,7 @@ class Flow {
         return this.add(phoneNumberQuestion);
     }
 
+    // Set the allowed country codes of the last added PhoneNumberQuestion
     countryCodes(allowedCountryCodes) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on countryCodes()");
@@ -489,6 +495,7 @@ class Flow {
         return this.add(mentionQuestion);
     }
 
+    // Add mentions to include after answer of the last added MentionQuestion
     includeMentions(mentions) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on includeMentions()");
@@ -502,6 +509,7 @@ class Flow {
         return this;
     }
 
+    // Change if the all mentioned tag is allowed of the last added MentionQuestion
     allAllowed(allowed) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on allAllowed()");
@@ -515,6 +523,7 @@ class Flow {
         return this;
     }
 
+    // Change if the robot mentioned tag is allowed of the last added MentionQuestion
     robotAllowed(allowed) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on robotAllowed()");
@@ -540,6 +549,7 @@ class Flow {
         return this.add(polarQuestion);
     }
 
+    // Set the positive regex and optional sub flow of the last added PolarQuestion
     positive(regex, subFlow) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on positive()");
@@ -553,6 +563,7 @@ class Flow {
         return this;
     }
 
+    // Set the negative regex and optional sub flow of the last added PolarQuestion
     negative(regex, subFlow) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on negative()");
@@ -566,11 +577,13 @@ class Flow {
         return this;
     }
 
+    // Add new MultipleChoiceQuestion
     multiple(answerKey, questionText, invalidText) {
         var multipleChoiceQuestion = new MultipleChoiceQuestion(answerKey, questionText, invalidText);
         return this.add(multipleChoiceQuestion);
     }
 
+    // Add an option regex and optional sub flow of the last added MultipleChoiceQuestion
     option(regex, subFlow) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on option()");
@@ -584,6 +597,7 @@ class Flow {
         return this;
     }
 
+    // Ask the last added question to the users that were mentioned a MentionQuestion earlier (multi user question)
     askMentions(mentionAnswerKey) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on askMentions()");
@@ -593,6 +607,7 @@ class Flow {
         return this;
     }
 
+    // Ask the last added question to a list of user ids (multi user question)
     askUserIds(userIds) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on askUserIds()");
@@ -602,6 +617,7 @@ class Flow {
         return this;
     }
 
+    // Break multi user question on a certain answer value, and set if the flow should continue or stop
     breakOnValue(value, stop) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on breakOnValue()");
@@ -611,6 +627,7 @@ class Flow {
         return this;
     }
 
+    // Set a callback to summarize given answers after every user answer for a multi user question
     multiUserSummary(multiUserSummaryFunction) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on multiUserSummary()");
@@ -620,7 +637,7 @@ class Flow {
         return this;
     }
 
-    // Summarize the given answers after last added question
+    // Set a callback to summarize the given answers after last added question
     summary(summaryFunction) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on summary()");
@@ -691,6 +708,7 @@ class Flow {
             var userId = flow.control.getUserId(response.message.user);
             multiAnswers.add(userId, answerValue);
 
+            // Check if a value was set to break multi user question on and use it
             var breaking = question.breakOnValue != null && question.breakOnValue === answerValue;
 
             // Call multi user answers summary function if set
@@ -698,6 +716,7 @@ class Flow {
                 response.send(question.multiUserSummaryFunction(this.answers, userId, breaking));
             }
 
+            // Cleanup on breaking and stop if configured
             if(breaking) {
                 question.cleanup();
                 if(question.stopOnBreak) {
@@ -746,6 +765,7 @@ class Flow {
 
     // Execute next question
     next(response) {
+        // Check if has more steps or flow is finished
         if(this.currentStep < this.steps.length) {
             var question = this.steps[this.currentStep++];
             console.log("Flow nex question: " + question.questionText);
@@ -778,6 +798,7 @@ class Question {
         this.subFlow = subFlow;
     }
 
+    // Set a summary callback function to trigger after answer
     setSummaryFunction(summaryFunction) {
         this.summaryFunction = summaryFunction;
     }
@@ -789,30 +810,39 @@ class Question {
         this.timeoutCallback = callback;
     }
 
+    // Ask this question to users that were mentioned earlier
     setMentionAnswerKey(mentionAnswerKey) {
         this.mentionAnswerKey = mentionAnswerKey;
         this.isMultiUser = true;
     }
 
+    // Ask this question to a list of user ids
     setUserIds(userIds) {
         this.userIds = userIds;
         this.isMultiUser = true;
     }
 
+    // Break this multi user question on an answer value and optionally stop the flow
     setBreakOnValue(value, stop) {
         this.breakOnValue = value;
         this.stopOnBreak = stop;
         this.isMultiUser = true;
     }
 
+    // Set a summary callback function to trigger after every user answer
     setMultiUserSummaryFunction(multiUserSummaryFunction) {
         this.multiUserSummaryFunction = multiUserSummaryFunction;
         this.isMultiUser = true;
     }
 
+    // Execute this question
     execute(control, response, callback, answers) {
+        // Send question text
         response.send(this.questionText);
+
+        // Check if the question should be asked to multiple users
         if(this.isMultiUser) {
+            // Generate user id list by mentioned users
             if(!this.userIds && this.mentionAnswerKey) {
                 var mentions = answers.get(this.mentionAnswerKey);
                 if(mentions) {
@@ -831,25 +861,35 @@ class Question {
                 }
             }
 
+            // Check if user id list is available and not empty
             if(this.userIds && this.userIds.length > 0) {
                 var question = this;
                 question.timedOut = false;
                 question.multiUserMessages = [];
 
+                // Create listener for every user id
                 for(var index in this.userIds) {
                     var userId = this.userIds[index];
+
+                    // Create Message for each user id in list
                     var user = new User(userId);
                     var userMessage = new Message(user);
                     userMessage.room = response.message.room;
 
+                    // Store for cleanup if needed
                     question.multiUserMessages.push(userMessage);
 
+                    // Add listener for user and wait for answer
                     control.addListener(userMessage, new Listener(response, callback, answers, this.regex, this.timeoutMs, null, function() {
+                        // Check if question was already timed out
                         if(question.timedOut) {
                             return;
                         }
+                        // Mark question as timed out
                         question.timedOut = true;
+                        // Clean up remaining listeners
                         question.cleanup();
+                        // Trigger timeout callback
                         if(question.timeoutCallback) {
                             question.timeoutCallback();
                         } else {
@@ -864,6 +904,7 @@ class Question {
             response.send(this.flow.errorText);
             return;
         }
+        // Add listener for single user and wait for answer
         control.addListener(response.message, new Listener(response, callback, answers, this.regex, this.timeoutMs, this.timeoutText, this.timeoutCallback), this);
     }
 
@@ -892,11 +933,13 @@ class TextQuestion extends Question {
         this.regex = Extra.getTextRegex();
     }
 
+    // Set the accepted length of the answer
     setLength(min, max) {
         this.min = min;
         this.max = max;
     }
 
+    // Check if valid text and if length is accepted
     checkAndParseAnswer(matches, message) {
         if(matches == null) {
             return null;
@@ -907,6 +950,7 @@ class TextQuestion extends Question {
         return null;
     }
 
+    // Check the text length
     acceptedLength(text) {
         if(this.min != null && this.max != null) {
             return text.length >= this.min && text.length <= this.max;
@@ -993,6 +1037,7 @@ class EmailQuestion extends Question {
         this.allowedDomains.push(domain);
     }
 
+    // Add a list of accepted domains
     addAllowedDomains(domains) {
         for(var index in domains) {
             this.addAllowedDomain(domains[index]);
@@ -1036,6 +1081,7 @@ class PhoneNumberQuestion extends Question {
         this.allowedCountryCodes.push(code);
     }
 
+    // Set a list of accepted country codes
     addAllowedCountryCodes(codes) {
         for(var index in codes) {
             this.addAllowedCountryCode(codes[index]);
@@ -1073,7 +1119,10 @@ class MentionQuestion extends Question {
             return null;
         }
         var value = [];
+
+        // Check for the mentioned all tag
         if(message.text.match(Extra.getMentionedAllRegex()) !== null) {
+            // Check if the all tag is configured as allowed
             if(!this.allAllowed) {
                 return null;
             }
@@ -1085,7 +1134,7 @@ class MentionQuestion extends Question {
 
         var mentions;
 
-        console.log("Mentions parsed by gateway: " + (message.mentions !== null));
+        // Copy mention data if already parsed by gateway
         if(message.mentions !== null) {
             // Parsed by gateway
             mentions = message.mentions;
@@ -1112,9 +1161,11 @@ class MentionQuestion extends Question {
             robotId = this.flow.control.robot.user.id;
         }
 
+        // Check for duplicates and robot mention
         for(var index in mentions) {
             var mention = mentions[index];
             var userId = mention["id"];
+            // Skip robot mention if not allowed
             if(!this.robotAllowed && robotId !== null && userId === robotId) {
                 console.log("Removed robot mention")
                 continue;
@@ -1133,6 +1184,7 @@ class MentionQuestion extends Question {
             }
         }
 
+        // If a valid answer has been given, add the include mention list
         if(value.length != 0) {
             if(this.includeMentions != null) {
                 for(var index in this.includeMentions) {
@@ -1190,6 +1242,7 @@ class PolarQuestion extends Question {
     }
 };
 
+// Multiple choice question, add options by regex and optional sub flow
 class MultipleChoiceQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
@@ -1197,10 +1250,12 @@ class MultipleChoiceQuestion extends Question {
         this.options = [];
     }
 
+    // Add an option answer regex and optional sub flow
     addOption(regex, subFlow) {
         this.options.push(new MultipleChoiceOption(regex, subFlow));
     }
 
+    // Check the if one of the option regex matches, and set the corresponding sub flow to execute
     checkAndParseAnswer(matches, message) {
         if(matches == null || message.text == null) {
             return null;
@@ -1216,6 +1271,7 @@ class MultipleChoiceQuestion extends Question {
     }
 };
 
+// Class to contain a option of a multiple choice question
 class MultipleChoiceOption {
     constructor(regex, subFlow) {
         this.regex = regex;
@@ -1223,6 +1279,7 @@ class MultipleChoiceOption {
     }
 };
 
+// Export the classes
 module.exports = {
 
     Answers : Answers,
