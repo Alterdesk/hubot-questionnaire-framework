@@ -894,7 +894,9 @@ class Question {
                             question.timeoutCallback();
                         } else {
                             var timeoutText = question.timeoutText || control.responseTimeoutText;
-                            response.send(timeoutText);
+                            if(timeoutText != null) {
+                                response.send(timeoutText);
+                            }
                         }
                     }), this);
                 }
