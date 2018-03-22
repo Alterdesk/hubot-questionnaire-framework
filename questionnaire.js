@@ -627,6 +627,16 @@ class Flow {
         return this;
     }
 
+    // Set a callback to format the question text with by the answers given earlier
+    format(formatQuestionFunction) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on format()");
+            return this;
+        }
+        this.lastAddedQuestion.setFormatQuestionFunction(formatQuestionFunction);
+        return this;
+    }
+
     // Set a callback to summarize given answers after every user answer for a multi user question
     multiUserSummary(multiUserSummaryFunction) {
         if(this.lastAddedQuestion == null) {
@@ -798,6 +808,11 @@ class Question {
         this.subFlow = subFlow;
     }
 
+    // Set a format question text callback function
+    setFormatQuestionFunction(formatQuestionFunction) {
+        this.formatQuestionFunction = formatQuestionFunction;
+    }
+
     // Set a summary callback function to trigger after answer
     setSummaryFunction(summaryFunction) {
         this.summaryFunction = summaryFunction;
@@ -837,8 +852,20 @@ class Question {
 
     // Execute this question
     execute(control, response, callback, answers) {
-        // Send question text
-        response.send(this.questionText);
+
+        if(this.formatQuestionFunction != null) {
+            var formatted = this.formatQuestionFunction(answers);
+            if(formatted != null) {
+                // Send formatted question text
+                response.send(formatted);
+            } else {
+                // Formatting failed, fallback to configured text
+                response.send(this.questionText);
+            }
+        } else {
+            // Send question text
+            response.send(this.questionText);
+        }
 
         // Check if the question should be asked to multiple users
         if(this.isMultiUser) {
