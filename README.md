@@ -46,6 +46,8 @@ robot.hear(/start/i, function(msg) {
     .email("email", "What is the email address", "Invalid email.")
     .summary(getSummary)
     .polar("confirmed", "Are you sure you want to send the invite?", "Invalid confirmation.")
+    .positive(positiveRegex)
+    .negative(negativeRegex)
     .timeout(600000)
     .finish(callbackFormFinished)
     .start(msg);
@@ -183,6 +185,10 @@ To add a question that excepts non-empty text, simply call text() on a flow inst
 ```javascript
 // Ask user to send some text and store in Answers with the key "myKey"
 flow.text("myKey", "Can you send me some text?", "Invalid text.");
+
+// Ask for text with the length between 4 and 32
+flow.text("limitedText", "Can you send me some text between 4 and 32 characters long?", "Invalid text or length.")
+.length(4, 32);
 ```
 
 ### NumberQuestion
@@ -193,7 +199,8 @@ values. Adding a NumberQuestion can be done with the convenience function number
 flow.number("number", "Can you send me a number?", "Invalid number.");
 
 // Ask a number between 2 and 5
-flow.number("limited", "Can you send me a number between 2 and 5?", "Invalid number or outside range", 2, 5);
+flow.number("limited", "Can you send me a number between 2 and 5?", "Invalid number or outside range")
+.range(2, 5);
 ```
 
 ### EmailQuestion
@@ -201,10 +208,11 @@ The EmailQuestion class is used to ask a user for an email address, you can opti
 domain by passing an array of accepted domains. Add an EmailQuestion by calling email() on the flow instance.
 ```javascript
 // Ask for any email address
-flow.email("email", "What is your email address?", "Invalid email");
+flow.email("email", "What is your email address?", "Invalid email")
 
 // Only accept domains "alterdesk.com" and ".nl"
-flow.email("email", "What is your email address?", "Invalid email or domain not allowed", ["alterdesk.com", ".nl"]);
+flow.email("email", "What is your email address?", "Invalid email or domain not allowed")
+.domains(["alterdesk.com", ".nl"]);
 ```
 
 ### PhoneNumberQuestion
@@ -215,14 +223,44 @@ codes by passing an array of accepted codes. Add a phone number question by usin
 flow.number("phone", "What is your phone number?", "Invalid phone number");
 
 // Only accept Dutch phone numbers
-flow.number("dutch", "What is your phone number?", "Not a Dutch phone number", ["+31"]);
+flow.number("dutch", "What is your phone number?", "Not a Dutch phone number")
+.countryCodes(["+31"]);
 ```
 
 ### MentionQuestion
 You can ask a user to tag chat members in a flow, the user can use '@' to start a mention tag in the messenger. Ask a
 MentionQuestion by using mention().
 ```javascript
+// Ask user to mention chat members
+flow.mention("tagged", "Which users do you want to include? (Use '@' to mention users)", "Invalid mention.");
+
+// Do not allow "All members" and robot mentions
 flow.mention("tagged", "Which users do you want to include? (Use '@' to mention users)", "Invalid mention.")
+.allAllowed(false)
+.robotAllowed(false);
+
+// Always include these mentions after user gives a valid answer
+var mention = {};
+mention["id"] = "<USER_UUID>";
+mention["first_name"] = "First";
+mention["last_name"] = "Last";
+mention["company_name"] = "Company";
+var mentions = [];
+mentions.push(mention);
+flow.mention("tagged", "Which users do you want to include? (Use '@' to mention users)", "Invalid mention.")
+.includeMentions(mentions);
+```
+
+### AttachmentQuestion
+When using the messenger, you can ask the user to send one or more attachments with a message.
+```javascript
+// Ask for an attachment
+flow.attachment("attachments", "Can you send me a file to use?", "Invalid attachment");
+
+// Ask for one to three attachments from 1KB to 1MB
+flow.attachment("limitedAttachments", "Can you send me one to three attachments? (1KB-1MB)", "Invalid attachment or outside ranges")
+.count(1, 3)
+.size(1024, 1048576);
 ```
 
 ### PolarQuestion

@@ -413,12 +413,8 @@ class Flow {
     }
 
     // Add new NumberQuestion
-    number(answerKey, questionText, invalidText, minValue, maxValue) {
-        var numberQuestion = new NumberQuestion(answerKey, questionText, invalidText);
-        if(minValue !== null || maxValue !== null) {
-            numberQuestion.setRange(minValue, maxValue);
-        }
-        return this.add(numberQuestion);
+    number(answerKey, questionText, invalidText) {
+        return this.add(new NumberQuestion(answerKey, questionText, invalidText));
     }
 
     // Set the minimum and/or maximum value range of the last added NumberQuestion
@@ -436,14 +432,8 @@ class Flow {
     }
 
     // Add new EmailQuestion
-    email(answerKey, questionText, invalidText, allowedDomains) {
-        var emailQuestion = new EmailQuestion(answerKey, questionText, invalidText);
-        if(allowedDomains != null) {
-            for(var index in allowedDomains) {
-                emailQuestion.addAllowedDomain(allowedDomains[index]);
-            }
-        }
-        return this.add(emailQuestion);
+    email(answerKey, questionText, invalidText) {
+        return this.add(new EmailQuestion(answerKey, questionText, invalidText));
     }
 
     // Set the allowed email domains of the last added EmailQuestion
@@ -463,14 +453,8 @@ class Flow {
     }
 
     // Add new PhoneNumberQuestion
-    phone(answerKey, questionText, invalidText, allowedCountryCodes) {
-        var phoneNumberQuestion = new PhoneNumberQuestion(answerKey, questionText, invalidText);
-        if(allowedCountryCodes != null) {
-            for(var index in allowedCountryCodes) {
-                phoneNumberQuestion.addAllowedCountryCode(allowedCountryCodes[index]);
-            }
-        }
-        return this.add(phoneNumberQuestion);
+    phone(answerKey, questionText, invalidText) {
+        return this.add(new PhoneNumberQuestion(answerKey, questionText, invalidText));
     }
 
     // Set the allowed country codes of the last added PhoneNumberQuestion
@@ -491,8 +475,7 @@ class Flow {
 
     // Add new MentionQuestion
     mention(answerKey, questionText, invalidText) {
-        var mentionQuestion = new MentionQuestion(answerKey, questionText, invalidText);
-        return this.add(mentionQuestion);
+        return this.add(new MentionQuestion(answerKey, questionText, invalidText));
     }
 
     // Add mentions to include after answer of the last added MentionQuestion
@@ -537,16 +520,52 @@ class Flow {
         return this;
     }
 
+    attachment(answerKey, questionText, invalidText) {
+        return this.add(new AttachmentQuestion(answerKey, questionText, invalidText));
+    }
+
+    count(minCount, maxCount) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on count()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof AttachmentQuestion)) {
+            console.error("Last added Question is not an instance of AttachmentQuestion on count()");
+            return this;
+        }
+        this.lastAddedQuestion.setCountRange(minCount, maxCount);
+        return this;
+    }
+
+    size(minSize, maxSize) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on size()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof AttachmentQuestion)) {
+            console.error("Last added Question is not an instance of AttachmentQuestion on size()");
+            return this;
+        }
+        this.lastAddedQuestion.setSizeRange(minSize, maxSize);
+        return this;
+    }
+
+    extensions(allowedExtensions) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on extensions()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof AttachmentQuestion)) {
+            console.error("Last added Question is not an instance of AttachmentQuestion on extensions()");
+            return this;
+        }
+        this.lastAddedQuestion.addAllowedExtensions(allowedExtensions);
+        return this;
+    }
+
     // Add new PolarQuestion
-    polar(answerKey, questionText, invalidText, positiveRegex, negativeRegex, positiveFlow, negativeFlow) {
-        var polarQuestion = new PolarQuestion(answerKey, questionText, invalidText);
-        if(positiveRegex !== null) {
-            polarQuestion.setPositive(positiveRegex, positiveFlow);
-        }
-        if(negativeRegex !== null) {
-            polarQuestion.setNegative(negativeRegex, negativeFlow);
-        }
-        return this.add(polarQuestion);
+    polar(answerKey, questionText, invalidText) {
+        return this.add(new PolarQuestion(answerKey, questionText, invalidText));
     }
 
     // Set the positive regex and optional sub flow of the last added PolarQuestion
@@ -579,8 +598,7 @@ class Flow {
 
     // Add new MultipleChoiceQuestion
     multiple(answerKey, questionText, invalidText) {
-        var multipleChoiceQuestion = new MultipleChoiceQuestion(answerKey, questionText, invalidText);
-        return this.add(multipleChoiceQuestion);
+        return this.add(new MultipleChoiceQuestion(answerKey, questionText, invalidText));
     }
 
     // Add an option regex and optional sub flow of the last added MultipleChoiceQuestion
@@ -1237,6 +1255,105 @@ class MentionQuestion extends Question {
     }
 };
 
+class AttachmentQuestion extends Question {
+    constructor(answerKey, questionText, invalidText) {
+        super(answerKey, questionText, invalidText);
+        this.regex = Extra.getTextRegex();
+        this.allowedExtensions = [];
+    }
+
+    // Get attachments that were sent with the message
+    checkAndParseAnswer(matches, message) {
+        if(message.attachments === null) {
+            return null;
+        }
+        var value = [];
+
+        for(var index in message.attachments) {
+            var attachment = message.attachments[index];
+            if(this.minSize !== null || this.maxSize !== null) {
+                var size = parseFloat(attachment["size"]);
+                if(!this.inSizeRange(size)) {
+                    continue;
+                }
+            }
+            if(this.allowedExtensions.length != 0) {
+                var name = attachment["name"];
+                var allowed = false;
+                for(var i in this.allowedExtensions) {
+                    if(name.endsWith(this.allowedExtensions[i])) {
+                        allowed = true;
+                        break;
+                    }
+                }
+                if(!allowed) {
+                    continue;
+                }
+            }
+            value.push(attachment);
+        }
+
+        if(value.length != 0 && this.inCountRange(value.length)) {
+            return value;
+        }
+        return null;
+    }
+
+    // Check if the value is in range
+    inCountRange(value) {
+        if(this.minCount != null && this.maxCount != null) {
+            return value >= this.minCount && value <= this.maxCount;
+        } else if(this.minCount != null) {
+            return value >= this.minCount;
+        } else if(this.maxCount != null) {
+            return value <= this.maxCount;
+        }
+        return true;
+    }
+
+    // Check if the value is in range
+    inSizeRange(value) {
+        if(this.minSize != null && this.maxSize != null) {
+            return value >= this.minSize && value <= this.maxSize;
+        } else if(this.minSize != null) {
+            return value >= this.minSize;
+        } else if(this.maxSize != null) {
+            return value <= this.maxSize;
+        }
+        return true;
+    }
+
+    // Set a minimum and/or maximum count of attachments to accept
+    setCountRange(minCount, maxCount) {
+        this.minCount = minCount;
+        this.maxCount = maxCount;
+    }
+
+    // Set a minimum and/or maximum size to accept
+    setSizeRange(minSize, maxSize) {
+        this.minSize = minSize;
+        this.maxSize = maxSize;
+    }
+
+    // Add an extension to limit accepted answers to
+    addAllowedExtension(extension) {
+        for(var index in this.allowedExtensions) {
+            if(extension === this.allowedExtensions[index]) {
+                console.error("Extension already configured as allowed for AttachmentQuestion: " + extension);
+                return;
+            }
+        }
+        this.allowedExtensions.push(extension);
+    }
+
+    // Add a list of accepted extensions
+    addAllowedExtensions(extensions) {
+        for(var index in extensions) {
+            this.addAllowedExtension(extensions[index]);
+        }
+    }
+};
+
 // Polar Question, accepts by positive or negative regex, and can set sub flow for an answer
 class PolarQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
@@ -1320,6 +1437,7 @@ module.exports = {
     EmailQuestion : EmailQuestion,
     PhoneNumberQuestion : PhoneNumberQuestion,
     MentionQuestion : MentionQuestion,
+    AttachmentQuestion : AttachmentQuestion,
     PolarQuestion : PolarQuestion,
     MultipleChoiceQuestion : MultipleChoiceQuestion
 };
