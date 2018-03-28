@@ -105,17 +105,31 @@ the flow is started like this
 flow.add(new TextQuestion("myKey", "Can you send me some text?", "Invalid text."));
 ```
 
+### Format a given answer
+When a user has given a valid answer, the answer may need need formatting, this can be done with a format callback.
+```javascript
+form.text("formatted", "", "Invalid answer.")
+.formatAnswer(formatAnswerFunction);
+```
+
+Format answer text callback function example
+```javascript
+var formatAnswerFunction = function(value) {
+    return value.toLowerCase();
+};
+```
+
 ### Format a question by given answers
 To format a question by using answers given earlier in the flow, a format callback can be set, if the format callback
 fails, the unformatted text will be used as fallback.
 
 Add a format callback to a question
 ```javascript
-form.text("textAnswer", "Fallback question text?", "Invalid answer")
-.format(formatTextQuestion);
+form.text("textAnswer", "Fallback question text?", "Invalid answer.")
+.formatQuestion(formatTextQuestion);
 ```
 
-Format callback function example
+Format question text callback function example
 ```javascript
 var formatTextQuestion = function(answers) {
     var givenAnswer = answers.get("given_answer_key");

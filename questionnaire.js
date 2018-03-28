@@ -412,6 +412,32 @@ class Flow {
         return this;
     }
 
+    capitalize() {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on capitalize()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof TextQuestion)) {
+            console.error("Last added Question is not an instance of TextQuestion on capitalize()");
+            return this;
+        }
+        this.lastAddedQuestion.setFormatAnswerFunction(Extra.capitalizeFirstLetter);
+        return this;
+    }
+
+    lastName() {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on lastName()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof TextQuestion)) {
+            console.error("Last added Question is not an instance of TextQuestion on lastName()");
+            return this;
+        }
+        this.lastAddedQuestion.setFormatAnswerFunction(Extra.capitalizeLastName);
+        return this;
+    }
+
     // Add new NumberQuestion
     number(answerKey, questionText, invalidText) {
         return this.add(new NumberQuestion(answerKey, questionText, invalidText));
@@ -646,9 +672,19 @@ class Flow {
     }
 
     // Set a callback to format the question text with by the answers given earlier
-    format(formatQuestionFunction) {
+    formatAnswer(formatAnswerFunction) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on format()");
+            console.error("No Question added to flow on formatAnswer()");
+            return this;
+        }
+        this.lastAddedQuestion.setFormatAnswerFunction(formatAnswerFunction);
+        return this;
+    }
+
+    // Set a callback to format the question text with by the answers given earlier
+    formatQuestion(formatQuestionFunction) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on formatQuestion()");
             return this;
         }
         this.lastAddedQuestion.setFormatQuestionFunction(formatQuestionFunction);
@@ -724,6 +760,14 @@ class Flow {
         if(answerValue == null) {
             response.send(question.invalidText + " " + question.questionText);
             return flow.control.addListener(response.message, new Listener(response, this.callback, this.answers, question.regex), question);
+        }
+
+        // Format the given answer if a function was set
+        if(question.formatAnswerFunction) {
+            var formatted = question.formatAnswerFunction(answerValue);
+            if(formatted != null) {
+                answerValue = formatted;
+            }
         }
 
         // Is the question asked to multiple users and not all users answered yet
@@ -824,6 +868,11 @@ class Question {
     // Set the sub flow to execute after this question
     setSubFlow(subFlow) {
         this.subFlow = subFlow;
+    }
+
+    // Set a format function to format given answer with
+    setFormatAnswerFunction(formatAnswerFunction) {
+        this.formatAnswerFunction = formatAnswerFunction;
     }
 
     // Set a format question text callback function
