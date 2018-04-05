@@ -203,6 +203,10 @@ flow.text("myKey", "Can you send me some text?", "Invalid text.");
 // Ask for text with the length between 4 and 32
 flow.text("limitedText", "Can you send me some text between 4 and 32 characters long?", "Invalid text or length.")
 .length(4, 32);
+
+// Ask for text that matches a specific regex
+flow.text("regexText", "Can you send me apples, pineapple or banana?", "Invalid text or does not match regex.")
+.regex(new RegExp(/apples|pineapple|banana/, 'i'));
 ```
 
 ### NumberQuestion

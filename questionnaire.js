@@ -398,6 +398,20 @@ class Flow {
         return this.add(new TextQuestion(answerKey, questionText, invalidText));
     }
 
+    // Use an alternative regular expression for the last added TextQuestion
+    regex(regex) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on regex()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof TextQuestion)) {
+            console.error("Last added Question is not an instance of TextQuestion on regex()");
+            return this;
+        }
+        this.lastAddedQuestion.setRegex(regex);
+        return this;
+    }
+
     // Set the minimum and/or maximum length of the last added TextQuestion
     length(minLength, maxLength) {
         if(this.lastAddedQuestion == null) {
@@ -1027,6 +1041,11 @@ class TextQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
         this.regex = Extra.getTextRegex();
+    }
+
+    // Use an alternative regular expression
+    setRegex(regex) {
+        this.regex = regex;
     }
 
     // Set the accepted length of the answer
