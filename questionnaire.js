@@ -822,11 +822,6 @@ class Flow {
             this.answers.add(question.answerKey, answerValue);
         }
 
-        // Call summary function if set
-        if(question.summaryFunction != null) {
-            response.send(question.summaryFunction(this.answers));
-        }
-
         // Trigger sub flow if set in question, otherwise continue
         if(question.subFlow != null) {
             var subFlow = question.subFlow;
@@ -840,11 +835,21 @@ class Flow {
             }
             // Continue current flow when sub flow finishes
             subFlow.finish(function(response, answers) {
+                // Call summary function if set
+                if(question.summaryFunction != null) {
+                    response.send(question.summaryFunction(this.answers));
+                }
+
                 flow.next(response);
             });
             // Start the sub flow
             subFlow.start(response, this.answers);
         } else {
+            // Call summary function if set
+            if(question.summaryFunction != null) {
+                response.send(question.summaryFunction(this.answers));
+            }
+
             flow.next(response);
         }
     }
