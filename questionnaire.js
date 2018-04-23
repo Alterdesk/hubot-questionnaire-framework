@@ -137,8 +137,8 @@ class Control {
         this.acceptedHelpTexts = {};
 
         // Regular expressions
-        this.stopRegex = new RegExp(/stop/, 'i');
-        this.helpRegex = new RegExp(/help/, 'i');
+        this.stopRegex = new RegExp(/^[ \n\r\t]*stop[ \n\r\t]*$/, 'gi');
+        this.helpRegex = new RegExp(/^[ \n\r\t]*help[ \n\r\t]*$/, 'gi');
         this.robotMentionRegex;
 
         // Response timeout milliseconds
