@@ -1465,7 +1465,7 @@ class PolarQuestion extends Question {
 class MultipleChoiceQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
-        this.regex = Extra.getTextRegex();
+        this.regex = Extra.getNonEmptyRegex();
         this.options = [];
     }
 
@@ -1480,13 +1480,26 @@ class MultipleChoiceQuestion extends Question {
             return null;
         }
         var choice = matches[0];
+        var longestMatch = null;
+        var subFlow = null;
         for(var index in this.options) {
             var option = this.options[index];
-            if(choice.match(option.regex)) {
-                this.setSubFlow(option.subFlow);
-                return choice;
+            var match = choice.match(option.regex);
+            if(match) {
+                var matchString = match[0];
+                if(longestMatch) {
+                    if(longestMatch.length > matchString.length) {
+                        continue;
+                    }
+                }
+                longestMatch = matchString;
+                subFlow = option.subFlow;
             }
         }
+        if(subFlow) {
+            this.setSubFlow(subFlow);
+        }
+        return longestMatch;
     }
 };
 
