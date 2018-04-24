@@ -825,6 +825,10 @@ class Flow {
         // Trigger sub flow if set in question, otherwise continue
         if(question.subFlow != null) {
             var subFlow = question.subFlow;
+            // Set control when null
+            if(subFlow.control == null) {
+                subFlow.control = flow.control;
+            }
             // Set stop text when null
             if(subFlow.stopText == null) {
                 subFlow.stopText = flow.stopText;
