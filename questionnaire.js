@@ -198,7 +198,11 @@ class Control {
             if(className === "TopicMessage" || message instanceof TopicMessage) {
                 var event = message.text;
                 console.log("TopicMessage: " + event);
-                if(event === "typing" || event === "stop_typing") {
+                if(event === "authenticated") {
+                    if(control.authenticatedCallback) {
+                        control.authenticatedCallback(message.id);
+                    }
+                } else if(event === "typing" || event === "stop_typing") {
                     if(control.typingCallback) {
                         var userId = control.getUserId(message.user);
                         var isGroup = control.isUserInGroup(message.user);
@@ -391,6 +395,11 @@ class Control {
     }
     setCatchHelpText(text) {
         this.catchHelpText = text;
+    }
+
+    // Callback that is called when the robot instance is authenticated
+    setAuthenticatedCallback(authenticatedCallback) {
+        this.authenticatedCallback = authenticatedCallback;
     }
 
     // Callback that is called when a user typing or user stopped typing is detected
