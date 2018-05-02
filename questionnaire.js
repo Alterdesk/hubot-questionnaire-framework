@@ -234,7 +234,8 @@ class Control {
                     }
                 } else if(event === "groupchat_members_added" || event === "groupchat_members_removed") {
                     if(control.groupMemberCallback) {
-                        control.groupMemberCallback(message.room, message.id, event === "groupchat_members_added");
+                        var data = message.id;
+                        control.groupMemberCallback(message.room, event === "groupchat_members_added", data.user_id, data.users);
                     }
                 } else if(event === "groupchat_subscribed" || event === "groupchat_unsubscribed") {
                     if(control.groupSubscribedCallback) {
