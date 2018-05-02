@@ -10,7 +10,7 @@
 
 // Requirements
 var Extra = require('node-messenger-extra');
-const {Response, User, Message, TextMessage, LeaveMessage} = require('hubot');
+const {Response, User, Message, TextMessage, LeaveMessage, TopicMessage} = require('hubot');
 
 // Data container of answers that the user has given
 class Answers {
@@ -156,6 +156,9 @@ class Control {
         // Help text to send when default hubot help command is overridden
         this.catchHelpText = process.env.HUBOT_QUESTIONNAIRE_CATCH_HELP_TEXT || "HELP_TEXT";
 
+        // Catch TopicMessages, used for events
+        this.catchTopics = process.env.HUBOT_QUESTIONNAIRE_CATCH_TOPICS || true;
+
         // Remove a questionnaire listener when a user leave is detected
         this.removeListenerOnLeave = process.env.HUBOT_QUESTIONNAIRE_REMOVE_ON_LEAVE || false;
     }
@@ -187,13 +190,63 @@ class Control {
             var className;
             if(message.constructor != null) {
                 className = message.constructor.name;
-                console.log("Received " + className);
             } else {
                 className = null;
                 console.error("Unable to retrieve classname for: ", message);
             }
 
-            if(className === "TextMessage" || message instanceof TextMessage) {
+            if(className === "TopicMessage" || message instanceof TopicMessage) {
+                var event = message.text;
+                console.log("TopicMessage: " + event);
+                if(event === "typing" || event === "stop_typing") {
+                    if(control.typingCallback) {
+                        var userId = control.getUserId(message.user);
+                        var isGroup = control.isUserInGroup(message.user);
+                        control.typingCallback(userId, event === "typing", message.room, isGroup);
+                    }
+                } else if(event === "presence_update") {
+                    if(control.presenceCallback) {
+                        control.presenceCallback(message.user.id, message.id);
+                    }
+                } else if(event === "new_conversation" || message.text === "new_groupchat") {
+                    if(control.newChatCallback) {
+                        control.newChatCallback(message.id, message.text === "new_groupchat");
+                    }
+                } else if(event === "groupchat_removed") {
+                    if(control.removedFromChatCallback) {
+                        control.removedFromChatCallback(message.id);
+                    }
+                } else if(event === "groupchat_closed") {
+                    if(control.closedChatCallback) {
+                        control.closedChatCallback(message.id);
+                    }
+                } else if(event === "conversation_message_liked" || event === "groupchat_message_liked") {
+                    if(control.messageLikedCallback) {
+                        var userId = control.getUserId(message.user);
+                        var isGroup = control.isUserInGroup(message.user);
+                        control.messageLikedCallback(userId, message.id, message.room, isGroup);
+                    }
+                } else if(event === "conversation_message_deleted" || event === "groupchat_message_deleted") {
+                    if(control.messageDeletedCallback) {
+                        var userId = control.getUserId(message.user);
+                        var isGroup = control.isUserInGroup(message.user);
+                        control.messageDeletedCallback(userId, message.id, message.room, isGroup);
+                    }
+                } else if(event === "groupchat_members_added" || event === "groupchat_members_removed") {
+                    if(control.groupMemberCallback) {
+                        var data = message.id;
+                        control.groupMemberCallback(message.room, event === "groupchat_members_added", data.user_id, data.users);
+                    }
+                } else if(event === "groupchat_subscribed" || event === "groupchat_unsubscribed") {
+                    if(control.groupSubscribedCallback) {
+                        control.groupSubscribedCallback(message.id, event === "groupchat_subscribed");
+                    }
+                }
+                if(control.catchTopics) {
+                    return;
+                }
+            } else if(className === "TextMessage" || message instanceof TextMessage) {
+                console.log("TextMessage: " + message.text);
                 // Check for listeners waiting for a message
                 if (control.hasListener(message)) {
                     var listener = control.removeListener(message);
@@ -204,7 +257,7 @@ class Control {
                 var userId = control.getUserId(message.user);
                 var roomId = message.room;
                 var isGroup = control.isUserInGroup(message.user);
-                var messageString = message.toString().toLowerCase();
+                var messageString = message.text.toLowerCase();
 
                 var isMentioned;
                 if(control.robotMentionRegex != null) {
@@ -338,6 +391,51 @@ class Control {
     }
     setCatchHelpText(text) {
         this.catchHelpText = text;
+    }
+
+    // Callback that is called when a user typing or user stopped typing is detected
+    setTypingCallback(typingCallback) {
+        this.typingCallback = typingCallback;
+    }
+
+    // Callback that is called when a user presence is detected
+    setPresenceCallback(presenceCallback) {
+        this.presenceCallback = presenceCallback;
+    }
+
+    // Callback that is called when a new chat is detected
+    setNewChatCallback(newChatCallback) {
+        this.newChatCallback = newChatCallback;
+    }
+
+    // Callback that is called when remove from chat is detected
+    setRemovedFromChatCallback(removedFromChatCallback) {
+        this.removedFromChatCallback = removedFromChatCallback;
+    }
+
+    // Callback that is called when a chat close is detected
+    setClosedChatCallback(closedChatCallback) {
+        this.closedChatCallback = closedChatCallback;
+    }
+
+    // Callback that is called when a message is liked
+    setMessageLikedCallback(messageLikedCallback) {
+        this.messageLikedCallback = messageLikedCallback;
+    }
+
+    // Callback that is called when a message is deleted
+    setMessageDeletedCallback(messageDeletedCallback) {
+        this.messageDeletedCallback = messageDeletedCallback;
+    }
+
+    // Callback that is called when a group member is added or removed
+    setGroupMemberCallback(groupMemberCallback) {
+        this.groupMemberCallback = groupMemberCallback;
+    }
+
+    // Callback that is called when subscribed/unsubscribed to/from a chat
+    setGroupSubscribedCallback(groupSubscribedCallback) {
+        this.groupSubscribedCallback = groupSubscribedCallback;
     }
 
     // Should a listener for a user be removed when a leave is detected
