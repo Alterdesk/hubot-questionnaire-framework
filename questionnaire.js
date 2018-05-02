@@ -252,9 +252,9 @@ class Control {
                 }
 
             } else if(className === "LeaveMessage" || message instanceof LeaveMessage) {
-                console.log("Leave detected");
+                console.log("Leave detected: " + message.user.id);
                 if(control.removeListenerOnLeave && control.hasListener(message)) {
-                    control.removeListener(msg);
+                    control.removeListener(message);
                 }
             }
 
