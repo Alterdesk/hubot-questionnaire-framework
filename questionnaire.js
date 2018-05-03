@@ -261,11 +261,15 @@ class Control {
                 var userId = control.getUserId(message.user);
                 var roomId = message.room;
                 var isGroup = control.isUserInGroup(message.user);
-                var messageString = message.text.toLowerCase();
+                var commandString = message.text.toLowerCase();
 
                 var isMentioned;
                 if(control.robotMentionRegex != null) {
-                    isMentioned = messageString.match(control.robotMentionRegex) != null;
+                    var mentionMatch = commandString.match(control.robotMentionRegex);
+                    if(mentionMatch) {
+                        commandString = commandString.replace(mentionMatch[0], "");
+                    }
+                    isMentioned = mentionMatch != null;
                 } else {
                     isMentioned = false;
                 }
@@ -278,7 +282,7 @@ class Control {
                 }
 
                 // Check if the user has sent the help command
-                if(control.catchHelpCommand && messageString.match(control.helpRegex) != null) {
+                if(control.catchHelpCommand && commandString.match(control.helpRegex) != null) {
                     console.log("Help detected");
                     var response = new Response(robot, message, true);
                     var helpText = control.catchHelpText;
@@ -292,7 +296,7 @@ class Control {
                 // Check if an accepted command was sent
                 var unknownCommand = true;
                 for(var index in control.acceptedRegex) {
-                    var match = messageString.match(control.acceptedRegex[index]);
+                    var match = commandString.match(control.acceptedRegex[index]);
                     if(match != null) {
                         unknownCommand = false;
                         console.log("Command detected: " + match);
@@ -475,7 +479,7 @@ class Control {
         }
         console.log("Command configured as accepted: " + c);
         this.acceptedCommands.push(c);
-        this.acceptedRegex.push(new RegExp(c + "+", 'i'));
+        this.acceptedRegex.push(new RegExp("^[ \\n\\r\\t]*" + c + "+[ \\n\\r\\t]*$", 'gi'));
         if(helpText != null) {
             this.acceptedHelpTexts[command] = helpText;
         }
