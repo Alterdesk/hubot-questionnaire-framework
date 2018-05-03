@@ -1,7 +1,7 @@
 # Hubot Questionnaire Framework
 
 Framework for creating a questionnaire(follow up questions) isolated per user and per room for 
-[Hubot](https://hubot.github.com/) scripts
+[Hubot](https://hubot.github.com/) scripts. It also enables listening to Alterdesk messenger events.
 
 ## Example script
 The [Alterdesk Hubot Example](https://github.com/Alterdesk/hubot-example) uses the questionnaire framework in 
@@ -13,6 +13,8 @@ The control class can override the default Hubot message receiver to:
 * Manage accepted commands
 * Override the default Hubot help command
 * Adding/Removing message listeners per user per room
+* Listen for [Alterdesk messenger events](https://api.alterdesk.com/documentation/gateway) when using the 
+[Hubot Alterdesk Adapter](https://github.com/Alterdesk/hubot-alterdesk-adapter)
 
 #### Minimal setup for Control
 To intercept messages with the control instance the following code is needed
@@ -25,6 +27,93 @@ module.exports = function(robot) {
     control = new Control();
     control.overrideReceiver(robot);
 };
+```
+
+#### Authentication events
+Authentication events are received when the Hubot instance is authenticated on the Messenger.
+```javascript
+control.setAuthenticatedCallback(function(user) {
+    console.log("Authenticated: " + user.id);
+});
+```
+
+#### Typing events
+Detect when a user starts or stops typing in a chat.
+```javascript
+control.setTypingCallback(function(userId, typing, chatId, isGroup) {
+    console.log("Typing: " + typing + " user: " + userId + " chat: " + chatId + " isGroup: " + isGroup);
+});
+```
+
+#### Presence events
+Detect when a user changes its presence.
+```javascript
+control.setPresenceCallback(function(userId, status) {
+    console.log("Presence: user: " + userId + " status: " + status);
+});
+```
+
+#### New chat events
+Detect when Hubot is added to a new chat.
+```javascript
+control.setNewChatCallback(function(chatId, isGroup) {
+    console.log("New chat: " + chatId + " isGroup: " + isGroup);
+});
+```
+
+#### Removed from chat events
+Detect when Hubot is removed from a chat.
+```javascript
+control.setRemovedFromChatCallback(function(groupId) {
+    console.log("Removed from groupchat: " + groupId);
+});
+```
+
+#### Chat closed events
+Detect when a chat is closed.
+```javascript
+control.setClosedChatCallback(function(groupId) {
+    console.log("Chat closed: " + groupId);
+});
+```
+
+#### Message liked events
+Detect when a message is liked.
+```javascript
+control.setMessageLikedCallback(function(userId, messageId, chatId, isGroup) {
+    console.log("Message liked: id: " + messageId + " user: " + userId + " chat: " + chatId + " isGroup: " + isGroup);
+});
+```
+
+#### Message deleted events
+Detect when a message is deleted.
+```javascript
+control.setMessageDeletedCallback(function(userId, messageId, chatId, isGroup) {
+    console.log("Message deleted: id: " + messageId + " user: " + userId + " chat: " + chatId + " isGroup: " + isGroup);
+});
+```
+
+#### Group member events
+Detect when users are added in or removed from a groupchat.
+```javascript
+control.setGroupMemberCallback(function(groupId, added, userId, users) {
+    for(var index in users) {
+        var user = users[index];
+        if(added) {
+            console.log("Added in group: " + groupId + " userId: " + userId + " member: " + user.id);
+        } else {
+            console.log("Removed from group: " + groupId + " userId: " + userId + " member: " + user.id);
+        }
+    }
+});
+```
+
+#### Group subscription events
+Detect when Hubot is subscribed or unsubscribed from a groupchat.
+```javascript
+control.setGroupSubscribedCallback(function(groupId, subscribed) {
+    console.log("Subscribed: " + subscribed + " chat: " + groupId);
+});
 ```
 
 ### Flow
