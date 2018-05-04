@@ -163,6 +163,18 @@ var getSummary(answers) {
 
 Using the function timeout(), you can override the timeout settings of the last added question
 
+```javascript
+// Override timeout time to 5 minutes to last added question
+flow.timeout(300000);
+// Override timeout time to 5 minutes and custom timeout text to last added question
+flow.timeout(300000, "5 minutes are up, too late");
+// Override timeout time to 10 minutes and use custom timeout callback
+flow.timeout(600000, null, function() {
+    console.log("Custom timeout callback triggered");
+});
+```
+
+#### Flow finished callback
 The finish() function will allow you to set a callback
 that is called when the flow is finished in which you can use the given answers to preform a task.
 
@@ -430,17 +442,10 @@ Listener constructor parameters
 You can also add a listener to the control instance by message manually
 ```javascript
 // Adding a listener after a start command was heard
-control.addListener(msg.message, new Listener(msg, callbackOne, new Answers()));
+control.addListener(msg.message, new Listener(msg, callbackOne, new Answers(), question));
 
 // Adding a listener after a response
-control.addListener(response.message, new Listener(response, callbackTwo, listener.answers));
-```
-
-#### Override regex and timeout defaults when adding a Listener manually
-You can also add a Listener manually with your own regex and timeout settings
-```javascript
-// Adding a listener which checks message with "myRegex", times out after three minutes and uses a custom timeout callback
-control.addListener(response.message, new Listener(response, callbackThree, listener.answers, myRegex, 180000, myTimeoutCallback));
+control.addListener(response.message, new Listener(response, callbackTwo, listener.answers, question));
 ```
 
 #### Listener callback
