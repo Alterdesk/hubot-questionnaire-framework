@@ -40,16 +40,17 @@ class Answers {
 }
 
 // Listener class for consecutive questions
-class Listener {    // TODO Replace regex and timeout parameters with question and remove function setQuestion()
-    constructor(msg, callback, answers, regex, timeoutMs, timeoutText, timeoutCallback) {
+class Listener {
+    constructor(msg, callback, answers, question) {
         this.call = this.call.bind(this);
         this.msg = msg;
         this.callback = callback;
         this.answers = answers;
-        this.regex = regex || Extra.getTextRegex();
-        this.timeoutMs = timeoutMs;
-        this.timeoutText = timeoutText;
-        this.timeoutCallback = timeoutCallback;
+        this.question = question;
+        this.regex = question.regex || Extra.getTextRegex();
+        this.timeoutMs = question.timeoutMs;
+        this.timeoutText = question.timeoutText;
+        this.timeoutCallback = question.timeoutCallback;
 
         // Matcher for given regex
         this.matcher = (message) => {
@@ -100,11 +101,6 @@ class Listener {    // TODO Replace regex and timeout parameters with question a
             // Call timeout callback
             useTimeoutCallback();
         }, useTimeoutMs);
-    }
-
-    // Set the corresponding question
-    setQuestion(question) {
-        this.question = question;
     }
 
     // Called when a message was received for the listener
@@ -326,9 +322,8 @@ class Control {
     }
 
     // Add a listeners for followup questions
-    addListener(message, listener, question) {
+    addListener(message, listener) {
         listener.configure(this);
-        listener.setQuestion(question);
         var userId = this.getUserId(message.user);
         console.log("Adding listener for user " + userId + " in room " + message.room);
         this.questionnaireListeners[message.room + userId] = listener;
@@ -884,7 +879,7 @@ class Flow {
         var answerValue = question.checkAndParseAnswer(listener.matches, response.message);
         if(answerValue == null) {
             response.send(question.invalidText + " " + question.questionText);
-            return flow.control.addListener(response.message, new Listener(response, this.callback, this.answers, question.regex), question);
+            return flow.control.addListener(response.message, new Listener(response, this.callback, this.answers, question));
         }
 
         // Format the given answer if a function was set
@@ -1095,6 +1090,28 @@ class Question {
                 question.timedOut = false;
                 question.multiUserMessages = [];
 
+                var configuredTimeoutCallback = question.timeoutCallback;
+
+                question.timeoutCallback = function() {
+                    // Check if question was already timed out
+                    if(question.timedOut) {
+                        return;
+                    }
+                    // Mark question as timed out
+                    question.timedOut = true;
+                    // Clean up remaining listeners
+                    question.cleanup();
+                    // Trigger timeout callback
+                    if(configuredTimeoutCallback) {
+                        configuredTimeoutCallback();
+                    } else {
+                        var timeoutText = question.timeoutText || control.responseTimeoutText;
+                        if(timeoutText != null) {
+                            response.send(timeoutText);
+                        }
+                    }
+                };
+
                 // Create listener for every user id
                 for(var index in this.userIds) {
                     var userId = this.userIds[index];
@@ -1108,25 +1125,7 @@ class Question {
                     question.multiUserMessages.push(userMessage);
 
                     // Add listener for user and wait for answer
-                    control.addListener(userMessage, new Listener(response, callback, answers, this.regex, this.timeoutMs, null, function() {
-                        // Check if question was already timed out
-                        if(question.timedOut) {
-                            return;
-                        }
-                        // Mark question as timed out
-                        question.timedOut = true;
-                        // Clean up remaining listeners
-                        question.cleanup();
-                        // Trigger timeout callback
-                        if(question.timeoutCallback) {
-                            question.timeoutCallback();
-                        } else {
-                            var timeoutText = question.timeoutText || control.responseTimeoutText;
-                            if(timeoutText != null) {
-                                response.send(timeoutText);
-                            }
-                        }
-                    }), this);
+                    control.addListener(userMessage, new Listener(response, callback, answers, this));
                 }
                 return;
             }
@@ -1135,7 +1134,7 @@ class Question {
             return;
         }
         // Add listener for single user and wait for answer
-        control.addListener(response.message, new Listener(response, callback, answers, this.regex, this.timeoutMs, this.timeoutText, this.timeoutCallback), this);
+        control.addListener(response.message, new Listener(response, callback, answers, this));
     }
 
     // Clean up question if timed out or stopped
