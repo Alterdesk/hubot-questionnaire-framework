@@ -919,6 +919,7 @@ class Flow {
             }
             var userId = flow.control.getUserId(response.message.user);
             multiAnswers.add(userId, answerValue);
+            var answerCount = multiAnswers.size();
 
             // Check if a value was set to break multi user question on and use it
             var breaking = false;
@@ -929,7 +930,7 @@ class Flow {
             } else if(question.breakOnRegex != null && answerValue.match(question.breakOnRegex) != null) {
                 breaking = true;
                 stopping = question.stopOnBreak;
-            } else if(question.breakOnCount != null && multiAnswers.size() >= question.breakOnCount) {
+            } else if(question.breakOnCount != null && answerCount != question.userIds.length && answerCount >= question.breakOnCount) {
                 breaking = true;
             }
 
@@ -953,7 +954,7 @@ class Flow {
             }
 
             // Check if still waiting for more answers
-            if(!breaking && question.userIds.length > multiAnswers.size()) {
+            if(!breaking && question.userIds.length > answerCount) {
                 return;
             }
         } else {
