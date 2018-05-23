@@ -206,7 +206,7 @@ the flow is started like this
 flow.add(new TextQuestion("myKey", "Can you send me some text?", "Invalid text."));
 ```
 
-### Format a given answer
+#### Format a given answer
 When a user has given a valid answer, the answer may need need formatting, this can be done with a format callback.
 ```javascript
 form.text("formatted", "", "Invalid answer.")
@@ -220,7 +220,7 @@ var formatAnswerFunction = function(value) {
 };
 ```
 
-### Format a question by given answers
+#### Format a question by given answers
 To format a question by using answers given earlier in the flow, a format callback can be set, if the format callback
 fails, the unformatted text will be used as fallback.
 
@@ -247,7 +247,7 @@ var formatTextQuestion = function(answers) {
 You can ask a question to multiple users in a flow, by using the results of a MentionQuestion or a given list of user 
 ids. The flow continues after each user has answered the question or the break value was given.
 
-Ask a multi user question
+Ask a question to mentioned users
 ```javascript
 // Regular expressions to use to parse positive and negative answers with
 var positiveRegex = new RegExp(/yes/, 'i');
@@ -267,6 +267,16 @@ flow.mention("mentioned", "Who should accept (Mention the users with '@')?", "In
 .askMentions("mentioned")
 .breakOnValue(breakOn, stopFlowOnBreak)
 .multiUserSummary(acceptSummary);
+```
+
+Ask a question to a list of user ids
+```javascript
+// List of user ids to ask the question to
+var userIds = ["<USER_ID_1>", "<USER_ID_2>", "<USER_ID_3>"];
+
+// Ask each user to add a note, functions like breakOnValue() and multiUserSummary() can also be used here 
+flow.text("note","Add a note?","Invalid note")
+.askUserIds(userIds);
 ```
 
 Optional multi user answer summary callback
@@ -293,6 +303,28 @@ var acceptSummary = funtion(answers, currentUserId, breaking) {
     }
     return summary;
 }
+```
+
+Optional break multi user question on value
+```javascript
+// Stop waiting on the remaining users when a user answers a polar question negatively
+var breakOn = false;
+var stopFlowOnBreak = false;
+flow.breakOnValue(breakOn, stopFlowOnBreak);
+```
+
+Optional break multi user question on regular expression
+```javascript
+// Stop waiting on the remaining users when a user sends "breaktext"
+var breakRegex = new RegExp(/breaktext/, 'i');
+var stopFlowOnBreak = false;
+flow.breakOnRegex(breakRegex, stopFlowOnBreak);
+```
+
+Optional break multi user question on answer count
+```javascript
+// Stop waiting on the remaining users when two answers are received
+flow.breakOnCount(2);
 ```
 
 ### TextQuestion
