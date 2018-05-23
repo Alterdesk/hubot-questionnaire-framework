@@ -791,6 +791,26 @@ class Flow {
         return this;
     }
 
+    // Break multi user question when an answer matches the given regex, and set if the flow should continue or stop
+    breakOnRegex(regex, stop) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on breakOnRegex()");
+            return this;
+        }
+        this.lastAddedQuestion.setBreakOnRegex(regex, stop);
+        return this;
+    }
+
+    // Break multi user question on a certain number of answers
+    breakOnCount(count) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on breakOnCount()");
+            return this;
+        }
+        this.lastAddedQuestion.setBreakOnCount(count);
+        return this;
+    }
+
     // Set a callback to format the question text with by the answers given earlier
     formatAnswer(formatAnswerFunction) {
         if(this.lastAddedQuestion == null) {
@@ -901,7 +921,17 @@ class Flow {
             multiAnswers.add(userId, answerValue);
 
             // Check if a value was set to break multi user question on and use it
-            var breaking = question.breakOnValue != null && question.breakOnValue === answerValue;
+            var breaking = false;
+            var stopping = false;
+            if(question.breakOnValue != null && question.breakOnValue === answerValue) {
+                breaking = true;
+                stopping = question.stopOnBreak;
+            } else if(question.breakOnRegex != null && answerValue.match(question.breakOnRegex) != null) {
+                breaking = true;
+                stopping = question.stopOnBreak;
+            } else if(question.breakOnCount != null && multiAnswers.size() >= question.breakOnCount) {
+                breaking = true;
+            }
 
             // Call multi user answers summary function if set
             if(question.multiUserSummaryFunction != null) {
@@ -914,7 +944,7 @@ class Flow {
             // Cleanup on breaking and stop if configured
             if(breaking) {
                 question.cleanup();
-                if(question.stopOnBreak) {
+                if(stopping) {
                     if(flow.stopText != null) {
                         response.send(flow.stopText);
                     }
@@ -1046,6 +1076,19 @@ class Question {
     setBreakOnValue(value, stop) {
         this.breakOnValue = value;
         this.stopOnBreak = stop;
+        this.isMultiUser = true;
+    }
+
+    // Break this multi user question when an answer matches the given regex and optionally stop the flow
+    setBreakOnRegex(regex, stop) {
+        this.breakOnRegex = regex;
+        this.stopOnBreak = stop;
+        this.isMultiUser = true;
+    }
+
+    // Break this multi user question when a certain number of answers is reached
+    setBreakOnCount(count) {
+        this.breakOnCount = count;
         this.isMultiUser = true;
     }
 
