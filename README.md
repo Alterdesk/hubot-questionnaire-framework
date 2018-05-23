@@ -315,8 +315,8 @@ flow.breakOnValue(breakOn, stopFlowOnBreak);
 
 Optional break multi user question on regular expression
 ```javascript
-// Stop waiting on the remaining users when a user sends "breaktext"
-var breakRegex = new RegExp(/breaktext/, 'i');
+// Stop waiting on the remaining users when a user sends "breaktext" or "decline"
+var breakRegex = new RegExp(/breaktext|decline/, 'i');
 var stopFlowOnBreak = false;
 flow.breakOnRegex(breakRegex, stopFlowOnBreak);
 ```
