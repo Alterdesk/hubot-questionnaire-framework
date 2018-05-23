@@ -885,7 +885,7 @@ class Flow {
         // Format the given answer if a function was set
         if(question.formatAnswerFunction) {
             var formatted = question.formatAnswerFunction(answerValue);
-            if(formatted != null) {
+            if(formatted && formatted !== "") {
                 answerValue = formatted;
             }
         }
@@ -905,7 +905,10 @@ class Flow {
 
             // Call multi user answers summary function if set
             if(question.multiUserSummaryFunction != null) {
-                response.send(question.multiUserSummaryFunction(this.answers, userId, breaking));
+                var summary = question.multiUserSummaryFunction(this.answers, userId, breaking);
+                if(summary && summary !== "") {
+                    response.send(summary);
+                }
             }
 
             // Cleanup on breaking and stop if configured
@@ -947,7 +950,10 @@ class Flow {
             subFlow.finish(function(response, answers) {
                 // Call summary function if set
                 if(question.summaryFunction != null) {
-                    response.send(question.summaryFunction(this.answers));
+                    var summary = question.summaryFunction(this.answers);
+                    if(summary && summary !== "") {
+                        response.send(summary);
+                    }
                 }
 
                 flow.next(response);
@@ -957,7 +963,10 @@ class Flow {
         } else {
             // Call summary function if set
             if(question.summaryFunction != null) {
-                response.send(question.summaryFunction(this.answers));
+                var summary = question.summaryFunction(this.answers);
+                if(summary && summary !== "") {
+                    response.send(summary);
+                }
             }
 
             flow.next(response);
@@ -1051,7 +1060,7 @@ class Question {
 
         if(this.formatQuestionFunction != null) {
             var formatted = this.formatQuestionFunction(answers);
-            if(formatted != null) {
+            if(formatted && formatted !== "") {
                 // Send formatted question text
                 response.send(formatted);
             } else {
