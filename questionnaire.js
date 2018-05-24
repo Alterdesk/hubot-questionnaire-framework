@@ -532,6 +532,7 @@ class Flow {
         return this;
     }
 
+    // Capitalize the first letter of the answer of the last added TextQuestion
     capitalize() {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on capitalize()");
@@ -545,6 +546,7 @@ class Flow {
         return this;
     }
 
+    // Capitalize the answer as a last name of the last added TextQuestion
     lastName() {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on lastName()");
@@ -666,10 +668,12 @@ class Flow {
         return this;
     }
 
+    // Add new AttachmentQuestion
     attachment(answerKey, questionText, invalidText) {
         return this.add(new AttachmentQuestion(answerKey, questionText, invalidText));
     }
 
+    // Set the minimum and/or maximum count of attachments of the last added AttachmentQuestion
     count(minCount, maxCount) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on count()");
@@ -683,6 +687,7 @@ class Flow {
         return this;
     }
 
+    // Set the minimum and/or maximum file size in bytes of attachments of the last added AttachmentQuestion
     size(minSize, maxSize) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on size()");
@@ -1368,7 +1373,7 @@ class PhoneNumberQuestion extends Question {
         this.allowedCountryCodes.push(code);
     }
 
-    // Set a list of accepted country codes
+    // Add a list of accepted country codes
     addAllowedCountryCodes(codes) {
         for(var index in codes) {
             this.addAllowedCountryCode(codes[index]);
