@@ -568,3 +568,35 @@ export HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT=60000
 
 exec node_modules/.bin/hubot --name "hubot" "$@"
 ```
+
+## Reference
+
+### Answers
+#### constructor()
+
+Create a new Answers instance
+
+#### add(key, value)
+
+Add a value by key(void)
+* key - *string*
+* value - *object*
+
+#### get(key)
+
+Get a value by key
+* key - *string*
+
+returns *object*
+
+#### keys()
+
+Get the keys that are added
+
+returns *array*
+
+#### size()
+
+Count of values that are added
+
+returns *int*
