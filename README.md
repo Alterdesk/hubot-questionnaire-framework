@@ -579,24 +579,25 @@ Create a new Answers instance
 #### add(key, value)
 
 Add a value by key
-* key *string* - Key to add the value with
-* value *object* - Value to add
+
+| key | *string* | Key to add the value with |
+| value | *object* | Value to add |
 
 #### get(key)
 
 Get a value by key
-* key *string* - Key that the requested value was added with
+| key | *string* | Key that the requested value was added with |
 
-returns *object* - Value corresponding to the key
+| returns | *object* | Value corresponding to the key |
 
 #### keys()
 
 Get the keys that are added
 
-returns *array* - Array of keys
+| returns | *array* | Array of keys |
 
 #### size()
 
 Count of values that are added
 
-returns *int* - Size of added values
+| returns | *int* | Size of added values |
