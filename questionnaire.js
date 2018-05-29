@@ -856,6 +856,16 @@ class Flow {
         return this;
     }
 
+    // Add a delay to the last added question
+    delay(ms) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on delay()");
+            return this;
+        }
+        this.lastAddedQuestion.setDelay(ms);
+        return this;
+    }
+
     // Use non-default timeout for last added question
     timeout(ms, text, callback) {
         if(this.lastAddedQuestion == null) {
@@ -1014,8 +1024,16 @@ class Flow {
         // Check if has more steps or flow is finished
         if(this.currentStep < this.steps.length) {
             var question = this.steps[this.currentStep++];
-            console.log("Flow nex question: " + question.questionText);
-            question.execute(this.control, response, this.callback, this.answers);
+            console.log("Flow next question: " + question.questionText);
+            // Delay executing this message if delay was set
+            if(question.delayMs && question.delayMs > 0) {
+                console.log("Executing question delayed by " + question.delayMs + " milliseconds");
+                setTimeout(() => {
+                    question.execute(this.control, response, this.callback, this.answers);
+                }, question.delayMs);
+            } else {
+                question.execute(this.control, response, this.callback, this.answers);
+            }
         } else {
             console.log("Flow finished");
             if(this.finishedCallback != null) {
@@ -1057,6 +1075,11 @@ class Question {
     // Set a summary callback function to trigger after answer
     setSummaryFunction(summaryFunction) {
         this.summaryFunction = summaryFunction;
+    }
+
+    // Add a delay before executing this question
+    setDelay(ms) {
+        this.delayMs = ms;
     }
 
     // Use non-default timeout settings for this question
