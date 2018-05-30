@@ -499,6 +499,12 @@ class Flow {
         return this;
     }
 
+    // Add a information message to the flow
+    info(text, waitMs) {
+        this.steps.push(new Information(text, waitMs));
+        return this;
+    }
+
     // Add new TextQuestion
     text(answerKey, questionText, invalidText) {
         return this.add(new TextQuestion(answerKey, questionText, invalidText));
@@ -1023,22 +1029,54 @@ class Flow {
     next(response) {
         // Check if has more steps or flow is finished
         if(this.currentStep < this.steps.length) {
-            var question = this.steps[this.currentStep++];
-            console.log("Flow next question: " + question.questionText);
-            // Delay executing this message if delay was set
-            if(question.delayMs && question.delayMs > 0) {
-                console.log("Executing question delayed by " + question.delayMs + " milliseconds");
-                setTimeout(() => {
+            var step = this.steps[this.currentStep++];
+            if(step instanceof Question) {
+                var question = step;
+                console.log("Flow next question: " + question.questionText);
+                // Delay executing this message if a delay was set
+                if(question.delayMs && question.delayMs > 0) {
+                    console.log("Executing question delayed by " + question.delayMs + " milliseconds");
+                    setTimeout(() => {
+                        question.execute(this.control, response, this.callback, this.answers);
+                    }, question.delayMs);
+                } else {
                     question.execute(this.control, response, this.callback, this.answers);
-                }, question.delayMs);
+                }
+            } else if(step instanceof Information) {
+                var information = step;
+                information.execute(this, response);
             } else {
-                question.execute(this.control, response, this.callback, this.answers);
+                console.error("Invalid step: ", step);
+                this.next(response);
             }
         } else {
             console.log("Flow finished");
             if(this.finishedCallback != null) {
                 this.finishedCallback(response, this.answers);
             }
+        }
+    }
+};
+
+// Class to send the user information during a flow
+class Information {
+    constructor(text, waitMs) {
+        this.text = text;
+        this.waitMs = waitMs;
+    }
+
+    // Execute this information message
+    execute(flow, response) {
+        // Send information message text
+        response.send(this.text);
+        // Wait after sending message if wait time was set
+        if(this.waitMs && this.waitMs > 0) {
+            console.log("Waiting after sending information for " + this.waitMs + " milliseconds");
+            setTimeout(() => {
+                flow.next(response);
+            }, this.waitMs)
+        } else {
+            flow.next(response);
         }
     }
 };
