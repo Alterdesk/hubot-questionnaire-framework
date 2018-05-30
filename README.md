@@ -537,25 +537,25 @@ Certain settings can also be set through environment variables if desired
 
 #### Variables
 Response timeout milliseconds
-* HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT *(int)*
+* HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT *(Integer)*
 
 Response timeout text to send on timeout
-* HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT_TEXT *(string)*
+* HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT_TEXT *(String)*
 
 Catch commands that are not present in the accepted commands list
-* HUBOT_QUESTIONNAIRE_CATCH_ALL *(boolean)*
+* HUBOT_QUESTIONNAIRE_CATCH_ALL *(Boolean)*
 
 Catch all text to send on unaccepted command
-* HUBOT_QUESTIONNAIRE_CATCH_ALL_TEXT *(string)*
+* HUBOT_QUESTIONNAIRE_CATCH_ALL_TEXT *(String)*
 
 Override default hubot help command
-* HUBOT_QUESTIONNAIRE_CATCH_HELP *(boolean)*
+* HUBOT_QUESTIONNAIRE_CATCH_HELP *(Boolean)*
 
 Help text to send when default hubot help command is overridden
-* HUBOT_QUESTIONNAIRE_CATCH_HELP_TEXT *(string)*
+* HUBOT_QUESTIONNAIRE_CATCH_HELP_TEXT *(String)*
 
 Remove a questionnaire listener when a user leave is detected
-* HUBOT_QUESTIONNAIRE_REMOVE_ON_LEAVE *(boolean)*
+* HUBOT_QUESTIONNAIRE_REMOVE_ON_LEAVE *(Boolean)*
 
 #### Set an environment variable
 You can set an environment variable in your hubot startup script like this
@@ -579,24 +579,921 @@ Create a new Answers instance
 #### add(key, value)
 
 Add a value by key
-* key *(string)* - Key to add the value with
-* value *(object)* - Value to add
+* key *(String)* - Key to add the value with
+* value *(Object)* - Value to add
 
 #### get(key)
 
 Get a value by key
-* key *(string)* - Key that the requested value was added with
+* key *(String)* - Key that the requested value was added with
 
-returns *(object)* - Value corresponding to the key
+returns *(Object)* - Value corresponding to the key
 
 #### keys()
 
 Get the keys that are added
 
-returns *(array)* - Array of keys
+returns *(Array)* - Array of keys
 
 #### size()
 
 Count of values that are added
 
-returns *(int)* - Size of added values
+returns *(Integer)* - Size of added values
+
+### Listener
+#### constructor(message, callback, answers, question)
+
+Create a new Listener instance
+* message *(Message)* - Hubot Message to create the Listener for
+* callback *(Function)* - Callback to call when an answer is received
+* answers *(Answers)* - Answers instance that stores the answers for this session
+* question *(Question)* - Question instance that is awaiting an answer
+
+#### configure(control)
+
+Configure the listener for the given Control instance(void)
+* control *(Control)* - Control instance to configure the Listener for
+
+#### call(message)
+
+Called when a Message was received for the listener
+* message *(Message)* - Hubot Message that was received
+
+### Control
+#### constructor()
+
+Create a new Control instance
+
+#### overrideReceiver(robot)
+
+Override the default Hubot receiver with the questionnaire receiver
+* robot *(Robot)* - Hubot Robot instance to override the receiver for
+
+#### addListener(message, listener)
+
+Add a Listener on the basis of a Message that was received
+* message *(Message)* - Hubot Message to add the Listener for
+* listener *(Listener)* - Listener to add
+
+#### removeListener(message)
+
+Remove a listener on the basis of a Message
+* message *(Message)* - Hubot Message that the Listener was added for
+
+returns *(Listener)* - Listener that was removed
+
+#### hasListener(message)
+
+Check if a listener is set for the Message
+* message *(Message)* - Hubot Message that the Listener was added for
+
+returns *(Boolean)* - If a Listener is added for the given Message
+
+#### getUserId(user)
+
+Return the user id for a user, use with Alterdesk groupchats
+* user *(User)* - Hubot User to get the id for
+
+returns *(String)* - User id
+
+#### isUserInGroup(user)
+
+Check if a user is talking to Hubot from a groupchat
+* user *(User)* - Hubot User to check for
+
+returns *(Boolean)* - If the user is talking from a groupchat
+
+#### setStopRegex(regexp)
+
+Set the regular expression to stop flows on
+* regexp *(RegExp)* - Regular Expression to stop flows with
+
+#### setHelpRegex(regexp)
+
+Set the regular expression to trigger the help message with
+* regexp *(RegExp)* - Regular Expression to trigger the help message with
+
+#### setResponseTimeoutText(text)
+
+Set the text to send when a user does not respond within the configured time
+* text *(String)* - Text to send on response timeout
+
+#### setResponseTimeoutMs(ms)
+
+Set the milliseconds to wait for a user response
+* ms *(Integer)* - Milliseconds to wait for response
+
+#### setCatchAll(catch)
+
+Set if unknown commands should be catched
+* catch *(Boolean)* - If unknown commands should be catched by the overridden receiver
+
+#### setCatchAllText(text)
+
+Set the text to send when an unknown command is catched
+* text *(String)* - Text to send when an unknown command is catched
+
+#### setCatchHelp(catch)
+
+Set if the default Hubot help should be overridden
+* catch *(Boolean)* - If the Hubot help should be overridden
+
+#### setCatchHelpText(text)
+
+Set the text to send when the help command is triggered
+* text *(String)* - Text to send when help command is triggered
+
+#### setAuthenticatedCallback(callback)
+
+Set the callback to call when Hubot is authenticated on Alterdesk, callback is called with the user data
+* callback *(Function(user))* - Function callback called when authenticated
+  * user *(User)* - Alterdek user data
+
+#### setTypingCallback(callback) 
+
+Set the callback to call when a user is typing on Alterdesk, callback is called with the user id and a boolean if the user is typing
+* callback *(Function(userId, typing))* - Function callback called when a user starts or stops typing
+  * userId *(String)* - Alterdesk user id 
+  * typing *(Boolean)* - If the user is typing
+
+#### setPresenceCallback(callback)
+
+Callback that is called when a user presence is detected
+* callback *(Function(userId, status))* - Function callback called with Alterdesk user id and the status string
+
+#### setNewChatCallback(callback)
+
+Callback that is called when a new chat is detected
+* callback *(Function(chatId, isGroup))* - Function callback called when a new chat is created/added
+  * chatId *(String)* - Alterdesk chat id
+  * isGroup *(Boolean)* - If the chat is a groupchat or one-to-one chat
+
+#### setRemovedFromChatCallback(callback)
+
+Callback that is called when remove from chat is detected
+* callback *(Function(groupId))* - Function callback called with the Alterdesk group chat id that the Hubot is removed from
+
+#### setClosedChatCallback(callback)
+
+Callback that is called when a chat close is detected
+* callback *(Function(groupId))* - Function callback called when a groupchat is closed
+  * groupId *(String)* - Alterdesk group chat id
+
+#### setMessageLikedCallback(callback)
+
+Callback that is called when a message is liked
+* callback *(Function(userId, messageId, chatId, isGroup))* - Function callback when a message is liked
+  * userId *(String)* - Alterdesk user id
+  * messageId *(String)* - Alterdesk message id
+  * chatId *(String)* - Alterdesk chat id
+  * isGroup *(Boolean)* - If the chat is a groupchat or one-to-one chat
+
+#### setMessageDeletedCallback(callback)
+
+Callback that is called when a message is deleted
+* callback *(Function(userId, messageId, chatId, isGroup))* - Function callback when a message is deleted
+  * userId *(String)* - Alterdesk user id
+  * messageId *(String)* - Alterdesk message id
+  * chatId *(String)* - Alterdesk chat id
+  * isGroup *(Boolean)* - If the chat is a groupchat or one-to-one chat
+
+#### setGroupMemberCallback(callback)
+
+Callback that is called when a group member is added or removed
+* callback *(Function(groupId, added, userId, users))* - Function callback called when a groupchat member is added or removed =
+  * groupId *(String)* - Alterdesk group chat id
+  * added *(Boolean)* - If the member is added or removed
+  * userId *(String)* - Alterdesk user id that added or removed the members
+  * users *(Array)* - Array of Alterdesk user data of the members
+
+#### setGroupSubscribedCallback(callback)
+
+Callback that is called when subscribed/unsubscribed to/from a groupchat
+* callback *(Function(groupId, subscribed))* - Function callback called when Hubot is subscribed/unsubscribed to/from a groupchat 
+  * groupId *(String)* - Alterdesk group chat id
+  * subscribed *(Boolean)* - If hubot is subscribed or unsubscribed
+
+#### setRemoveListenerOnLeave(remove)  
+
+Set if a Listener should be removed when a LeaveMessage for the user is received
+* remove *(Boolean)* - If the Listener should be removed
+
+#### addAcceptedCommand(command, helpText) 
+
+Add an accepted command
+* command *(String)* - Command text to listen for
+* helpText *(String)* - Help text to show when the help command is triggered
+
+### Flow
+#### constructor(control, stopText, errorText)
+
+Create a new Flow instance
+* control *(Control)* - Control instance to use
+* stopText *(String)* - Message text to send when the flow is stopped
+* errorText *(String)* - Message text to send when the flow stops with an error
+
+#### add(question)
+
+Add Question to the Flow
+* question *(Question)* - Question to add to the Flow
+
+returns *(Flow)* - Flow instance
+
+#### info(text, waitMs)
+
+Add a information message to the flow
+* text *(String)* - Information message text to send
+* waitMs *(Integer)* - Milliseconds to wait after sending information
+
+returns *(Flow)* - Flow instance
+
+#### text(answerKey, questionText, invalidText)
+
+Add a TextQuestion to the Flow
+* answerKey *(String)* - Key to store answer in Answers instance with
+* questionText *(String)* - Text to send when the question is triggered
+* invalidText *(String)* - Text to send when the user sends an invalid answer
+
+returns *(Flow)* - Flow instance
+
+#### regex(regex)
+
+Override the regex used in the last added TextQuestion
+* regex *(RegExp)* - Regular expression to check answer with
+
+returns *(Flow)* - Flow instance
+
+#### length(minLength, maxLength)
+
+Set the minimal and/or maximum accepted length of the last added TextQuestion
+* minLength *(Integer)* - Minimum accepted length
+* maxLength *(Integer)* - Maximum accepted length
+
+returns *(Flow)* - Flow instance
+
+#### capitalize()
+
+Capitalize the first letter of the answer of the last added TextQuestion
+
+returns *(Flow)* - Flow instance
+
+#### lastName()
+
+Capitalize the answer as a last name of the last added TextQuestion
+
+returns *(Flow)* - Flow instance
+
+#### number(answerKey, questionText, invalidText)
+
+Add a NumberQuestion to the Flow
+* answerKey *(String)* - Key to store answer in Answers instance with
+* questionText *(String)* - Text to send when the question is triggered
+* invalidText *(String)* - Text to send when the user sends an invalid answer
+
+returns *(Flow)* - Flow instance
+
+#### range(minValue, maxValue)
+
+Set the minimum and/or maximum value range of the last added NumberQuestion
+* minValue *(Integer)* - Minimum accepted value
+* maxValue *(Integer)* - Maximum accepted value
+
+returns *(Flow)* - Flow instance
+
+#### email(answerKey, questionText, invalidText)
+
+Add an EmailQuestion to the Flow
+* answerKey *(String)* - Key to store answer in Answers instance with
+* questionText *(String)* - Text to send when the question is triggered
+* invalidText *(String)* - Text to send when the user sends an invalid answer
+
+returns *(Flow)* - Flow instance
+
+#### domains(allowedDomains)
+
+Set the allowed email domains of the last added EmailQuestion
+* allowedDomains *(Array)* - String array of accepted domains
+
+returns *(Flow)* - Flow instance
+
+#### phone(answerKey, questionText, invalidText)
+
+Add a PhoneNumberQuestion to the Flow
+* answerKey *(String)* - Key to store answer in Answers instance with
+* questionText *(String)* - Text to send when the question is triggered
+* invalidText *(String)* - Text to send when the user sends an invalid answer
+
+returns *(Flow)* - Flow instance
+
+#### countryCodes(allowedCountryCodes)
+
+Set the allowed country codes of the last added PhoneNumberQuestion
+* allowedCountryCodes *(Array)* - String array of allowed country codes
+
+returns *(Flow)* - Flow instance
+
+#### mention(answerKey, questionText, invalidText)
+
+Add a MentionQuestion to the Flow
+* answerKey *(String)* - Key to store answer in Answers instance with
+* questionText *(String)* - Text to send when the question is triggered
+* invalidText *(String)* - Text to send when the user sends an invalid answer
+
+returns *(Flow)* - Flow instance
+
+#### includeMentions(mentions)
+
+Add mentions to include after answer of the last added MentionQuestion
+* mentions *(Array)* - Alterdesk mention user data array to add
+
+returns *(Flow)* - Flow instance
+
+#### allAllowed(allowed)
+
+Change if the all mentioned tag is allowed of the last added MentionQuestion
+* allowed *(Boolean)* - If the mention all tag is allowed
+
+returns *(Flow)* - Flow instance
+
+#### robotAllowed(allowed)
+
+Change if the robot mentioned tag is allowed of the last added MentionQuestion
+* allowed *(allowed)* - If tagging the Hubot user id is allowed
+
+returns *(Flow)* - Flow instance
+
+#### attachment(answerKey, questionText, invalidText)
+
+Add an AttachmentQuestion to the Flow
+* answerKey *(String)* - Key to store answer in Answers instance with
+* questionText *(String)* - Text to send when the question is triggered
+* invalidText *(String)* - Text to send when the user sends an invalid answer
+
+returns *(Flow)* - Flow instance
+
+#### count(minCount, maxCount)
+
+Set the minimum and/or maximum count of attachments of the last added AttachmentQuestion
+* minCount *(Integer)* - Minimum count of attachments
+* maxCount *(Integer)* - Maximum count of attachments
+
+returns *(Flow)* - Flow instance
+
+#### size(minSize, maxSize)
+
+Set the minimum and/or maximum file size in bytes of attachments of the last added AttachmentQuestion
+* minSize *(Integer)* - Minimum file size in bytes
+* maxSize *(Integer)* - Maximum file size in bytes
+
+returns *(Flow)* - Flow instance
+
+#### extensions(allowedExtensions)
+
+Set the allowed file extensions of the last added AttachmentQuestion
+* allowedExtensions *(Array)* - String array of allowed extensions
+
+returns *(Flow)* - Flow instance
+
+#### polar(answerKey, questionText, invalidText)
+
+Add a PolarQuestion to the Flow
+* answerKey *(String)* - Key to store answer in Answers instance with
+* questionText *(String)* - Text to send when the question is triggered
+* invalidText *(String)* - Text to send when the user sends an invalid answer
+
+returns *(Flow)* - Flow instance
+
+#### positive(regex, subFlow)
+
+Set the positive regex and optional sub flow of the last added PolarQuestion
+* regex *(RegExp)* - Regular expression to trigger positive answer
+* subFlow *(Flow)* - Flow to start when positive answer was given
+
+returns *(Flow)* - Flow instance
+
+#### negative(regex, subFlow)
+
+Set the negative regex and optional sub flow of the last added PolarQuestion
+* regex *(RegExp)* - Regular expression to trigger negative answer
+* subFlow *(Flow)* - Flow to start when negative answer was given
+
+returns *(Flow)* - Flow instance
+
+#### multiple(answerKey, questionText, invalidText)
+
+Add a MultipleChoiceQuestion to the Flow
+* answerKey *(String)* - Key to store answer in Answers instance with
+* questionText *(String)* - Text to send when the question is triggered
+* invalidText *(String)* - Text to send when the user sends an invalid answer
+
+returns *(Flow)* - Flow instance
+
+#### option(regex, subFlow)
+
+Add an option regex and optional sub flow of the last added MultipleChoiceQuestion
+* regex *(RegExp)* - Regular expression to trigger option answer
+* subFlow *(Flow)* - Flow to start when option answer was given
+
+returns *(Flow)* - Flow instance
+
+#### askMentions(mentionAnswerKey)
+
+Ask the last added question to the users that were mentioned a MentionQuestion earlier
+* mentionAnswerKey *(String)* - Key used to store the mentions with in Answers
+
+returns *(Flow)* - Flow instance
+
+#### askUserIds(userIds)
+
+Ask the last added question to a list of user ids
+* userIds *(Array)* - String array of Alterdesk user ids
+
+returns *(Flow)* - Flow instance
+
+#### breakOnValue(value, stop)
+
+Break multi user question on a certain answer value, and set if the flow should continue or stop
+* value *(Object)* - Value to break on
+* stop *(Boolean)* - Stop flow when breaking
+
+returns *(Flow)* - Flow instance
+
+#### breakOnRegex(regex, stop)
+
+Break multi user question when an answer matches the given regex, and set if the flow should continue or stop
+* regex *(RegExp)* - Regular expression to break with
+* stop *(Boolean)* - Stop flow when breaking
+
+returns *(Flow)* - Flow instance
+
+#### breakOnCount(count)
+
+Break multi user question on a certain number of answers
+* count *(Integer)* - Count of answers to break on
+
+returns *(Flow)* - Flow instance
+
+#### formatAnswer(callback)
+
+Set a callback to format the question text with by the answers given earlier
+* callback *(Function(answerValue))* - Callback that is called when an answer is given
+  * answerValue *(Object)* - Value of the answer
+  
+  returns *(Object)* - Formatted answer
+  
+returns *(Flow)* - Flow instance
+
+#### formatQuestion(callback)
+
+Set a callback to format the question text with by the answers given earlier
+* callback *(Function(answers))* - Callback that is called before the question is asked
+  * answers *(Answers)* - Answers instance
+  
+  returns *(String)* - Formatted question text to send
+
+returns *(Flow)* - Flow instance
+
+#### multiUserSummary(callback)
+
+Set a callback to summarize given answers after every user answer for a multi user question
+* callback *(Function(answers, userId, breaking))* - Callback that is called when a user answers the question
+  * answers *(Answers)* - Answers instance
+  * userId *(String)* - Alterdesk user id of the user that answered
+  * breaking *(Boolean)* - If breaking multi user question because of this answer
+
+  returns *(String)* - Summary text to send
+
+returns *(Flow)* - Flow instance
+
+#### summary(callback)
+
+Set a callback to summarize the given answers after last added question
+* callback *(Function(answers))* - Callback called when a summary of the given answers is requested
+  * answers *(Answers)* - Answers instance
+
+  returns *(String)* - Summary text to send
+
+returns *(Flow)* - Flow instance
+
+#### delay(ms)
+
+Use a delay before executing the last added question
+* ms *(Integer)* - Milliseconds to delay question
+
+returns *(Flow)* - Flow instance
+
+#### timeout(ms, text, callback)
+
+Use non-default timeout for last added question
+* ms *(Integer)* - Milliseconds to wait for response
+* text *(String)* - Optional override timeout text to send
+* callback *(Function())* - Optional override timeout callback to call
+
+returns *(Flow)* - Flow instance
+
+#### finish(callback)
+
+Set the flow finished callback function
+* callback *(Function(response, answers))* - Callback called when the flow is finished
+  * response *(Response)* - Hubot Response instance
+  * answers *(Answers)* - Answers instance
+
+returns *(Flow)* - Flow instance
+
+#### start(message, answers)
+
+Start the flow
+* message *(Message)* - Hubot Message instance
+* answers *(Answers)* - Answers instance
+
+#### callback(response, listener)
+
+Callback function that is used with Listeners(internal use)
+* response *(Response)* - Hubot Response instance
+* listener *(Listener)* - Listener instance
+
+#### next(response)
+
+Execute next step of the flow(internal use)
+* response *(Response)* - Hubot Response instance
+
+### Information
+#### constructor(text, waitMs)
+
+Create a new Information instance
+* text *(String)* - Information message text to send
+* waitMs *(Integer)* - Milliseconds to wait after sending information
+
+#### execute(flow, response)
+
+Execute this information message
+* flow *(Flow)* - Flow instance that the information is executed for
+* response *(Response)* - Hubot Response instance
+
+### Question
+#### constructor(answerKey, questionText, invalidText)
+
+Create a new Question instance
+* answerKey *(String)* - Key to store answer in Answers instance with
+* questionText *(String)* - Text to send when the question is triggered
+* invalidText *(String)* - Text to send when the user sends an invalid answer
+
+#### setFlow(flow)
+
+Set the parent flow
+* flow *(Flow)* - Flow instance
+
+#### setSubFlow(subFlow)
+
+Set the sub flow to execute after this question
+* subFlow *(Flow)* - Flow instance
+
+#### setFormatAnswerFunction(callback)
+
+Set a format function to format given answer with
+* callback *(Function(answerValue))* - Callback that is called when an answer is given
+  * answerValue *(Object)* - Value of the answer
+  
+  returns *(Object)* - Formatted answer
+
+#### setFormatQuestionFunction(callback)
+
+Set a format question text callback function
+* callback *(Function(answers))* - Callback that is called before the question is asked
+  * answers *(Answers)* - Answers instance
+  
+  returns *(String)* - Formatted question text to send
+
+#### setSummaryFunction(callback)
+
+Set a summary callback function to trigger after answer
+* callback *(Function(answers))* - Callback called when a summary of the given answers is requested
+  * answers *(Answers)* - Answers instance
+
+  returns *(String)* - Summary text to send
+
+#### setDelay(ms)
+
+Use a delay before executing the last added question
+* ms *(Integer)* - Milliseconds to delay question
+
+#### setTimeout(ms, text, callback)
+
+Use non-default timeout settings for this question
+* ms *(Integer)* - Milliseconds to wait for response
+* text *(String)* - Optional override timeout text to send
+* callback *(Function())* - Optional override timeout callback to call
+
+#### setMentionAnswerKey(mentionAnswerKey)
+
+Ask this question to users that were mentioned earlier
+* mentionAnswerKey *(String)* - Key used to store the mentions with in Answers
+
+#### setUserIds(userIds)
+
+Ask this question to a list of user ids
+* userIds *(Array)* - String array of Alterdesk user ids
+
+#### setBreakOnValue(value, stop)
+
+Break this multi user question on an answer value and optionally stop the flow
+* value *(Object)* - Value to break on
+* stop *(Boolean)* - Stop flow when breaking
+
+#### setBreakOnRegex(regex, stop)
+
+Break this multi user question when an answer matches the given regex and optionally stop the flow
+* regex *(RegExp)* - Regular expression to break with
+* stop *(Boolean)* - Stop flow when breaking
+
+#### setBreakOnCount(count)
+
+Break this multi user question when a certain number of answers is reached
+* count *(Integer)* - Count of answers to break on
+
+#### setMultiUserSummaryFunction(callback)
+
+Set a summary callback function to trigger after every user answer
+* callback *(Function(answers, userId, breaking))* - Callback that is called when a user answers the question
+  * answers *(Answers)* - Answers instance
+  * userId *(String)* - Alterdesk user id of the user that answered
+  * breaking *(Boolean)* - If breaking multi user question because of this answer
+
+  returns *(String)* - Summary text to send
+
+#### execute(control, response, callback, answers)
+
+Execute this question(internal use)
+* control *(Control)* - Control instance to use
+* response *(Response)* - Hubot Response instance
+* callback *(Function(response, listener))* - Callback that is called when the question is answered
+  * response *(Response)* - Hubot Response instance
+  * listener *(Listener)* - Listener instance
+* answers *(Answers)* - Answers instance
+
+#### cleanup()
+
+Clean up question if timed out or stopped
+
+#### checkAndParseAnswer(matches, message)
+
+Answer given by the user is parsed and checked here
+* matches *(Array)* - Array of regular expression matches
+* message *(Message)* - Hubot Message instance
+
+returns *(Object)* - Parsed value when accepted
+
+### TextQuestion
+#### constructor(answerKey, questionText, invalidText)
+
+Create a new TextQuestion instance
+* answerKey *(String)* - Key to store answer in Answers instance with
+* questionText *(String)* - Text to send when the question is triggered
+* invalidText *(String)* - Text to send when the user sends an invalid answer
+
+#### setRegex(regex)
+
+Use an alternative regular expression
+* regex *(RegExp)* - Regular expression to check answer with
+
+#### setLength(min, max)
+
+Set the accepted length of the answer
+* min *(Integer)* - Minimum accepted length
+* max *(Integer)* - Maximum accepted length
+
+#### checkAndParseAnswer(matches, message)
+
+Check if valid text and if length is accepted
+* matches *(Array)* - Array of regular expression matches
+* message *(Message)* - Hubot Message instance
+
+* returns *(String)* - Parsed value when accepted
+
+#### acceptedLength(text)
+
+Check if the text is within length boundaries
+* text *(String)* - Text to check
+
+returns *(Boolean)* - Accepted length
+ 
+### NumberQuestion
+#### constructor(answerKey, questionText, invalidText)
+
+Create a new NumberQuestion instance
+* answerKey *(String)* - Key to store answer in Answers instance with
+* questionText *(String)* - Text to send when the question is triggered
+* invalidText *(String)* - Text to send when the user sends an invalid answer
+
+#### setRange(min, max)
+
+Limit the valid answer to range
+* min *(Integer)* - Minimum accepted value
+* max *(Integer)* - Maximum accepted value
+
+#### checkAndParseAnswer(matches, message)
+
+Parse given number as float and only accept if in range
+* matches *(Array)* - Array of regular expression matches
+* message *(Message)* - Hubot Message instance
+
+* returns *(Integer)* - Parsed value when accepted
+
+#### inRange(value)
+
+Check if the value is in range
+* value *(Integer)* - Value to check
+
+returns *(Boolean)* - Accepted value
+
+### EmailQuestion
+#### constructor(answerKey, questionText, invalidText)
+
+Create a new EmailQuestion instance
+* answerKey *(String)* - Key to store answer in Answers instance with
+* questionText *(String)* - Text to send when the question is triggered
+* invalidText *(String)* - Text to send when the user sends an invalid answer
+
+#### checkAndParseAnswer(matches, message)
+
+Check for valid email and if domain is allowed
+* matches *(Array)* - Array of regular expression matches
+* message *(Message)* - Hubot Message instance
+
+* returns *(String)* - Parsed email address when accepted
+
+#### addAllowedDomain(domain)
+
+Add a domain to limit accepted answers to
+* domain *(String)* - Accepted domain
+
+#### addAllowedDomains(domains)
+
+Add a list of accepted domains
+* domains *(Array)* - String array of accepted domains
+ 
+### PhoneNumberQuestion
+#### constructor(answerKey, questionText, invalidText)
+
+Create a new PhoneNumberQuestion instance
+* answerKey *(String)* - Key to store answer in Answers instance with
+* questionText *(String)* - Text to send when the question is triggered
+* invalidText *(String)* - Text to send when the user sends an invalid answer
+
+#### checkAndParseAnswer(matches, message)
+
+Check if valid phone number and if country code is allowed
+* matches *(Array)* - Array of regular expression matches
+* message *(Message)* - Hubot Message instance
+
+* returns *(String)* - Parsed phone number when accepted
+
+#### addAllowedCountryCode(code)
+
+Add a country code to limit accepted answers to
+* code *(String)* - Accepted country code
+
+#### addAllowedCountryCodes(codes)
+
+Add a list of accepted country codes
+* codes *(Array)* - String array of allowed country codes
+
+### MentionQuestion
+#### constructor(answerKey, questionText, invalidText)
+
+Create a new MentionQuestion instance
+* answerKey *(String)* - Key to store answer in Answers instance with
+* questionText *(String)* - Text to send when the question is triggered
+* invalidText *(String)* - Text to send when the user sends an invalid answer
+
+#### setIncludeMentions(mentions)
+
+Include these mentions after question is answered
+* mentions *(Array)* - Alterdesk mention user data array to add
+
+#### setAllAllowed(allowed)
+
+Change if if the mentioned all tag is allowed
+* allowed *(Boolean)* - If the mention all tag is allowed
+
+#### setRobotAllowed(allowed)
+
+Change if it is allowed to mention robot
+* allowed *(allowed)* - If tagging the Hubot user id is allowed
+
+#### checkAndParseAnswer(matches, message)
+
+Parse mentioned users or mentioned all tags
+* matches *(Array)* - Array of regular expression matches
+* message *(Message)* - Hubot Message instance
+
+* returns *(Array)* - Parsed array of mention data when accepted
+
+### AttachmentQuestion
+#### constructor(answerKey, questionText, invalidText)
+
+Create a new AttachmentQuestion instance
+* answerKey *(String)* - Key to store answer in Answers instance with
+* questionText *(String)* - Text to send when the question is triggered
+* invalidText *(String)* - Text to send when the user sends an invalid answer
+
+#### checkAndParseAnswer(matches, message)
+
+Get attachments that were sent with the message
+* matches *(Array)* - Array of regular expression matches
+* message *(Message)* - Hubot Message instance
+
+* returns *(Array)* - Parsed array of attachments when accepted
+
+#### inCountRange(value)
+
+Check if the value is in range
+* value *(Integer)* - Count value
+
+returns *(Boolean)* - Accepted count
+
+#### inSizeRange(value)
+
+Check if the value is in range
+* value *(Integer)* - Size value
+
+returns *(Boolean)* - Accepted size
+
+#### setCountRange(minCount, maxCount)
+
+Set a minimum and/or maximum count of attachments to accept
+* minCount *(Integer)* - Minimum count of attachments
+* maxCount *(Integer)* - Maximum count of attachments
+
+#### setSizeRange(minSize, maxSize)
+
+Set a minimum and/or maximum size to accept
+* minSize *(Integer)* - Minimum file size in bytes
+* maxSize *(Integer)* - Maximum file size in bytes
+
+#### addAllowedExtension(extension)
+
+Add an extension to limit accepted answers to
+* extension *(String)* - Allowed extension
+
+#### addAllowedExtensions(extensions)
+
+Add a list of accepted extensions
+* extensions *(Array)* - String array of allowed extensions
+
+### PolarQuestion
+#### constructor(answerKey, questionText, invalidText)
+
+Create a new PolarQuestion instance
+* answerKey *(String)* - Key to store answer in Answers instance with
+* questionText *(String)* - Text to send when the question is triggered
+* invalidText *(String)* - Text to send when the user sends an invalid answer
+
+#### setPositive(regex, subFlow)
+
+Set the positive answer regex and optional sub flow to start when a positive answer was given
+* regex *(RegExp)* - Regular expression to trigger positive answer
+* subFlow *(Flow)* - Flow to start when positive answer was given
+
+#### setNegative(regex, subFlow)
+
+Set the negative answer regex and optional sub flow to start when a negative answer was given
+* regex *(RegExp)* - Regular expression to trigger negative answer
+* subFlow *(Flow)* - Flow to start when negative answer was given
+
+#### checkAndParseAnswer(matches, message)
+
+Check if the positive regex or negative regex matches, and set corresponding sub flow to execute
+* matches *(Array)* - Array of regular expression matches
+* message *(Message)* - Hubot Message instance
+
+* returns *(Boolean)* - Parsed value when accepted
+
+### MultipleChoiceQuestion
+#### constructor(answerKey, questionText, invalidText)
+
+Create a new MultipleChoiceQuestion instance
+* answerKey *(String)* - Key to store answer in Answers instance with
+* questionText *(String)* - Text to send when the question is triggered
+* invalidText *(String)* - Text to send when the user sends an invalid answer
+
+#### addOption(regex, subFlow)
+
+Add an option answer regex and optional sub flow
+* regex *(RegExp)* - Regular expression to trigger option answer
+* subFlow *(Flow)* - Flow to start when option answer was given
+
+#### checkAndParseAnswer(matches, message)
+
+Check the if one of the option regex matches, and set the corresponding sub flow to execute
+* matches *(Array)* - Array of regular expression matches
+* message *(Message)* - Hubot Message instance
+
+* returns *(String)* - Parsed value when accepted
+
+### MultipleChoiceOption
+#### constructor(regex, subFlow)
+
+Create a new MultipleChoiceOption instance(internal use)
+
