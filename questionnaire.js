@@ -1053,7 +1053,7 @@ class Flow {
                 information.execute(this, response);
             } else if(step instanceof Action) {
                 var action = step;
-                action.execute(this, response);
+                action.execute(this, response, this.answers);
             } else {
                 console.error("Invalid step: ", step);
                 this.next(response);
@@ -1075,9 +1075,9 @@ class Action {
     }
 
     // Execute this action
-    execute(flow, response) {
+    execute(flow, response, answers) {
         // Trigger action callback
-        this.callback(response, () => {
+        this.callback(response, answers, () => {
             // Wait after executing action if wait time was set
             if(this.waitMs && this.waitMs > 0) {
                 console.log("Waiting after executing action for " + this.waitMs + " milliseconds");
