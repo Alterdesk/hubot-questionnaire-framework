@@ -505,6 +505,12 @@ class Flow {
         return this;
     }
 
+    // Add an external action to the flow
+    action(callback, waitMs) {
+        this.steps.push(new Action(callback, waitMs));
+        return this;
+    }
+
     // Add new TextQuestion
     text(answerKey, questionText, invalidText) {
         return this.add(new TextQuestion(answerKey, questionText, invalidText));
@@ -1045,6 +1051,9 @@ class Flow {
             } else if(step instanceof Information) {
                 var information = step;
                 information.execute(this, response);
+            } else if(step instanceof Action) {
+                var action = step;
+                action.execute(this, response);
             } else {
                 console.error("Invalid step: ", step);
                 this.next(response);
@@ -1055,6 +1064,30 @@ class Flow {
                 this.finishedCallback(response, this.answers);
             }
         }
+    }
+};
+
+// Class to preform an external action during a flow
+class Action {
+    constructor(callback, waitMs) {
+        this.callback = callback;
+        this.waitMs = waitMs;
+    }
+
+    // Execute this action
+    execute(flow, response) {
+        // Trigger action callback
+        this.callback(response, () => {
+            // Wait after executing action if wait time was set
+            if(this.waitMs && this.waitMs > 0) {
+                console.log("Waiting after executing action for " + this.waitMs + " milliseconds");
+                setTimeout(() => {
+                    flow.next(response);
+                }, this.waitMs)
+            } else {
+                flow.next(response);
+            }
+        });
     }
 };
 
