@@ -764,8 +764,8 @@ class Flow {
         return this.add(new MultipleChoiceQuestion(answerKey, questionText, invalidText));
     }
 
-    // Add an option regex and optional sub flow of the last added MultipleChoiceQuestion
-    option(regex, subFlow) {
+    // Add an option regex, optional sub flow and optional value of the last added MultipleChoiceQuestion
+    option(regex, subFlow, value) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on option()");
             return this;
@@ -774,7 +774,7 @@ class Flow {
             console.error("Last added Question is not an instance of MultipleChoiceQuestion on option()");
             return this;
         }
-        this.lastAddedQuestion.addOption(regex, subFlow);
+        this.lastAddedQuestion.addOption(regex, subFlow, value);
         return this;
     }
 
@@ -1736,8 +1736,8 @@ class MultipleChoiceQuestion extends Question {
     }
 
     // Add an option answer regex and optional sub flow
-    addOption(regex, subFlow) {
-        this.options.push(new MultipleChoiceOption(regex, subFlow));
+    addOption(regex, subFlow, value) {
+        this.options.push(new MultipleChoiceOption(regex, subFlow, value));
     }
 
     // Check the if one of the option regex matches, and set the corresponding sub flow to execute
@@ -1747,7 +1747,7 @@ class MultipleChoiceQuestion extends Question {
         }
         var choice = matches[0];
         var longestMatch = null;
-        var subFlow = null;
+        var optionMatch = null;
         for(var index in this.options) {
             var option = this.options[index];
             var match = choice.match(option.regex);
@@ -1759,21 +1759,32 @@ class MultipleChoiceQuestion extends Question {
                     }
                 }
                 longestMatch = matchString;
-                subFlow = option.subFlow;
+                optionMatch = option;
             }
         }
-        if(subFlow) {
-            this.setSubFlow(subFlow);
+        if(optionMatch) {
+            // Set the sub flow if available
+            var subFlow = optionMatch.subFlow;
+            if(subFlow) {
+                this.setSubFlow(subFlow);
+            }
+            // Return value if set
+            var value = optionMatch.value;
+            if(value) {
+                return value;
+            }
         }
+        // Return text match
         return longestMatch;
     }
 };
 
 // Class to contain a option of a multiple choice question
 class MultipleChoiceOption {
-    constructor(regex, subFlow) {
+    constructor(regex, subFlow, value) {
         this.regex = regex;
         this.subFlow = subFlow;
+        this.value = value;
     }
 };
 
