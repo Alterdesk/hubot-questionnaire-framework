@@ -1770,7 +1770,7 @@ class MultipleChoiceQuestion extends Question {
             }
             // Return value if set
             var value = optionMatch.value;
-            if(value) {
+            if(typeof value !== typeof undefined) {
                 return value;
             }
         }
