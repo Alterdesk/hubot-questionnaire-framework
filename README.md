@@ -761,7 +761,7 @@ Callback that is called when a message is deleted
 #### setGroupMemberCallback(callback)
 
 Callback that is called when a group member is added or removed
-* callback *(Function(groupId, added, userId, users))* - Function callback called when a groupchat member is added or removed =
+* callback *(Function(groupId, added, userId, users))* - Function callback called when a groupchat member is added or removed
   * groupId *(String)* - Alterdesk group chat id
   * added *(Boolean)* - If the member is added or removed
   * userId *(String)* - Alterdesk user id that added or removed the members
@@ -807,6 +807,15 @@ Add a information message to the flow
 * waitMs *(Integer)* - Milliseconds to wait after sending information
 
 returns *(Flow)* - Flow instance
+
+#### action(callback, waitMs)
+
+Add an external asynchronous action to the flow
+* callback *(Function(response, answers, flowCallback))* - Function callback called when the external action should be triggered
+  * response *(Response)* - Hubot Response instance
+  * answers *(Answers)* - Answers instance
+  * flowCallback *(Function())* - Callback to call when the flow should continue
+* waitMs *(Integer)* - Milliseconds to wait after executing action
 
 #### text(answerKey, questionText, invalidText)
 
@@ -989,11 +998,13 @@ Add a MultipleChoiceQuestion to the Flow
 
 returns *(Flow)* - Flow instance
 
-#### option(regex, subFlow)
+#### option(regex, subFlow, value)
 
-Add an option regex and optional sub flow of the last added MultipleChoiceQuestion
+Add an option regex, optional sub flow and optional value of the last added MultipleChoiceQuestion
 * regex *(RegExp)* - Regular expression to trigger option answer
 * subFlow *(Flow)* - Flow to start when option answer was given
+* value *(Object)* - Value to set as answer when option answer was given
+
 
 returns *(Flow)* - Flow instance
 
@@ -1478,11 +1489,12 @@ Create a new MultipleChoiceQuestion instance
 * questionText *(String)* - Text to send when the question is triggered
 * invalidText *(String)* - Text to send when the user sends an invalid answer
 
-#### addOption(regex, subFlow)
+#### addOption(regex, subFlow, value)
 
-Add an option answer regex and optional sub flow
+Add an option answer regex, optional sub flow and optional value 
 * regex *(RegExp)* - Regular expression to trigger option answer
 * subFlow *(Flow)* - Flow to start when option answer was given
+* value *(Object)* - Value to set as answer when option answer was given
 
 #### checkAndParseAnswer(matches, message)
 

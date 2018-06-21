@@ -1204,16 +1204,13 @@ class Question {
         if(this.formatQuestionFunction != null) {
             var formatted = this.formatQuestionFunction(answers);
             if(formatted && formatted !== "") {
-                // Send formatted question text
-                response.send(formatted);
-            } else {
-                // Formatting failed, fallback to configured text
-                response.send(this.questionText);
+                // Set formatted question as question text
+                this.questionText = formatted;
+
             }
-        } else {
-            // Send question text
-            response.send(this.questionText);
         }
+        // Send question text
+        response.send(this.questionText);
 
         // Check if the question should be asked to multiple users
         if(this.isMultiUser) {
