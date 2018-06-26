@@ -946,6 +946,7 @@ class Flow {
             }
             var userId = flow.control.getUserId(response.message.user);
             multiAnswers.add(userId, answerValue);
+            console.log("Added multi-user answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
             var answerCount = multiAnswers.size();
 
             // Check if a value was set to break multi user question on and use it
@@ -987,6 +988,7 @@ class Flow {
         } else {
             // Valid answer, store in the answers object
             this.answers.add(question.answerKey, answerValue);
+            console.log("Added answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
         }
 
         // Trigger sub flow if set in question, otherwise continue
@@ -1038,7 +1040,13 @@ class Flow {
             var step = this.steps[this.currentStep++];
             if(step instanceof Question) {
                 var question = step;
+                if(this.answers.get(question.answerKey)) {
+                    console.log("Already have answer for \"" + question.answerKey + "\", skipping question");
+                    this.next(response);
+                    return;
+                }
                 console.log("Flow next question: " + question.questionText);
+
                 // Delay executing this message if a delay was set
                 if(question.delayMs && question.delayMs > 0) {
                     console.log("Executing question delayed by " + question.delayMs + " milliseconds");
