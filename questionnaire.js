@@ -12,6 +12,9 @@
 var Extra = require('node-messenger-extra');
 const {Response, User, Message, TextMessage, LeaveMessage, TopicMessage} = require('hubot');
 
+// Optional dependency, onyl loaded when Control.setMessengerApi() was called
+var Messenger;
+
 // Data container of answers that the user has given
 class Answers {
     constructor() {
@@ -63,6 +66,7 @@ class Listener {
     // Configure the listener for the given control instance
     configure(control) {
         this.control = control;
+
         // Matcher for stop regex
         this.stopMatcher = (responseMessage) => {
             if (responseMessage.text != null && control.stopRegex != null) {
@@ -70,33 +74,23 @@ class Listener {
             }
         };
 
-        var msg = this.msg;
-
         // Timeout milliseconds and callback
         var useTimeoutMs = this.timeoutMs || control.responseTimeoutMs;
         var useTimeoutText = this.timeoutText || control.responseTimeoutText;
         var useTimeoutCallback = this.timeoutCallback;
         if(useTimeoutCallback == null) {
-            useTimeoutCallback = function() {
+            useTimeoutCallback = () => {
                 if(useTimeoutText != null) {
-                    msg.send(useTimeoutText);
+                    this.msg.send(useTimeoutText);
                 }
             };
         };
 
-        var message = this.msg.message;
-
         // Set timer for timeout
-        this.timer = setTimeout(function () {
+        this.timer = setTimeout(() => {
+            var message = this.msg.message;
             console.log("Response timeout from user " + control.getUserId(message.user) + " in room " + message.room);
-
-            // Delete listener
-            control.removeListener(message);
-
-            // Call question cleanup if question is set
-            if(this.question != null) {
-                this.question.cleanup();
-            }
+            this.question.cleanup(message);
 
             // Call timeout callback
             useTimeoutCallback();
@@ -107,8 +101,10 @@ class Listener {
     call(responseMessage) {
         console.log("call: text: \"" + responseMessage.text + "\"");
 
-        // Cancel timeout timer
-        clearTimeout(this.timer);
+        if(this.timer) {
+            // Cancel timeout timer
+            clearTimeout(this.timer);
+        }
 
         // Check if given regex matches
         this.matches = this.matcher(responseMessage);
@@ -121,11 +117,95 @@ class Listener {
     }
 };
 
+class PendingRequest {
+    constructor(msg, callback, answers, question) {
+        this.msg = msg;
+        this.callback = callback;
+        this.answers = answers;
+        this.question = question;
+        this.timeoutMs = question.timeoutMs;
+        this.timeoutText = question.timeoutText;
+        this.timeoutCallback = question.timeoutCallback;
+    }
+
+    configure(control) {
+        this.control = control;
+
+        // Timeout milliseconds and callback
+        var useTimeoutMs = this.timeoutMs || control.responseTimeoutMs;
+        var useTimeoutText = this.timeoutText || control.responseTimeoutText;
+        var useTimeoutCallback = this.timeoutCallback;
+        if(useTimeoutCallback == null) {
+            useTimeoutCallback = () => {
+                if(useTimeoutText != null) {
+                    this.msg.send(useTimeoutText);
+                }
+            };
+        };
+
+        this.timer = setTimeout(() => {
+            var message = this.msg.message;
+            console.log("Response timeout from user " + control.getUserId(message.user) + " in room " + message.room);
+            this.question.cleanup(message);
+
+            // Call timeout callback
+            useTimeoutCallback();
+        }, useTimeoutMs);
+    }
+
+    // Called when an event was received for the request
+    call(responseMessage) {
+        console.log("call: \"" + responseMessage + "\"");
+
+        if(this.timer) {
+            // Cancel timeout timer
+            clearTimeout(this.timer);
+        }
+
+        // Check if this response if for the correct pending request message
+        var requestMessageId;
+        if(responseMessage.id && responseMessage.id["message_id"]) {
+            requestMessageId = responseMessage.id["message_id"];
+        } else {
+            requestMessageId = responseMessage.id
+        }
+        var idMatch = requestMessageId === this.question.requestMessageId;
+
+        var text;
+
+        if(idMatch) {
+            var event = responseMessage.text;
+            if(event === "conversation_question_answer" || event === "groupchat_question_answer") {
+                if(responseMessage.id && responseMessage.id["option"]) {
+                    text = responseMessage.id["option"];
+                }
+            } else if(event === "conversation_verification_accepted" || event === "conversation_verification_rejected"
+              || event === "groupchat_verification_accepted" || event === "groupchat_verification_rejected") {
+                text = event;
+            }
+        } else {
+            console.log("Message ids do not match on pending request call");
+        }
+
+        responseMessage.text = text;
+
+        if(text) {
+            this.matches = text.match(this.question.regex);
+        }
+
+        // Call callback
+        this.callback(new Response(this.msg.robot, responseMessage, true), this);
+    }
+};
+
 // Class to control the questionnaires with
 class Control {
     constructor() {
         // Listeners for active questionnaires
         this.questionnaireListeners = {};
+
+        // Pending requests for active questionnaires
+        this.questionnairePendingRequests = {};
 
         // Accepted commands
         this.acceptedCommands = [];
@@ -155,8 +235,19 @@ class Control {
         // Catch TopicMessages, used for events
         this.catchTopics = process.env.HUBOT_QUESTIONNAIRE_CATCH_TOPICS || true;
 
-        // Remove a questionnaire listener when a user leave is detected
+        // Remove a questionnaire listener and pending request when a user leave is detected
         this.removeListenerOnLeave = process.env.HUBOT_QUESTIONNAIRE_REMOVE_ON_LEAVE || false;
+    }
+
+    // Set the messenger api instance to use
+    setMessengerApi(messengerApi) {
+        try {
+            Messenger = require('node-messenger-sdk');
+            this.messengerApi = messengerApi;
+        } catch(error) {
+            console.error("setMessengerApi:", error);
+        }
+
     }
 
     // Override the default receiver
@@ -231,6 +322,36 @@ class Control {
                         var userId = control.getUserId(message.user);
                         var isGroup = control.isUserInGroup(message.user);
                         control.messageDeletedCallback(userId, message.id, message.room, isGroup);
+                    }
+                } else if(event === "conversation_verification_accepted" || event === "conversation_verification_rejected"
+                    || event === "groupchat_verification_accepted" || event === "groupchat_verification_rejected") {
+                    if(control.hasPendingRequest(message)) {
+                        var pendingRequest = control.removePendingRequest(message);
+                        pendingRequest.call(message);
+                    }
+                    if(control.verificationCallback) {
+                        var userId = control.getUserId(message.user);
+                        var isGroup = control.isUserInGroup(message.user);
+                        var accepted = event === "conversation_verification_accepted" || event === "groupchat_verification_accepted";
+                        control.verificationCallback(userId, message.id, message.room, isGroup, accepted);
+                    }
+                } else if(event === "conversation_question_answer" || event === "groupchat_question_answer") {
+                    if(control.hasPendingRequest(message)) {
+                        var pendingRequest = control.removePendingRequest(message);
+                        pendingRequest.call(message);
+                    }
+                    if(control.questionCallback) {
+                        var userId = control.getUserId(message.user);
+                        var isGroup = control.isUserInGroup(message.user);
+                        var messageId;
+                        var option;
+                        if(message.id) {
+                            messageId = message.id["message_id"];
+                            option = message.id["option"];
+                        }
+                        if(messageId && option) {
+                            control.questionCallback(userId, messageId, message.room, isGroup, option);
+                        }
                     }
                 } else if(event === "groupchat_members_added" || event === "groupchat_members_removed") {
                     if(control.groupMemberCallback) {
@@ -310,8 +431,13 @@ class Control {
 
             } else if(className === "LeaveMessage" || message instanceof LeaveMessage) {
                 console.log("Leave detected: " + message.user.id);
-                if(control.removeListenerOnLeave && control.hasListener(message)) {
-                    control.removeListener(message);
+                if(control.removeListenerOnLeave) {
+                    if(control.hasListener(message)) {
+                        control.removeListener(message);
+                    }
+                    if(control.hasPendingRequest(message)) {
+                        control.removePendingRequest(message);
+                    }
                 }
             }
 
@@ -337,6 +463,9 @@ class Control {
         }
         console.log("Removing listener for user " + userId + " in room " + message.room);
         var listener = this.questionnaireListeners[message.room + userId];
+        if(listener != null && listener.timer != null) {
+            clearTimeout(listener.timer);
+        }
         delete this.questionnaireListeners[message.room + userId];
         return listener;
     }
@@ -344,6 +473,34 @@ class Control {
     // Check if a listener is present for a user in a room
     hasListener(message) {
         return this.questionnaireListeners[message.room + this.getUserId(message.user)] != null;
+    }
+
+    // Add a pending request for a user
+    addPendingRequest(message, pendingRequest) {
+        pendingRequest.configure(this)
+        var userId = this.getUserId(message.user);
+        console.log("Adding pending request for user " + userId + " in room " + message.room);
+        this.questionnairePendingRequests[message.room + userId] = pendingRequest;
+    }
+
+    // Remove a pending request for a user
+    removePendingRequest(message) {
+        var userId = this.getUserId(message.user);
+        if(this.questionnairePendingRequests[message.room + userId] == null) {
+            return null;
+        }
+        console.log("Removing pending request for user " + userId + " in room " + message.room);
+        var pendingRequest = this.questionnairePendingRequests[message.room + userId];
+        if(pendingRequest != null && pendingRequest.timer != null) {
+            clearTimeout(pendingRequest.timer);
+        }
+        delete this.questionnairePendingRequests[message.room + userId];
+        return pendingRequest;
+    }
+
+    // Check if a pending request is present for a user in a room
+    hasPendingRequest(message) {
+        return this.questionnairePendingRequests[message.room + this.getUserId(message.user)] != null;
     }
 
     // Alterdesk adapter uses separate user id field(user.id in groups consists of (group_id + user_id)
@@ -434,6 +591,16 @@ class Control {
     // Callback that is called when a message is deleted
     setMessageDeletedCallback(messageDeletedCallback) {
         this.messageDeletedCallback = messageDeletedCallback;
+    }
+
+    // Callback that is called when a verification request is accepted or rejected
+    setVerificationCallback(verificationCallback) {
+        this.verificationCallback = verificationCallback;
+    }
+
+    // Callback that is called when a question request is answered
+    setQuestionCallback(questionCallback) {
+        this.questionCallback = questionCallback;
     }
 
     // Callback that is called when a group member is added or removed
@@ -745,6 +912,19 @@ class Flow {
         return this;
     }
 
+    positiveButton(name, label, style) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on positiveButton()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof PolarQuestion)) {
+            console.error("Last added Question is not an instance of PolarQuestion on positiveButton()");
+            return this;
+        }
+        this.lastAddedQuestion.setPositiveButton(name, label, style);
+        return this;
+    }
+
     // Set the negative regex and optional sub flow of the last added PolarQuestion
     negative(regex, subFlow) {
         if(this.lastAddedQuestion == null) {
@@ -756,6 +936,19 @@ class Flow {
             return this;
         }
         this.lastAddedQuestion.setNegative(regex, subFlow);
+        return this;
+    }
+
+    negativeButton(name, label, style) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on negativeButton()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof PolarQuestion)) {
+            console.error("Last added Question is not an instance of PolarQuestion on negativeButton()");
+            return this;
+        }
+        this.lastAddedQuestion.setNegativeButton(name, label, style);
         return this;
     }
 
@@ -776,6 +969,26 @@ class Flow {
         }
         this.lastAddedQuestion.addOption(regex, subFlow, value);
         return this;
+    }
+
+    button(name, label, style) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on button()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof MultipleChoiceQuestion)) {
+            console.error("Last added Question is not an instance of MultipleChoiceQuestion on button()");
+            return this;
+        }
+        this.lastAddedQuestion.addButton(name, label, style);
+        return this;
+    }
+
+    // Add new VerificationQuestion
+    verification(answerKey, provider) {
+        var verificationQuestion = new VerificationQuestion(answerKey, "", "");
+        verificationQuestion.setProvider(provider);
+        return this.add(verificationQuestion);
     }
 
     // Ask the last added question to the users that were mentioned a MentionQuestion earlier (multi user question)
@@ -908,26 +1121,49 @@ class Flow {
         this.next(msg);
     }
 
-    // Callback function that is used with Listeners
-    callback(response, listener) {
-        var question = listener.question;
+    // Callback function that is used with Listeners and PendingRequests
+    callback(response, listenerOrPendingRequest) {
+        var question = listenerOrPendingRequest.question;
         var flow = question.flow;
 
-        // Check if the stop regex was triggered
-        if(listener.stop) {
-            question.cleanup();
-            if(flow.stopText != null) {
-                response.send(flow.stopText);
-            }
-            return;
-        }
+        if(listenerOrPendingRequest instanceof Listener) {
+            var listener = listenerOrPendingRequest;
 
-        // Let the Question check and parse the message
-        var answerValue = question.checkAndParseAnswer(listener.matches, response.message);
-        if(answerValue == null) {
-            response.send(question.invalidText + " " + question.questionText);
-            return flow.control.addListener(response.message, new Listener(response, this.callback, this.answers, question));
+            // Check if the stop regex was triggered
+            if(listener.stop) {
+                question.cleanup(response.message);
+                if(flow.stopText != null) {
+                    response.send(flow.stopText);
+                }
+                return;
+            }
+
+            // Let the Question check and parse the message
+            var answerValue = question.checkAndParseAnswer(listener.matches, response.message);
+            if(answerValue == null) {
+                console.log("No valid answer value from listener, resetting listener");
+                response.send(question.invalidText + " " + question.questionText);
+                return flow.control.addListener(response.message, new Listener(response, this.callback, this.answers, question));
+            }
+            flow.onAnswer(response, question, answerValue);
+        } else if(listenerOrPendingRequest instanceof PendingRequest) {
+            var pendingRequest = listenerOrPendingRequest;
+
+            var answerValue = question.checkAndParseAnswer(pendingRequest.matches, response.message);
+            if(answerValue == null) {
+                console.log("No valid answer value from pending request, resetting pending request");
+//                response.send(question.invalidText + " " + question.questionText);    // TODO Should probably not ask again
+                return flow.control.addPendingRequest(response.message, new PendingRequest(response, this.callback, this.answers, question));
+            }
+            flow.onAnswer(response, question, answerValue);
+        } else {
+            response.send(flow.errorText);
         }
+    }
+
+    // Process question answer
+    onAnswer(response, question, answerValue) {
+        var flow = question.flow;
 
         // Format the given answer if a function was set
         if(question.formatAnswerFunction) {
@@ -972,7 +1208,7 @@ class Flow {
 
             // Cleanup on breaking and stop if configured
             if(breaking) {
-                question.cleanup();
+                question.cleanup(response.message);
                 if(stopping) {
                     if(flow.stopText != null) {
                         response.send(flow.stopText);
@@ -1129,6 +1365,8 @@ class Question {
         this.questionText = questionText || "QUESTION_TEXT";
         this.invalidText = invalidText || "INVALID_TEXT";
         this.isMultiUser = false;
+        this.useListeners = true;
+        this.usePendingRequests = false;
     }
 
     // Set the parent flow
@@ -1217,30 +1455,45 @@ class Question {
 
             }
         }
+
+        // Generate user id list by mentioned users
+        if(this.isMultiUser && !this.userIds && this.mentionAnswerKey) {
+            var mentions = answers.get(this.mentionAnswerKey);
+            if(mentions) {
+                this.userIds = [];
+                for(var index in mentions) {
+                    var mention = mentions[index];
+                    var userId = mention["id"];
+                    if(userId.toUpperCase() === "@ALL") {
+                        console.log("Skipping @All tag on execute()");
+                        continue;
+                    }
+                    if(userId) {
+                        this.userIds.push(userId);
+                    }
+               }
+            }
+        }
+
         // Send question text
+        this.send(control, response, callback, answers);
+    }
+
+    // Send the message text
+    send(control, response, callback, answers) {
         response.send(this.questionText);
+        this.setListenersAndPendingRequests(control, response, callback, answers);
+    }
+
+    // Set the Listeners and PendingRequests for this Question
+    setListenersAndPendingRequests(control, response, callback, answers) {
+        // Check if listeners or pending requests should be added
+        if(!this.useListeners && !this.usePendingRequests || (this.pendingRequest && !control.messengerApi)) {
+            return;
+        }
 
         // Check if the question should be asked to multiple users
         if(this.isMultiUser) {
-            // Generate user id list by mentioned users
-            if(!this.userIds && this.mentionAnswerKey) {
-                var mentions = answers.get(this.mentionAnswerKey);
-                if(mentions) {
-                    this.userIds = [];
-                    for(var index in mentions) {
-                        var mention = mentions[index];
-                        var userId = mention["id"];
-                        if(userId.toUpperCase() === "@ALL") {
-                            console.log("Skipping @All tag on execute()");
-                            continue;
-                        }
-                        if(userId) {
-                            this.userIds.push(userId);
-                        }
-                    }
-                }
-            }
-
             // Check if user id list is available and not empty
             if(this.userIds && this.userIds.length > 0) {
                 var question = this;
@@ -1257,7 +1510,7 @@ class Question {
                     // Mark question as timed out
                     question.timedOut = true;
                     // Clean up remaining listeners
-                    question.cleanup();
+                    question.cleanup(response.message);
                     // Trigger timeout callback
                     if(configuredTimeoutCallback) {
                         configuredTimeoutCallback();
@@ -1281,8 +1534,14 @@ class Question {
                     // Store for cleanup if needed
                     question.multiUserMessages.push(userMessage);
 
-                    // Add listener for user and wait for answer
-                    control.addListener(userMessage, new Listener(response, callback, answers, this));
+                    if(question.useListeners) {
+                        // Add listener for user and wait for answer
+                        control.addListener(userMessage, new Listener(response, callback, answers, this));
+                    }
+                    if(question.usePendingRequests) {
+                        // Add listener for user and wait for answer
+                        control.addPendingRequest(userMessage, new PendingRequest(response, callback, answers, this));
+                    }
                 }
                 return;
             }
@@ -1290,18 +1549,28 @@ class Question {
             response.send(this.flow.errorText);
             return;
         }
-        // Add listener for single user and wait for answer
-        control.addListener(response.message, new Listener(response, callback, answers, this));
+
+        if(this.useListeners) {
+            // Add listener for single user and wait for answer
+            control.addListener(response.message, new Listener(response, callback, answers, this));
+        }
+        if(this.usePendingRequests) {
+            // Add a pending request for single user and wait for answer
+            control.addPendingRequest(response.message, new PendingRequest(response, callback, answers, this));
+        }
     }
 
     // Clean up question if timed out or stopped
-    cleanup() {
+    cleanup(msg) {
+        if(msg) {
+            this.flow.control.removeListener(msg);
+            this.flow.control.removePendingRequest(msg);
+        }
         if(this.multiUserMessages != null) {
             for(var index in this.multiUserMessages) {
-                var listener = this.flow.control.removeListener(this.multiUserMessages[index]);
-                if(listener != null && listener.timer != null) {
-                    clearTimeout(listener.timer);
-                }
+                var userMessage = this.multiUserMessages[index];
+                this.flow.control.removeListener(userMessage);
+                this.flow.control.removePendingRequest(userMessage);
             }
         }
     }
@@ -1703,6 +1972,7 @@ class PolarQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
         this.regex = Extra.getTextRegex();
+        this.useButtons = false;
     }
 
     // Set the positive answer regex and optional sub flow to start when a positive answer was given
@@ -1717,8 +1987,97 @@ class PolarQuestion extends Question {
         this.negativeFlow = subFlow;
     }
 
+    setPositiveButton(name, label, style) {
+        this.useButtons = true;
+        this.positiveName = name;
+        this.positiveLabel = label;
+        this.positiveStyle = style;
+    }
+
+    setNegativeButton(name, label, style) {
+        this.useButtons = true;
+        this.negativeName = name;
+        this.negativeLabel = label;
+        this.negativeStyle = style;
+    }
+
+    send(control, response, callback, answers) {
+        if(control.messengerApi && this.useButtons) {
+            var messageData = new Messenger.SendMessageData();
+            messageData.message = this.questionText;
+            messageData.chatId = response.message.room;
+            messageData.isGroup = control.isUserInGroup(response.message.user);
+            messageData.isAux = false;
+
+            var questionPayload = new Messenger.QuestionPayload();
+            questionPayload.multiAnswer = false;
+//            questionPayload.style = "horizontal";
+
+            var labelPositive = this.positiveLabel || this.positiveRegex;
+            if(!labelPositive) {
+                labelPositive = "Positive";
+            }
+            var namePositive = this.positiveName || this.positiveRegex;
+            if(namePositive) {
+                namePositive = namePositive.toLowerCase();
+            } else {
+                namePositive = "positive";
+            }
+            var positiveOption = new Messenger.QuestionOption();
+            positiveOption.style = this.positiveStyle || "green";
+            positiveOption.label = labelPositive;
+            positiveOption.name = namePositive;
+            questionPayload.addQuestionOption(positiveOption);
+
+            var labelNegative = this.negativeLabel || this.negativeRegex;
+            if(!labelNegative) {
+                labelNegative = "Negative";
+            }
+            var nameNegative = this.negativeName || this.negativeRegex;
+            if(nameNegative) {
+                nameNegative = nameNegative.toLowerCase();
+            } else {
+                nameNegative = "negative";
+            }
+            var negativeOption = new Messenger.QuestionOption();
+            negativeOption.style = this.negativeStyle || "red";
+            negativeOption.label = labelNegative;
+            negativeOption.name = nameNegative;
+            questionPayload.addQuestionOption(negativeOption);
+
+            if(this.userIds && this.userIds.length > 0) {
+                questionPayload.addUserIds(this.userIds);
+            } else {
+                questionPayload.addUserId(control.getUserId(response.message.user));
+            }
+            messageData.payload = questionPayload;
+
+            var question = this;
+
+            // Send the message and parse result in callback
+            control.messengerApi.sendMessage(messageData, function(success, json) {
+                console.log("Send question successful: " + success);
+                if(json != null) {
+                    var messageId = json["id"];
+                    console.log("Question message id: " + messageId);
+                    question.requestMessageId = messageId;
+                    question.usePendingRequests = true;
+                } else {
+                    // Fallback
+                    response.send(question.questionText);
+                }
+                question.setListenersAndPendingRequests(control, response, callback, answers);
+            });
+        } else {
+            response.send(this.questionText);
+            this.setListenersAndPendingRequests(control, response, callback, answers);
+        }
+    }
+
     // Check if the positive regex or negative regex matches, and set corresponding sub flow to execute
     checkAndParseAnswer(matches, message) {
+        console.log("!!! MATCHES", matches);
+        console.log("!!! MESSAGE", message);
         if(matches == null || message.text == null) {
             return null;
         } else if(message.text.match(this.positiveRegex)) {
@@ -1738,11 +2097,85 @@ class MultipleChoiceQuestion extends Question {
         super(answerKey, questionText, invalidText);
         this.regex = Extra.getNonEmptyRegex();
         this.options = [];
+        this.useButtons = false;
     }
 
     // Add an option answer regex and optional sub flow
     addOption(regex, subFlow, value) {
         this.options.push(new MultipleChoiceOption(regex, subFlow, value));
+    }
+
+    addButton(name, label, style) {
+        this.useButtons = true;
+        if(this.options && this.options.length > 0) {
+            var option = this.options[this.options.length - 1];
+            if(option) {
+                option.name = name;
+                option.label = label;
+                option.style = style;
+            }
+        }
+    }
+
+    send(control, response, callback, answers) {
+        if(control.messengerApi && this.useButtons) {
+            var messageData = new Messenger.SendMessageData();
+            messageData.message = this.questionText;
+            messageData.chatId = response.message.room;
+            messageData.isGroup = control.isUserInGroup(response.message.user);
+            messageData.isAux = false;
+
+            var questionPayload = new Messenger.QuestionPayload();
+            questionPayload.multiAnswer = false;
+//            questionPayload.style = "horizontal";
+            for(var i in this.options) {
+                var option = this.options[i];
+
+                var label = option.label || option.regex;
+                if(!label) {
+                    label = "Label" + i;
+                }
+
+                var name = option.name || option.regex;
+                if(name) {
+                    name = name.toLowerCase();
+                } else {
+                    name = "name" + i;
+                }
+
+                var questionOption = new Messenger.QuestionOption();
+                questionOption.style = option.style || "red";
+                questionOption.label = label;
+                questionOption.name = name;
+                questionPayload.addQuestionOption(questionOption);
+            }
+            if(this.userIds && this.userIds.length > 0) {
+                questionPayload.addUserIds(this.userIds);
+            } else {
+                questionPayload.addUserId(control.getUserId(response.message.user));
+            }
+            messageData.payload = questionPayload;
+
+            var question = this;
+
+            // Send the message and parse result in callback
+            control.messengerApi.sendMessage(messageData, function(success, json) {
+                console.log("Send question successful: " + success);
+                if(json != null) {
+                    var messageId = json["id"];
+                    console.log("Question message id: " + messageId);
+                    question.requestMessageId = messageId;
+                    question.usePendingRequests = true;
+                } else {
+                    // Fallback
+                    response.send(question.questionText);
+                }
+                question.setListenersAndPendingRequests(control, response, callback, answers);
+            });
+        } else {
+            response.send(this.questionText);
+            this.setListenersAndPendingRequests(control, response, callback, answers);
+        }
     }
 
     // Check the if one of the option regex matches, and set the corresponding sub flow to execute
@@ -1793,11 +2226,118 @@ class MultipleChoiceOption {
     }
 };
 
+// Verification question
+class VerificationQuestion extends Question {
+    constructor(answerKey, questionText, invalidText) {
+        super(answerKey, questionText, invalidText);
+        this.useListeners = false;
+        this.usePendingRequests = true;
+    }
+
+    setProvider(provider) {
+        this.provider = provider;
+    }
+
+    send(control, response, callback, answers) {
+        // Unable to preform question without messenger api
+        if(!control.messengerApi) {
+            this.cleanup(response.message);
+            response.send(this.flow.errorText);
+            return;
+        }
+
+        if(this.isMultiUser && this.userIds && this.userIds.length > 0) {
+            for(var index in this.userIds) {
+                this.sendForUserId(control, response, callback, answers, this.userIds[index]);
+            }
+        } else {
+            this.sendForUserId(control, response, callback, answers, control.getUserId(response.message.user));
+        }
+    }
+
+    sendForUserId(control, response, callback, answers, userId) {
+        var question = this;
+
+        // Try to retrieve provider for user
+        control.messengerApi.getUserProviders(userId, function(providerSuccess, providerJson) {
+            if(!providerSuccess) {
+                question.cleanup(response.message);
+                response.send(question.flow.errorText);
+                return;
+            }
+            var providerId;
+            for(var i in providerJson) {
+                var provider = providerJson[i];
+                if(provider["name"] === question.provider) {
+                    providerId = provider["provider_id"];
+                    break;
+                }
+            }
+            if(providerId) {
+                // Got provider, send verification request
+                var chatId = response.message.room;
+                var isGroup = control.isUserInGroup(response.message.user);
+
+                control.messengerApi.askUserVerification(userId, providerId, chatId, isGroup, false, function(askSuccess, askJson) {
+                    if(!askSuccess) {
+                        question.cleanup(response.message);
+                        response.send(question.flow.errorText);
+                        return;
+                    }
+                    var messageId = askJson["id"];
+                    console.log("Verification message id: " + messageId);
+                    question.requestMessageId = messageId;
+                    question.setListenersAndPendingRequests(control, response, callback, answers);
+                });
+            } else {
+                // Unable to get provider, check if user already verified via provider
+                control.messengerApi.getUserVerifications(userId, function(verificationsSuccess, verificationsJson) {
+                    if(!verificationsSuccess) {
+                        question.cleanup(response.message);
+                        response.send(question.flow.errorText);
+                        return;
+                    }
+                    var isVerified = false;
+                    var userVerifications = verificationsJson["user"];
+                    for(var i in userVerifications) {
+                        var verification = userVerifications[i];
+                        if(verification["name"] === question.provider) {
+                            isVerified = true;
+                            break;
+                        }
+                    }
+                    if(isVerified) {
+                        question.flow.onAnswer(response, question, true);
+                    } else {
+                        question.cleanup(response.message);
+                        response.send(question.flow.errorText);
+                        return;
+                    }
+                });
+            }
+        });
+    }
+
+    checkAndParseAnswer(matches, message) {
+        if(matches === null || !matches || message.text == null) {
+            return null;
+        }
+        var event = message.text;
+        if(event === "conversation_verification_accepted" || event === "groupchat_verification_accepted") {
+            return true;
+        } else if(event === "conversation_verification_rejected" || event === "groupchat_verification_rejected") {
+            return false;
+        }
+        return null;
+    }
+};
+
 // Export the classes
 module.exports = {
 
     Answers : Answers,
     Listener : Listener,
+    PendingRequest : PendingRequest,
     Control : Control,
     Flow : Flow,
     TextQuestion : TextQuestion,
@@ -1807,5 +2347,7 @@ module.exports = {
     MentionQuestion : MentionQuestion,
     AttachmentQuestion : AttachmentQuestion,
     PolarQuestion : PolarQuestion,
-    MultipleChoiceQuestion : MultipleChoiceQuestion
+    MultipleChoiceQuestion : MultipleChoiceQuestion,
+    VerificationQuestion : VerificationQuestion
+
 };
