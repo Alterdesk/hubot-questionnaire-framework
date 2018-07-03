@@ -44,16 +44,12 @@ class Answers {
 
 // Listener class for consecutive questions
 class Listener {
-    constructor(msg, callback, answers, question) {
+    constructor(msg, callback, question) {
         this.call = this.call.bind(this);
         this.msg = msg;
         this.callback = callback;
-        this.answers = answers;
         this.question = question;
         this.regex = question.regex || Extra.getTextRegex();
-        this.timeoutMs = question.timeoutMs;
-        this.timeoutText = question.timeoutText;
-        this.timeoutCallback = question.timeoutCallback;
 
         // Matcher for given regex
         this.matcher = (message) => {
@@ -73,38 +69,11 @@ class Listener {
                 return responseMessage.text.match(control.stopRegex);
             }
         };
-
-        // Timeout milliseconds and callback
-        var useTimeoutMs = this.timeoutMs || control.responseTimeoutMs;
-        var useTimeoutText = this.timeoutText || control.responseTimeoutText;
-        var useTimeoutCallback = this.timeoutCallback;
-        if(useTimeoutCallback == null) {
-            useTimeoutCallback = () => {
-                if(useTimeoutText != null) {
-                    this.msg.send(useTimeoutText);
-                }
-            };
-        };
-
-        // Set timer for timeout
-        this.timer = setTimeout(() => {
-            var message = this.msg.message;
-            console.log("Response timeout from user " + control.getUserId(message.user) + " in room " + message.room);
-            this.question.cleanup(message);
-
-            // Call timeout callback
-            useTimeoutCallback();
-        }, useTimeoutMs);
     }
 
     // Called when a message was received for the listener
     call(responseMessage) {
         console.log("call: text: \"" + responseMessage.text + "\"");
-
-        if(this.timer) {
-            // Cancel timeout timer
-            clearTimeout(this.timer);
-        }
 
         // Check if given regex matches
         this.matches = this.matcher(responseMessage);
@@ -118,49 +87,16 @@ class Listener {
 };
 
 class PendingRequest {
-    constructor(msg, callback, answers, question) {
+    constructor(msg, callback, question) {
+        this.call = this.call.bind(this);
         this.msg = msg;
         this.callback = callback;
-        this.answers = answers;
         this.question = question;
-        this.timeoutMs = question.timeoutMs;
-        this.timeoutText = question.timeoutText;
-        this.timeoutCallback = question.timeoutCallback;
-    }
-
-    configure(control) {
-        this.control = control;
-
-        // Timeout milliseconds and callback
-        var useTimeoutMs = this.timeoutMs || control.responseTimeoutMs;
-        var useTimeoutText = this.timeoutText || control.responseTimeoutText;
-        var useTimeoutCallback = this.timeoutCallback;
-        if(useTimeoutCallback == null) {
-            useTimeoutCallback = () => {
-                if(useTimeoutText != null) {
-                    this.msg.send(useTimeoutText);
-                }
-            };
-        };
-
-        this.timer = setTimeout(() => {
-            var message = this.msg.message;
-            console.log("Response timeout from user " + control.getUserId(message.user) + " in room " + message.room);
-            this.question.cleanup(message);
-
-            // Call timeout callback
-            useTimeoutCallback();
-        }, useTimeoutMs);
     }
 
     // Called when an event was received for the request
     call(responseMessage) {
         console.log("call: \"" + responseMessage + "\"");
-
-        if(this.timer) {
-            // Cancel timeout timer
-            clearTimeout(this.timer);
-        }
 
         // Check if this response if for the correct pending request message
         var requestMessageId;
@@ -206,6 +142,9 @@ class Control {
 
         // Pending requests for active questionnaires
         this.questionnairePendingRequests = {};
+
+        // Timeout timers for active questionnaires
+        this.questionnaireTimeoutTimers = {};
 
         // Accepted commands
         this.acceptedCommands = [];
@@ -453,6 +392,9 @@ class Control {
         var userId = this.getUserId(message.user);
         console.log("Adding listener for user " + userId + " in room " + message.room);
         this.questionnaireListeners[message.room + userId] = listener;
+        if(!this.hasTimeoutTimer(message)) {
+            this.addTimeoutTimer(message, listener.msg, listener.question);
+        }
     }
 
     // Remove a listener that was added before
@@ -463,10 +405,10 @@ class Control {
         }
         console.log("Removing listener for user " + userId + " in room " + message.room);
         var listener = this.questionnaireListeners[message.room + userId];
-        if(listener != null && listener.timer != null) {
-            clearTimeout(listener.timer);
-        }
         delete this.questionnaireListeners[message.room + userId];
+        if(this.hasTimeoutTimer(message)) {
+            this.removeTimeoutTimer(message, listener.question);
+        }
         return listener;
     }
 
@@ -477,10 +419,12 @@ class Control {
 
     // Add a pending request for a user
     addPendingRequest(message, pendingRequest) {
-        pendingRequest.configure(this)
         var userId = this.getUserId(message.user);
         console.log("Adding pending request for user " + userId + " in room " + message.room);
         this.questionnairePendingRequests[message.room + userId] = pendingRequest;
+        if(!this.hasTimeoutTimer(message)) {
+            this.addTimeoutTimer(message, pendingRequest.msg, pendingRequest.question);
+        }
     }
 
     // Remove a pending request for a user
@@ -491,16 +435,57 @@ class Control {
         }
         console.log("Removing pending request for user " + userId + " in room " + message.room);
         var pendingRequest = this.questionnairePendingRequests[message.room + userId];
-        if(pendingRequest != null && pendingRequest.timer != null) {
-            clearTimeout(pendingRequest.timer);
-        }
         delete this.questionnairePendingRequests[message.room + userId];
+        if(this.hasTimeoutTimer(message)) {
+            this.removeTimeoutTimer(message, pendingRequest.question);
+        }
         return pendingRequest;
     }
 
     // Check if a pending request is present for a user in a room
     hasPendingRequest(message) {
         return this.questionnairePendingRequests[message.room + this.getUserId(message.user)] != null;
+    }
+
+    addTimeoutTimer(message, msg, question) {
+        var userId = this.getUserId(message.user);
+        console.log("Adding timeout timer for user " + userId + " in room " + message.room);
+        // Timeout milliseconds and callback
+        var useTimeoutMs = question.timeoutMs || this.responseTimeoutMs;
+        var useTimeoutText = question.timeoutText || this.responseTimeoutText;
+        var useTimeoutCallback = question.timeoutCallback;
+        if(useTimeoutCallback == null) {
+            useTimeoutCallback = () => {
+                if(useTimeoutText != null) {
+                    msg.send(useTimeoutText);
+                }
+            };
+        };
+
+        var timer = setTimeout(() => {
+            console.log("Timer timeout from user " + userId + " in room " + message.room);
+            question.cleanup(message);
+
+            // Call timeout callback
+            useTimeoutCallback();
+        }, useTimeoutMs);
+
+        this.questionnaireTimeoutTimers[message.room + userId] = timer;
+    }
+
+    removeTimeoutTimer(message) {
+        var userId = this.getUserId(message.user);
+        if(this.questionnaireTimeoutTimers[message.room + userId] == null) {
+            return;
+        }
+        console.log("Removing timeout timer for user " + userId + " in room " + message.room);
+        var timer = this.questionnaireTimeoutTimers[message.room + userId];
+        delete this.questionnaireTimeoutTimers[message.room + userId];
+        clearTimeout(timer);
+    }
+
+    hasTimeoutTimer(message) {
+        return this.questionnaireTimeoutTimers[message.room + this.getUserId(message.user)] != null;
     }
 
     // Alterdesk adapter uses separate user id field(user.id in groups consists of (group_id + user_id)
@@ -1116,9 +1101,16 @@ class Flow {
                 msg.send(this.errorText);
             }
             return;
+        } else if(msg == null) {
+            console.error("msg is null on start");
+            if(this.errorText != null) {
+                msg.send(this.errorText);
+            }
+            return;
         }
+        this.msg = msg;
         this.answers = answers || new Answers();
-        this.next(msg);
+        this.next();
     }
 
     // Callback function that is used with Listeners and PendingRequests
@@ -1143,7 +1135,7 @@ class Flow {
             if(answerValue == null) {
                 console.log("No valid answer value from listener, resetting listener");
                 response.send(question.invalidText + " " + question.questionText);
-                return flow.control.addListener(response.message, new Listener(response, this.callback, this.answers, question));
+                return flow.control.addListener(response.message, new Listener(response, this.callback, question));
             }
             flow.onAnswer(response, question, answerValue);
         } else if(listenerOrPendingRequest instanceof PendingRequest) {
@@ -1151,9 +1143,8 @@ class Flow {
 
             var answerValue = question.checkAndParseAnswer(pendingRequest.matches, response.message);
             if(answerValue == null) {
-                console.log("No valid answer value from pending request, resetting pending request");
-//                response.send(question.invalidText + " " + question.questionText);    // TODO Should probably not ask again
-                return flow.control.addPendingRequest(response.message, new PendingRequest(response, this.callback, this.answers, question));
+                console.log("No valid answer value from pending request or wrong request message id, resetting pending request");
+                return flow.control.addPendingRequest(response.message, new PendingRequest(response, this.callback, question));
             }
             flow.onAnswer(response, question, answerValue);
         } else {
@@ -1252,10 +1243,10 @@ class Flow {
                     }
                 }
 
-                flow.next(response);
+                flow.next();
             });
             // Start the sub flow
-            subFlow.start(response, this.answers);
+            subFlow.start(this.msg, this.answers);
         } else {
             // Call summary function if set
             if(question.summaryFunction != null) {
@@ -1265,12 +1256,12 @@ class Flow {
                 }
             }
 
-            flow.next(response);
+            flow.next();
         }
     }
 
     // Execute next question
-    next(response) {
+    next() {
         // Check if has more steps or flow is finished
         if(this.currentStep < this.steps.length) {
             var step = this.steps[this.currentStep++];
@@ -1278,7 +1269,7 @@ class Flow {
                 var question = step;
                 if(this.answers.get(question.answerKey)) {
                     console.log("Already have answer for \"" + question.answerKey + "\", skipping question");
-                    this.next(response);
+                    this.next();
                     return;
                 }
                 console.log("Flow next question: " + question.questionText);
@@ -1287,25 +1278,25 @@ class Flow {
                 if(question.delayMs && question.delayMs > 0) {
                     console.log("Executing question delayed by " + question.delayMs + " milliseconds");
                     setTimeout(() => {
-                        question.execute(this.control, response, this.callback, this.answers);
+                        question.execute(this.control, this.msg, this.callback, this.answers);
                     }, question.delayMs);
                 } else {
-                    question.execute(this.control, response, this.callback, this.answers);
+                    question.execute(this.control, this.msg, this.callback, this.answers);
                 }
             } else if(step instanceof Information) {
                 var information = step;
-                information.execute(this, response);
+                information.execute(this, this.msg);
             } else if(step instanceof Action) {
                 var action = step;
-                action.execute(this, response, this.answers);
+                action.execute(this, this.msg, this.answers);
             } else {
                 console.error("Invalid step: ", step);
-                this.next(response);
+                this.next();
             }
         } else {
             console.log("Flow finished");
             if(this.finishedCallback != null) {
-                this.finishedCallback(response, this.answers);
+                this.finishedCallback(this.msg, this.answers);
             }
         }
     }
@@ -1319,17 +1310,17 @@ class Action {
     }
 
     // Execute this action
-    execute(flow, response, answers) {
+    execute(flow, msg, answers) {
         // Trigger action callback
-        this.callback(response, answers, () => {
+        this.callback(msg, answers, () => {
             // Wait after executing action if wait time was set
             if(this.waitMs && this.waitMs > 0) {
                 console.log("Waiting after executing action for " + this.waitMs + " milliseconds");
                 setTimeout(() => {
-                    flow.next(response);
+                    flow.next();
                 }, this.waitMs)
             } else {
-                flow.next(response);
+                flow.next();
             }
         });
     }
@@ -1343,17 +1334,17 @@ class Information {
     }
 
     // Execute this information message
-    execute(flow, response) {
+    execute(flow, msg) {
         // Send information message text
-        response.send(this.text);
+        msg.send(this.text);
         // Wait after sending message if wait time was set
         if(this.waitMs && this.waitMs > 0) {
             console.log("Waiting after sending information for " + this.waitMs + " milliseconds");
             setTimeout(() => {
-                flow.next(response);
+                flow.next();
             }, this.waitMs)
         } else {
-            flow.next(response);
+            flow.next();
         }
     }
 };
@@ -1445,7 +1436,7 @@ class Question {
     }
 
     // Execute this question
-    execute(control, response, callback, answers) {
+    execute(control, msg, callback, answers) {
 
         if(this.formatQuestionFunction != null) {
             var formatted = this.formatQuestionFunction(answers);
@@ -1476,17 +1467,17 @@ class Question {
         }
 
         // Send question text
-        this.send(control, response, callback, answers);
+        this.send(control, msg, callback);
     }
 
     // Send the message text
-    send(control, response, callback, answers) {
-        response.send(this.questionText);
-        this.setListenersAndPendingRequests(control, response, callback, answers);
+    send(control, msg, callback) {
+        msg.send(this.questionText);
+        this.setListenersAndPendingRequests(control, msg, callback);
     }
 
     // Set the Listeners and PendingRequests for this Question
-    setListenersAndPendingRequests(control, response, callback, answers) {
+    setListenersAndPendingRequests(control, msg, callback) {
         // Check if listeners or pending requests should be added
         if(!this.useListeners && !this.usePendingRequests || (this.pendingRequest && !control.messengerApi)) {
             return;
@@ -1510,14 +1501,14 @@ class Question {
                     // Mark question as timed out
                     question.timedOut = true;
                     // Clean up remaining listeners
-                    question.cleanup(response.message);
+                    question.cleanup(msg.message);
                     // Trigger timeout callback
                     if(configuredTimeoutCallback) {
                         configuredTimeoutCallback();
                     } else {
                         var timeoutText = question.timeoutText || control.responseTimeoutText;
                         if(timeoutText != null) {
-                            response.send(timeoutText);
+                            msg.send(timeoutText);
                         }
                     }
                 };
@@ -1529,34 +1520,34 @@ class Question {
                     // Create Message for each user id in list
                     var user = new User(userId);
                     var userMessage = new Message(user);
-                    userMessage.room = response.message.room;
+                    userMessage.room = msg.message.room;
 
                     // Store for cleanup if needed
                     question.multiUserMessages.push(userMessage);
 
                     if(question.useListeners) {
                         // Add listener for user and wait for answer
-                        control.addListener(userMessage, new Listener(response, callback, answers, this));
+                        control.addListener(userMessage, new Listener(msg, callback, this));
                     }
                     if(question.usePendingRequests) {
                         // Add listener for user and wait for answer
-                        control.addPendingRequest(userMessage, new PendingRequest(response, callback, answers, this));
+                        control.addPendingRequest(userMessage, new PendingRequest(msg, callback, this));
                     }
                 }
                 return;
             }
             console.error("Empty userId list for multi-user question");
-            response.send(this.flow.errorText);
+            msg.send(this.flow.errorText);
             return;
         }
 
         if(this.useListeners) {
             // Add listener for single user and wait for answer
-            control.addListener(response.message, new Listener(response, callback, answers, this));
+            control.addListener(msg.message, new Listener(msg, callback, this));
         }
         if(this.usePendingRequests) {
             // Add a pending request for single user and wait for answer
-            control.addPendingRequest(response.message, new PendingRequest(response, callback, answers, this));
+            control.addPendingRequest(msg.message, new PendingRequest(msg, callback, this));
         }
     }
 
@@ -2001,12 +1992,12 @@ class PolarQuestion extends Question {
         this.negativeStyle = style;
     }
 
-    send(control, response, callback, answers) {
+    send(control, msg, callback) {
         if(control.messengerApi && this.useButtons) {
             var messageData = new Messenger.SendMessageData();
             messageData.message = this.questionText;
-            messageData.chatId = response.message.room;
-            messageData.isGroup = control.isUserInGroup(response.message.user);
+            messageData.chatId = msg.message.room;
+            messageData.isGroup = control.isUserInGroup(msg.message.user);
             messageData.isAux = false;
 
             var questionPayload = new Messenger.QuestionPayload();
@@ -2048,7 +2039,7 @@ class PolarQuestion extends Question {
             if(this.userIds && this.userIds.length > 0) {
                 questionPayload.addUserIds(this.userIds);
             } else {
-                questionPayload.addUserId(control.getUserId(response.message.user));
+                questionPayload.addUserId(control.getUserId(msg.message.user));
             }
             messageData.payload = questionPayload;
 
@@ -2064,20 +2055,18 @@ class PolarQuestion extends Question {
                     question.usePendingRequests = true;
                 } else {
                     // Fallback
-                    response.send(question.questionText);
+                    msg.send(question.questionText);
                 }
-                question.setListenersAndPendingRequests(control, response, callback, answers);
+                question.setListenersAndPendingRequests(control, msg, callback);
             });
         } else {
-            response.send(this.questionText);
-            this.setListenersAndPendingRequests(control, response, callback, answers);
+            msg.send(this.questionText);
+            this.setListenersAndPendingRequests(control, msg, callback);
         }
     }
 
     // Check if the positive regex or negative regex matches, and set corresponding sub flow to execute
     checkAndParseAnswer(matches, message) {
-        console.log("!!! MATCHES", matches);
-        console.log("!!! MESSAGE", message);
         if(matches == null || message.text == null) {
             return null;
         } else if(message.text.match(this.positiveRegex)) {
@@ -2117,12 +2106,12 @@ class MultipleChoiceQuestion extends Question {
         }
     }
 
-    send(control, response, callback, answers) {
+    send(control, msg, callback) {
         if(control.messengerApi && this.useButtons) {
             var messageData = new Messenger.SendMessageData();
             messageData.message = this.questionText;
-            messageData.chatId = response.message.room;
-            messageData.isGroup = control.isUserInGroup(response.message.user);
+            messageData.chatId = msg.message.room;
+            messageData.isGroup = control.isUserInGroup(msg.message.user);
             messageData.isAux = false;
 
             var questionPayload = new Messenger.QuestionPayload();
@@ -2152,7 +2141,7 @@ class MultipleChoiceQuestion extends Question {
             if(this.userIds && this.userIds.length > 0) {
                 questionPayload.addUserIds(this.userIds);
             } else {
-                questionPayload.addUserId(control.getUserId(response.message.user));
+                questionPayload.addUserId(control.getUserId(msg.message.user));
             }
             messageData.payload = questionPayload;
 
@@ -2167,14 +2156,18 @@ class MultipleChoiceQuestion extends Question {
                     question.requestMessageId = messageId;
                     question.usePendingRequests = true;
                 } else {
-                    // Fallback
-                    response.send(question.questionText);
+                    var fallbackText = question.questionText;
+                    for(var i in questionPayload.questionOptions) {
+                        var option = questionPayload.questionOptions[i];
+                        fallbackText += "\n • \"" + option.name + "\" - " + option.label;
+                    }
+                    msg.send(fallbackText);
                 }
-                question.setListenersAndPendingRequests(control, response, callback, answers);
+                question.setListenersAndPendingRequests(control, msg, callback);
             });
         } else {
-            response.send(this.questionText);
-            this.setListenersAndPendingRequests(control, response, callback, answers);
+            msg.send(this.questionText);
+            this.setListenersAndPendingRequests(control, msg, callback);
         }
     }
 
@@ -2238,31 +2231,29 @@ class VerificationQuestion extends Question {
         this.provider = provider;
     }
 
-    send(control, response, callback, answers) {
+    send(control, msg, callback) {
         // Unable to preform question without messenger api
         if(!control.messengerApi) {
-            this.cleanup(response.message);
-            response.send(this.flow.errorText);
+            msg.send(this.flow.errorText);
             return;
         }
 
         if(this.isMultiUser && this.userIds && this.userIds.length > 0) {
             for(var index in this.userIds) {
-                this.sendForUserId(control, response, callback, answers, this.userIds[index]);
+                this.sendForUserId(control, msg, callback, this.userIds[index]);
             }
         } else {
-            this.sendForUserId(control, response, callback, answers, control.getUserId(response.message.user));
+            this.sendForUserId(control, msg, callback, control.getUserId(msg.message.user));
         }
     }
 
-    sendForUserId(control, response, callback, answers, userId) {
+    sendForUserId(control, msg, callback, userId) {
         var question = this;
 
         // Try to retrieve provider for user
         control.messengerApi.getUserProviders(userId, function(providerSuccess, providerJson) {
             if(!providerSuccess) {
-                question.cleanup(response.message);
-                response.send(question.flow.errorText);
+                msg.send(question.flow.errorText);
                 return;
             }
             var providerId;
@@ -2275,26 +2266,24 @@ class VerificationQuestion extends Question {
             }
             if(providerId) {
                 // Got provider, send verification request
-                var chatId = response.message.room;
-                var isGroup = control.isUserInGroup(response.message.user);
+                var chatId = msg.message.room;
+                var isGroup = control.isUserInGroup(msg.message.user);
 
                 control.messengerApi.askUserVerification(userId, providerId, chatId, isGroup, false, function(askSuccess, askJson) {
                     if(!askSuccess) {
-                        question.cleanup(response.message);
-                        response.send(question.flow.errorText);
+                        msg.send(question.flow.errorText);
                         return;
                     }
                     var messageId = askJson["id"];
                     console.log("Verification message id: " + messageId);
                     question.requestMessageId = messageId;
-                    question.setListenersAndPendingRequests(control, response, callback, answers);
+                    question.setListenersAndPendingRequests(control, msg, callback);
                 });
             } else {
-                // Unable to get provider, check if user already verified via provider
+                // Unable to get provider for this user, check if user already verified via provider
                 control.messengerApi.getUserVerifications(userId, function(verificationsSuccess, verificationsJson) {
                     if(!verificationsSuccess) {
-                        question.cleanup(response.message);
-                        response.send(question.flow.errorText);
+                        msg.send(question.flow.errorText);
                         return;
                     }
                     var isVerified = false;
@@ -2307,10 +2296,9 @@ class VerificationQuestion extends Question {
                         }
                     }
                     if(isVerified) {
-                        question.flow.onAnswer(response, question, true);
+                        question.flow.onAnswer(msg, question, true);
                     } else {
-                        question.cleanup(response.message);
-                        response.send(question.flow.errorText);
+                        msg.send(question.flow.errorText);
                         return;
                     }
                 });
