@@ -15,5 +15,8 @@
   "dependencies": {
     "hubot": "^2.19.0",
     "node-messenger-extra": "https://github.com/Alterdesk/node-messenger-extra.git"
+  },
+  "optionalDependencies": {
+    "node-messenger-sdk": "file:../node-messenger-sdk"
   }
 }
