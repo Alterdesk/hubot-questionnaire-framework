@@ -112,8 +112,16 @@ class PendingRequest {
         if(idMatch) {
             var event = responseMessage.text;
             if(event === "conversation_question_answer" || event === "groupchat_question_answer") {
-                if(responseMessage.id && responseMessage.id["option"]) {
-                    text = responseMessage.id["option"];
+                if(responseMessage.id && responseMessage.id["options"]) {
+                    var options = responseMessage.id["options"];
+                    var optionText = "";
+                    for(var index in options) {
+                        if(optionText.length > 0) {
+                            optionText += ",";
+                        }
+                        optionText += options[index];
+                    }
+                    text = optionText;
                 }
             } else if(event === "conversation_verification_accepted" || event === "conversation_verification_rejected"
               || event === "groupchat_verification_accepted" || event === "groupchat_verification_rejected") {
@@ -150,10 +158,13 @@ class Control {
         this.acceptedCommands = [];
         this.acceptedRegex = [];
         this.acceptedHelpTexts = {};
+        this.acceptedButtonLabels = {};
+        this.acceptedButtonStyles = {};
 
         // Regular expressions
         this.stopRegex = new RegExp(/^[ \n\r\t]*stop[ \n\r\t]*$/, 'gi');
         this.helpRegex = new RegExp(/^[ \n\r\t]*help[ \n\r\t]*$/, 'gi');
+        this.robotUserId;
         this.robotMentionRegex;
 
         // Response timeout milliseconds
@@ -165,6 +176,13 @@ class Control {
         this.catchAllCommands = process.env.HUBOT_QUESTIONNAIRE_CATCH_ALL || false;
         // Catch all text to send on unaccepted command
         this.catchAllText = process.env.HUBOT_QUESTIONNAIRE_CATCH_ALL_TEXT || "COMMAND_NOT_FOUND_TEXT";
+
+        // Catch all button name to use on unaccepted command
+        this.catchAllButtonName = process.env.HUBOT_QUESTIONNAIRE_CATCH_ALL_BUTTON_NAME;
+        // Catch all button label to use on unaccepted command
+        this.catchAllButtonLabel = process.env.HUBOT_QUESTIONNAIRE_CATCH_ALL_BUTTON_LABEL;
+        // Catch all button style to use on unaccepted command
+        this.catchAllButtonStyle = process.env.HUBOT_QUESTIONNAIRE_CATCH_ALL_BUTTON_STYLE;
 
         // Override default hubot help command
         this.catchHelpCommand = process.env.HUBOT_QUESTIONNAIRE_CATCH_HELP || false;
@@ -207,6 +225,10 @@ class Control {
 
         // Override receive function
         robot.receive = function(message) {
+
+            if(control.robotUserId == null && robot.user != null) {
+                control.robotUserId = robot.user.id;
+            }
 
             if(control.robotMentionRegex == null && robot.user != null) {
                 // Set the robot mention tag regex
@@ -278,18 +300,16 @@ class Control {
                     if(control.hasPendingRequest(message)) {
                         var pendingRequest = control.removePendingRequest(message);
                         pendingRequest.call(message);
+                    } else if(message.id) {
+                        control.checkCommandButton(message);
                     }
-                    if(control.questionCallback) {
+                    if(control.questionCallback && message.id) {
                         var userId = control.getUserId(message.user);
                         var isGroup = control.isUserInGroup(message.user);
-                        var messageId;
-                        var option;
-                        if(message.id) {
-                            messageId = message.id["message_id"];
-                            option = message.id["option"];
-                        }
-                        if(messageId && option) {
-                            control.questionCallback(userId, messageId, message.room, isGroup, option);
+                        var messageId = message.id["message_id"];
+                        var options = message.id["options"];
+                        if(messageId && options) {
+                            control.questionCallback(userId, messageId, message.room, isGroup, options);
                         }
                     }
                 } else if(event === "groupchat_members_added" || event === "groupchat_members_removed") {
@@ -340,12 +360,7 @@ class Control {
                 // Check if the user has sent the help command
                 if(control.catchHelpCommand && commandString.match(control.helpRegex) != null) {
                     console.log("Help detected");
-                    var response = new Response(robot, message, true);
-                    var helpText = control.catchHelpText;
-                    for(var field in control.acceptedHelpTexts) {
-                        helpText += "\n • \'" + field + "\' - " + control.acceptedHelpTexts[field];
-                    }
-                    response.send(helpText);
+                    control.sendHelpMessage(message);
                     return;
                 }
 
@@ -363,8 +378,7 @@ class Control {
                 // Stop if catch all is enabled and an unknown command was sent
                 if(control.catchAllCommands && unknownCommand) {
                     console.log("Catched unknown command");
-                    var response = new Response(robot, message, true);
-                    response.send(control.catchAllText);
+                    control.sendCatchAllMessage(message);
                     return;
                 }
 
@@ -529,6 +543,11 @@ class Control {
     setCatchAllText(text) {
         this.catchAllText = text;
     }
+    setCatchAllButton(name, label, style) {
+        this.catchAllButtonName = name;
+        this.catchAllButtonLabel = label;
+        this.catchAllButtonStyle = style;
+    }
 
     // Configuration to override default hubot help and commands that it does accept
     setCatchHelp(catchHelp) {
@@ -611,7 +630,7 @@ class Control {
     }
 
     // Add a command that the overridden receiver will accept
-    addAcceptedCommand(command, helpText) {
+    addAcceptedCommand(command, helpText, buttonLabel, buttonStyle) {
         var c = command.toLowerCase();
         var configured = false;
         for(var index in this.acceptedCommands) {
@@ -629,6 +648,133 @@ class Control {
         this.acceptedRegex.push(new RegExp("^[ \\n\\r\\t]*" + c + "+[ \\n\\r\\t]*$", 'gi'));
         if(helpText != null) {
             this.acceptedHelpTexts[command] = helpText;
+        }
+        if(buttonLabel != null) {
+            this.acceptedButtonLabels[command] = buttonLabel;
+        }
+        if(buttonStyle != null) {
+            this.acceptedButtonStyles[command] = buttonStyle;
+        }
+    }
+
+    checkCommandButton(message) {
+        if(!this.messengerApi) {
+            return;
+        }
+        var acceptedCommand = false;
+        var options = message.id["options"];
+        var optionText = "";
+        for(var index in options) {
+            if(optionText.length > 0) {
+                optionText += ",";
+            }
+            optionText += options[index];
+        }
+        var helpCommand = optionText.match(this.helpRegex);
+        if(!helpCommand) {
+            for(var index in this.acceptedCommands) {
+                if(optionText === this.acceptedCommands[index]) {
+                    acceptedCommand = true;
+                    break;
+                }
+            }
+            if(!acceptedCommand) {
+                return;
+            }
+        }
+        var userId = this.getUserId(message.user);
+        var roomId = message.room;
+        var isGroup = this.isUserInGroup(message.user);
+        var messageId = message.id["message_id"];
+        this.messengerApi.getMessage(messageId, roomId, isGroup, false, (success, json) => {
+            if(!success) {
+                console.error("Unable to retrieve request message on checkCommandButton");
+                return;
+            }
+            if(json != null && json["user"] && json["user"]["id"] === this.robotUserId) {
+                if(helpCommand) {
+                    this.sendHelpMessage(message);
+                } else {
+                    var textMessage = new TextMessage(message.user);
+                    textMessage.room = roomId;
+                    textMessage.text = optionText;
+                    this.robot.defaultRobotReceiver(textMessage);
+                }
+            }
+        });
+    }
+
+    sendHelpMessage(message) {
+        var helpText = this.catchHelpText;
+        for(var field in this.acceptedHelpTexts) {
+            helpText += "\n • \'" + field + "\' - " + this.acceptedHelpTexts[field];
+        }
+        if(this.messengerApi && Object.keys(this.acceptedButtonLabels).length > 0) {
+            var messageData = new Messenger.SendMessageData();
+            messageData.message = helpText;
+            messageData.chatId = message.room;
+            messageData.isGroup = this.isUserInGroup(message.user);
+            messageData.isAux = false;
+
+            var questionPayload = new Messenger.QuestionPayload();
+            questionPayload.multiAnswer = false;
+//            questionPayload.style = "horizontal";
+            for(var key in this.acceptedButtonLabels) {
+                var questionOption = new Messenger.QuestionOption();
+                questionOption.style = this.acceptedButtonStyles[key] || "red";
+                questionOption.label = this.acceptedButtonLabels[key];
+                questionOption.name = key;
+                questionPayload.addQuestionOption(questionOption);
+            }
+            questionPayload.addUserId(this.getUserId(message.user));
+            messageData.payload = questionPayload;
+
+            // Send the message and parse result in callback
+            this.messengerApi.sendMessage(messageData, (success, json) => {
+                console.log("Send help successful: " + success);
+                if(json == null) {
+                    // Fallback
+                    var response = new Response(this.robot, message, true);
+                    response.send(helpText);
+                }
+            });
+        } else {
+            var response = new Response(this.robot, message, true);
+            response.send(helpText);
+        }
+    }
+
+    sendCatchAllMessage(message) {
+        if(this.messengerApi && this.catchAllButtonName && this.catchAllButtonLabel) {
+            var messageData = new Messenger.SendMessageData();
+            messageData.message = this.catchAllText;
+            messageData.chatId = message.room;
+            messageData.isGroup = this.isUserInGroup(message.user);
+            messageData.isAux = false;
+
+            var questionPayload = new Messenger.QuestionPayload();
+            questionPayload.multiAnswer = false;
+//            questionPayload.style = "horizontal";
+            var questionOption = new Messenger.QuestionOption();
+            questionOption.style = this.catchAllButtonStyle || "red";
+            questionOption.label = this.catchAllButtonLabel;
+            questionOption.name = this.catchAllButtonName;
+            questionPayload.addQuestionOption(questionOption);
+            questionPayload.addUserId(this.getUserId(message.user));
+            messageData.payload = questionPayload;
+
+            // Send the message and parse result in callback
+            this.messengerApi.sendMessage(messageData, function(success, json) {
+                console.log("Send help successful: " + success);
+                if(json == null) {
+                    // Fallback
+                    var response = new Response(this.robot, message, true);
+                    response.send(this.catchAllText);
+                }
+            });
+        } else {
+            var response = new Response(this.robot, message, true);
+            response.send(this.catchAllText);
         }
     }
 }
