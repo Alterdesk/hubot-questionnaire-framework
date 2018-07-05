@@ -978,6 +978,49 @@ class Flow {
         return this;
     }
 
+    // Add predefined action to complete mentioned user data that were mentioned in the last added MentionQuestion
+    completeMentions(onlyCompleteAll) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on completeMentions()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof MentionQuestion)) {
+            console.error("Last added Question is not an instance of MentionQuestion on completeMentions()");
+            return this;
+        }
+        if(!this.control.messengerApi) {
+            console.error("Messenger API instance not set on completeMentions()");
+            return this;
+        }
+        var answerKey = this.lastAddedQuestion.answerKey;
+        this.action((response, answers, flowCallback) => {
+            if(!this.msg) {
+                flowCallback();
+                return;
+            }
+            var mentions = answers.get(answerKey);
+            if(onlyCompleteAll && (mentions.length > 1 || mentions[0]["id"] !== "@all")) {
+                flowCallback();
+                return;
+            }
+            var chatId = this.msg.message.room;
+            var isGroup = this.control.isUserInGroup(this.msg.message.user);
+            var excludeIds;
+
+            if(!this.lastAddedQuestion.robotAllowed) {
+                excludeIds = [];
+                excludeIds.push(this.control.robotUserId);
+            }
+            this.control.messengerApi.completeMentions(mentions, excludeIds, chatId, isGroup, false, (mentionedMembers) => {
+                if(mentionedMembers) {
+                    answers.add(answerKey, mentionedMembers);
+                }
+                flowCallback();
+            });
+        });
+        return this;
+    }
+
     // Add new AttachmentQuestion
     attachment(answerKey, questionText, invalidText) {
         return this.add(new AttachmentQuestion(answerKey, questionText, invalidText));
@@ -1955,7 +1998,7 @@ class MentionQuestion extends Question {
         // Retrieve robot id if available
         var robotId = null;
         if(this.flow.control.robot.user != null) {
-            robotId = this.flow.control.robot.user.id;
+            robotId = this.flow.control.robotUserId;
         }
 
         // Check for duplicates and robot mention
