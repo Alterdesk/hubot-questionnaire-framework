@@ -470,9 +470,7 @@ class Control {
         var useTimeoutCallback = question.timeoutCallback;
         if(useTimeoutCallback == null) {
             useTimeoutCallback = () => {
-                if(useTimeoutText != null) {
-                    msg.send(useTimeoutText);
-                }
+                question.flow.sendRestartMessage(useTimeoutText);
             };
         };
 
@@ -709,58 +707,46 @@ class Control {
         for(var field in this.acceptedHelpTexts) {
             helpText += "\n • \'" + field + "\' - " + this.acceptedHelpTexts[field];
         }
+        var questionPayload;
         if(this.messengerApi && Object.keys(this.acceptedButtonLabels).length > 0) {
-            var messageData = new Messenger.SendMessageData();
-            messageData.message = helpText;
-            messageData.chatId = message.room;
-            messageData.isGroup = this.isUserInGroup(message.user);
-            messageData.isAux = false;
-
-            var questionPayload = new Messenger.QuestionPayload();
+            questionPayload = new Messenger.QuestionPayload();
             questionPayload.multiAnswer = false;
 //            questionPayload.style = "horizontal";
             for(var key in this.acceptedButtonLabels) {
                 var questionOption = new Messenger.QuestionOption();
-                questionOption.style = this.acceptedButtonStyles[key] || "red";
+                questionOption.style = this.acceptedButtonStyles[key] || "theme";
                 questionOption.label = this.acceptedButtonLabels[key];
                 questionOption.name = key;
                 questionPayload.addQuestionOption(questionOption);
             }
             questionPayload.addUserId(this.getUserId(message.user));
-            messageData.payload = questionPayload;
-
-            // Send the message and parse result in callback
-            this.messengerApi.sendMessage(messageData, (success, json) => {
-                console.log("Send help successful: " + success);
-                if(json == null) {
-                    // Fallback
-                    var response = new Response(this.robot, message, true);
-                    response.send(helpText);
-                }
-            });
-        } else {
-            var response = new Response(this.robot, message, true);
-            response.send(helpText);
         }
+        sendRequestMessage(message, helpText, questionPayload);
     }
 
     sendCatchAllMessage(message) {
+        var questionPayload;
         if(this.messengerApi && this.catchAllButtonName && this.catchAllButtonLabel) {
-            var messageData = new Messenger.SendMessageData();
-            messageData.message = this.catchAllText;
-            messageData.chatId = message.room;
-            messageData.isGroup = this.isUserInGroup(message.user);
-            messageData.isAux = false;
-
-            var questionPayload = new Messenger.QuestionPayload();
+            questionPayload = new Messenger.QuestionPayload();
             questionPayload.multiAnswer = false;
 //            questionPayload.style = "horizontal";
             var questionOption = new Messenger.QuestionOption();
-            questionOption.style = this.catchAllButtonStyle || "red";
+            questionOption.style = this.catchAllButtonStyle || "theme";
             questionOption.label = this.catchAllButtonLabel;
             questionOption.name = this.catchAllButtonName;
             questionPayload.addQuestionOption(questionOption);
             questionPayload.addUserId(this.getUserId(message.user));
+        }
+        sendRequestMessage(message, this.catchAllText, questionPayload);
+    }
+
+    sendRequestMessage(message, text, questionPayload) {
+        if(this.messengerApi && questionPayload) {
+            var messageData = new Messenger.SendMessageData();
+            messageData.message = text;
+            messageData.chatId = message.room;
+            messageData.isGroup = this.isUserInGroup(message.user);
+            messageData.isAux = false;
             messageData.payload = questionPayload;
 
             // Send the message and parse result in callback
@@ -769,12 +755,12 @@ class Control {
                 if(json == null) {
                     // Fallback
                     var response = new Response(this.robot, message, true);
-                    response.send(this.catchAllText);
+                    response.send(text);
                 }
             });
         } else {
             var response = new Response(this.robot, message, true);
-            response.send(this.catchAllText);
+            response.send(text);
         }
     }
 }
@@ -1275,6 +1261,32 @@ class Flow {
         return this;
     }
 
+    restartButton(name, label, style) {
+        this.restartButtonName = name;
+        this.restartButtonLabel = label;
+        this.restartButtonStyle = style;
+        return this;
+    }
+
+    sendRestartMessage(text) {
+        if(!text || text === "") {
+            return;
+        }
+        var questionPayload;
+        if(this.control.messengerApi && this.restartButtonName && this.restartButtonLabel) {
+            questionPayload = new Messenger.QuestionPayload();
+            questionPayload.multiAnswer = false;
+//            questionPayload.style = "horizontal";
+            var questionOption = new Messenger.QuestionOption();
+            questionOption.style = this.restartButtonStyle || "theme";
+            questionOption.label = this.restartButtonLabel;
+            questionOption.name = this.restartButtonName;
+            questionPayload.addQuestionOption(questionOption);
+            questionPayload.addUserId(this.control.getUserId(this.msg.message.user));
+        }
+        this.control.sendRequestMessage(this.msg.message, text, questionPayload);
+    }
+
     // Set the flow finished callback function
     finish(finishedCallback) {
         this.finishedCallback = finishedCallback;
@@ -1286,15 +1298,11 @@ class Flow {
         console.log("Flow started");
         if(this.steps.length === 0) {
             console.error("No steps for flow on start");
-            if(this.errorText != null) {
-                msg.send(this.errorText);
-            }
+            this.sendRestartMessage(this.errorText);
             return;
         } else if(msg == null) {
             console.error("msg is null on start");
-            if(this.errorText != null) {
-                msg.send(this.errorText);
-            }
+            this.sendRestartMessage(this.errorText);
             return;
         }
         this.msg = msg;
@@ -1313,9 +1321,7 @@ class Flow {
             // Check if the stop regex was triggered
             if(listener.stop) {
                 question.cleanup(response.message);
-                if(flow.stopText != null) {
-                    response.send(flow.stopText);
-                }
+                flow.sendRestartMessage(flow.stopText);
                 return;
             }
 
@@ -1337,7 +1343,8 @@ class Flow {
             }
             flow.onAnswer(response, question, answerValue);
         } else {
-            response.send(flow.errorText);
+            console.error("Object not instance of Listener or PendingRequest on callback");
+            flow.sendRestartMessage(flow.errorText);
         }
     }
 
@@ -1390,9 +1397,7 @@ class Flow {
             if(breaking) {
                 question.cleanup(response.message);
                 if(stopping) {
-                    if(flow.stopText != null) {
-                        response.send(flow.stopText);
-                    }
+                    flow.sendRestartMessage(flow.stopText);
                     return;
                 }
             }
@@ -1682,7 +1687,7 @@ class Question {
 
                 var configuredTimeoutCallback = question.timeoutCallback;
 
-                question.timeoutCallback = function() {
+                question.timeoutCallback = () => {
                     // Check if question was already timed out
                     if(question.timedOut) {
                         return;
@@ -1696,9 +1701,7 @@ class Question {
                         configuredTimeoutCallback();
                     } else {
                         var timeoutText = question.timeoutText || control.responseTimeoutText;
-                        if(timeoutText != null) {
-                            msg.send(timeoutText);
-                        }
+                        question.flow.sendRestartMessage(timeoutText);
                     }
                 };
 
@@ -1726,7 +1729,7 @@ class Question {
                 return;
             }
             console.error("Empty userId list for multi-user question");
-            msg.send(this.flow.errorText);
+            this.flow.sendRestartMessage(this.flow.errorText);
             return;
         }
 
@@ -2322,7 +2325,7 @@ class MultipleChoiceQuestion extends Question {
                 }
 
                 var questionOption = new Messenger.QuestionOption();
-                questionOption.style = option.style || "red";
+                questionOption.style = option.style || "theme";
                 questionOption.label = label;
                 questionOption.name = name;
                 questionPayload.addQuestionOption(questionOption);
@@ -2423,7 +2426,7 @@ class VerificationQuestion extends Question {
     send(control, msg, callback) {
         // Unable to preform question without messenger api
         if(!control.messengerApi) {
-            msg.send(this.flow.errorText);
+            this.flow.sendRestartMessage(this.flow.errorText);
             return;
         }
 
@@ -2442,7 +2445,7 @@ class VerificationQuestion extends Question {
         // Try to retrieve provider for user
         control.messengerApi.getUserProviders(userId, function(providerSuccess, providerJson) {
             if(!providerSuccess) {
-                msg.send(question.flow.errorText);
+                question.flow.sendRestartMessage(question.flow.errorText);
                 return;
             }
             var providerId;
@@ -2460,7 +2463,7 @@ class VerificationQuestion extends Question {
 
                 control.messengerApi.askUserVerification(userId, providerId, chatId, isGroup, false, function(askSuccess, askJson) {
                     if(!askSuccess) {
-                        msg.send(question.flow.errorText);
+                        question.flow.sendRestartMessage(question.flow.errorText);
                         return;
                     }
                     var messageId = askJson["id"];
@@ -2472,7 +2475,7 @@ class VerificationQuestion extends Question {
                 // Unable to get provider for this user, check if user already verified via provider
                 control.messengerApi.getUserVerifications(userId, function(verificationsSuccess, verificationsJson) {
                     if(!verificationsSuccess) {
-                        msg.send(question.flow.errorText);
+                        question.flow.sendRestartMessage(question.flow.errorText);
                         return;
                     }
                     var isVerified = false;
@@ -2487,7 +2490,7 @@ class VerificationQuestion extends Question {
                     if(isVerified) {
                         question.flow.onAnswer(msg, question, true);
                     } else {
-                        msg.send(question.flow.errorText);
+                        question.flow.sendRestartMessage(question.flow.errorText);
                         return;
                     }
                 });
