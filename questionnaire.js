@@ -721,7 +721,7 @@ class Control {
             }
             questionPayload.addUserId(this.getUserId(message.user));
         }
-        sendRequestMessage(message, helpText, questionPayload);
+        this.sendRequestMessage(message, helpText, questionPayload);
     }
 
     sendCatchAllMessage(message) {
@@ -737,7 +737,7 @@ class Control {
             questionPayload.addQuestionOption(questionOption);
             questionPayload.addUserId(this.getUserId(message.user));
         }
-        sendRequestMessage(message, this.catchAllText, questionPayload);
+        this.sendRequestMessage(message, this.catchAllText, questionPayload);
     }
 
     sendRequestMessage(message, text, questionPayload) {
