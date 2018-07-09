@@ -1466,6 +1466,16 @@ class Flow {
             if(subFlow.errorText == null) {
                 subFlow.errorText = flow.errorText;
             }
+            // Set restart button when null
+            if(subFlow.restartButtonName == null){
+                subFlow.restartButtonName = flow.restartButtonName;
+            }
+            if(subFlow.restartButtonLabel == null) {
+                subFlow.restartButtonLabel = flow.restartButtonLabel;
+            }
+            if(subFlow.restartButtonStyle == null) {
+                subFlow.restartButtonStyle= flow.restartButtonStyle;
+            }
             // Continue current flow when sub flow finishes
             subFlow.finish(function(response, answers) {
                 // Call summary function if set
