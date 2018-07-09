@@ -1164,6 +1164,32 @@ class Flow {
         return this.add(verificationQuestion);
     }
 
+    verified(subFlow) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on verified()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof VerificationQuestion)) {
+            console.error("Last added Question is not an instance of MultipleChoiceQuestion on verified()");
+            return this;
+        }
+        this.lastAddedQuestion.setVerifiedSubFlow(subFlow);
+        return this;
+    }
+
+    unverified(subFlow) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on unverified()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof VerificationQuestion)) {
+            console.error("Last added Question is not an instance of MultipleChoiceQuestion on unverified()");
+            return this;
+        }
+        this.lastAddedQuestion.setUnverifiedSubFlow(subFlow);
+        return this;
+    }
+
     // Ask the last added question to the users that were mentioned a MentionQuestion earlier (multi user question)
     askMentions(mentionAnswerKey) {
         if(this.lastAddedQuestion == null) {
@@ -2442,6 +2468,14 @@ class VerificationQuestion extends Question {
         this.provider = provider;
     }
 
+    setVerifiedSubFlow(subFlow) {
+        this.verifiedSubFlow = subFlow;
+    }
+
+    setUnverifiedSubFlow(subFlow) {
+        this.unverifiedSubFlow = subFlow;
+    }
+
     send(control, msg, callback) {
         // Unable to preform question without messenger api
         if(!control.messengerApi) {
@@ -2507,6 +2541,7 @@ class VerificationQuestion extends Question {
                         }
                     }
                     if(isVerified) {
+                        question.setSubFlow(question.verifiedSubFlow);
                         question.flow.onAnswer(msg, question, true);
                     } else {
                         question.flow.sendRestartMessage(question.flow.errorText);
@@ -2523,8 +2558,10 @@ class VerificationQuestion extends Question {
         }
         var event = message.text;
         if(event === "conversation_verification_accepted" || event === "groupchat_verification_accepted") {
+            this.setSubFlow(this.verifiedSubFlow);
             return true;
         } else if(event === "conversation_verification_rejected" || event === "groupchat_verification_rejected") {
+            this.setSubFlow(this.unverifiedSubFlow);
             return false;
         }
         return null;
