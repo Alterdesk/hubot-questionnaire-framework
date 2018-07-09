@@ -117,7 +117,7 @@ class PendingRequest {
                     var optionText = "";
                     for(var index in options) {
                         if(optionText.length > 0) {
-                            optionText += ",";
+                            optionText += "|";
                         }
                         optionText += options[index];
                     }
@@ -1141,6 +1141,19 @@ class Flow {
             return this;
         }
         this.lastAddedQuestion.addButton(name, label, style);
+        return this;
+    }
+
+    multiAnswer() {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on multiAnswer()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof MultipleChoiceQuestion)) {
+            console.error("Last added Question is not an instance of MultipleChoiceQuestion on multiAnswer()");
+            return this;
+        }
+        this.lastAddedQuestion.setMultiAnswer(true);
         return this;
     }
 
@@ -2279,6 +2292,7 @@ class MultipleChoiceQuestion extends Question {
         this.regex = Extra.getNonEmptyRegex();
         this.options = [];
         this.useButtons = false;
+        this.multiAnswer = false;
     }
 
     // Add an option answer regex and optional sub flow
@@ -2298,6 +2312,10 @@ class MultipleChoiceQuestion extends Question {
         }
     }
 
+    setMultiAnswer(multiAnswer) {
+        this.multiAnswer = multiAnswer;
+    }
+
     send(control, msg, callback) {
         if(control.messengerApi && this.useButtons) {
             var messageData = new Messenger.SendMessageData();
@@ -2307,7 +2325,7 @@ class MultipleChoiceQuestion extends Question {
             messageData.isAux = false;
 
             var questionPayload = new Messenger.QuestionPayload();
-            questionPayload.multiAnswer = false;
+            questionPayload.multiAnswer = this.multiAnswer;
 //            questionPayload.style = "horizontal";
             for(var i in this.options) {
                 var option = this.options[i];
@@ -2368,18 +2386,19 @@ class MultipleChoiceQuestion extends Question {
         if(matches == null || message.text == null) {
             return null;
         }
+        if(this.multiAnswer && message.text.indexOf("|") !== -1) {
+            return message.text.split("|");
+        }
         var choice = matches[0];
-        var longestMatch = null;
         var optionMatch = null;
+        var longestMatch = null;
         for(var index in this.options) {
             var option = this.options[index];
             var match = choice.match(option.regex);
             if(match) {
                 var matchString = match[0];
-                if(longestMatch) {
-                    if(longestMatch.length > matchString.length) {
-                        continue;
-                    }
+                if(longestMatch && longestMatch.length > matchString.length) {
+                    continue;
                 }
                 longestMatch = matchString;
                 optionMatch = option;
