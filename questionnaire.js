@@ -172,6 +172,9 @@ class Control {
         // Response timeout text to send on timeout
         this.responseTimeoutText = process.env.HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT_TEXT || "RESPONSE_TIMEOUT_TEXT";
 
+        // Need to mention robot in group to trigger command
+        this.needMentionInGroup = process.env.HUBOT_QUESTIONNAIRE_NEED_MENTION_IN_GROUP || false;
+
         // Catch commands that are not present in the accepted commands list
         this.catchAllCommands = process.env.HUBOT_QUESTIONNAIRE_CATCH_ALL || false;
         // Catch all text to send on unaccepted command
@@ -351,9 +354,9 @@ class Control {
                 }
 
                 // Only listen for messages in groups when mentioned
-                if(isGroup && !isMentioned) {
+                if(isGroup && !isMentioned && control.needMentionInGroup) {
                     // Ignoring message, not mentioned and no listeners for user in room
-                    console.log("Ignoring message, not mentioned and no listeners for user in room");
+                    console.log("Ignoring message, not mentioned when needed and no listeners for user in room");
                     return;
                 }
 
@@ -377,8 +380,12 @@ class Control {
 
                 // Stop if catch all is enabled and an unknown command was sent
                 if(control.catchAllCommands && unknownCommand) {
-                    console.log("Catched unknown command");
-                    control.sendCatchAllMessage(message);
+                    if(!isGroup || isMentioned) {
+                        console.log("Catched unknown command");
+                        control.sendCatchAllMessage(message);
+                    } else {
+                        console.log("Ignoring unknown command in group");
+                    }
                     return;
                 }
 
