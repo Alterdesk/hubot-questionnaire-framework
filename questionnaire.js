@@ -662,6 +662,10 @@ class Control {
         }
     }
 
+    setHelpQuestionStyle(style) {
+        this.helpQuestionStyle = style;
+    }
+
     checkCommandButton(message) {
         if(!this.messengerApi) {
             return;
@@ -718,7 +722,7 @@ class Control {
         if(this.messengerApi && Object.keys(this.acceptedButtonLabels).length > 0) {
             questionPayload = new Messenger.QuestionPayload();
             questionPayload.multiAnswer = false;
-//            questionPayload.style = "horizontal";
+            questionPayload.style = this.helpQuestionStyle || "horizontal";
             for(var key in this.acceptedButtonLabels) {
                 var questionOption = new Messenger.QuestionOption();
                 questionOption.style = this.acceptedButtonStyles[key] || "theme";
@@ -1161,6 +1165,19 @@ class Flow {
             return this;
         }
         this.lastAddedQuestion.setMultiAnswer(true);
+        return this;
+    }
+
+    questionStyle(style) {
+        if(this.lastAddedQuestion == null) {
+            console.error("No Question added to flow on questionStyle()");
+            return this;
+        }
+        if(!(this.lastAddedQuestion instanceof PolarQuestion) && !(this.lastAddedQuestion instanceof MultipleChoiceQuestion)) {
+            console.error("Last added Question is not an instance of PolarQuestion or MultipleChoiceQuestion on questionStyle()");
+            return this;
+        }
+        this.lastAddedQuestion.setQuestionStyle(style);
         return this;
     }
 
@@ -2240,6 +2257,10 @@ class PolarQuestion extends Question {
         this.negativeStyle = style;
     }
 
+    setQuestionStyle(style) {
+        this.questionStyle = style;
+    }
+
     send(control, msg, callback) {
         if(control.messengerApi && this.useButtons) {
             var messageData = new Messenger.SendMessageData();
@@ -2250,7 +2271,7 @@ class PolarQuestion extends Question {
 
             var questionPayload = new Messenger.QuestionPayload();
             questionPayload.multiAnswer = false;
-//            questionPayload.style = "horizontal";
+            questionPayload.style = this.questionStyle || "horizontal";
 
             var labelPositive = this.positiveLabel || this.positiveRegex;
             if(!labelPositive) {
@@ -2359,6 +2380,10 @@ class MultipleChoiceQuestion extends Question {
         this.multiAnswer = multiAnswer;
     }
 
+    setQuestionStyle(style) {
+        this.questionStyle = style;
+    }
+
     send(control, msg, callback) {
         if(control.messengerApi && this.useButtons) {
             var messageData = new Messenger.SendMessageData();
@@ -2369,7 +2394,7 @@ class MultipleChoiceQuestion extends Question {
 
             var questionPayload = new Messenger.QuestionPayload();
             questionPayload.multiAnswer = this.multiAnswer;
-//            questionPayload.style = "horizontal";
+            questionPayload.style = this.questionStyle || "horizontal";
             for(var i in this.options) {
                 var option = this.options[i];
 
