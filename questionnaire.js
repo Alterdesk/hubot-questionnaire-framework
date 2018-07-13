@@ -468,6 +468,7 @@ class Control {
         return this.questionnairePendingRequests[message.room + this.getUserId(message.user)] != null;
     }
 
+    // Add a timeout timer for a user
     addTimeoutTimer(message, msg, question) {
         var userId = this.getUserId(message.user);
         console.log("Adding timeout timer for user " + userId + " in room " + message.room);
@@ -492,6 +493,7 @@ class Control {
         this.questionnaireTimeoutTimers[message.room + userId] = timer;
     }
 
+    // Remove a timeout timer for a user
     removeTimeoutTimer(message) {
         var userId = this.getUserId(message.user);
         if(this.questionnaireTimeoutTimers[message.room + userId] == null) {
@@ -503,6 +505,7 @@ class Control {
         clearTimeout(timer);
     }
 
+    // Check if a timeout timer is present for a user in a room
     hasTimeoutTimer(message) {
         return this.questionnaireTimeoutTimers[message.room + this.getUserId(message.user)] != null;
     }
@@ -662,10 +665,12 @@ class Control {
         }
     }
 
+    // Set the question payload style of the help message
     setHelpQuestionStyle(style) {
         this.helpQuestionStyle = style;
     }
 
+    // Check if the received answer was a command and trigger it if so
     checkCommandButton(message) {
         if(!this.messengerApi) {
             return;
@@ -713,6 +718,7 @@ class Control {
         });
     }
 
+    // Send the help message
     sendHelpMessage(message) {
         var helpText = this.catchHelpText;
         for(var field in this.acceptedHelpTexts) {
@@ -735,6 +741,7 @@ class Control {
         this.sendRequestMessage(message, helpText, questionPayload);
     }
 
+    // Send the catch all message
     sendCatchAllMessage(message) {
         var questionPayload;
         if(this.messengerApi && this.catchAllButtonName && this.catchAllButtonLabel) {
@@ -751,6 +758,7 @@ class Control {
         this.sendRequestMessage(message, this.catchAllText, questionPayload);
     }
 
+    // Send a request message
     sendRequestMessage(message, text, questionPayload) {
         if(this.messengerApi && questionPayload) {
             var messageData = new Messenger.SendMessageData();
@@ -1051,6 +1059,7 @@ class Flow {
         return this;
     }
 
+    // Set an array of allowed extensions for attachments of the last added AttachmentQuestion
     extensions(allowedExtensions) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on extensions()");
@@ -1083,6 +1092,7 @@ class Flow {
         return this;
     }
 
+    // Add a button for the positive answer of the last added PolarQuestion
     positiveButton(name, label, style) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on positiveButton()");
@@ -1110,6 +1120,7 @@ class Flow {
         return this;
     }
 
+    // Add a button for the negative answer of the last added PolarQuestion
     negativeButton(name, label, style) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on negativeButton()");
@@ -1142,6 +1153,7 @@ class Flow {
         return this;
     }
 
+    // Add a button to the last added MultipleChoiceOption
     button(name, label, style) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on button()");
@@ -1155,6 +1167,7 @@ class Flow {
         return this;
     }
 
+    // Set the last added MultipleChoiceQuestion to allow multiple answers
     multiAnswer() {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on multiAnswer()");
@@ -1168,6 +1181,7 @@ class Flow {
         return this;
     }
 
+    // Set the question payload style for the last added MultipleChoiceQuestion
     questionStyle(style) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on questionStyle()");
@@ -1188,6 +1202,7 @@ class Flow {
         return this.add(verificationQuestion);
     }
 
+    // Set an optional sub flow if the user is verified
     verified(subFlow) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on verified()");
@@ -1201,6 +1216,7 @@ class Flow {
         return this;
     }
 
+    // Set an optional sub flow if the user declines verification
     unverified(subFlow) {
         if(this.lastAddedQuestion == null) {
             console.error("No Question added to flow on unverified()");
@@ -1324,6 +1340,7 @@ class Flow {
         return this;
     }
 
+    // Set a restart button for error, stop and timeout messages
     restartButton(name, label, style) {
         this.restartButtonName = name;
         this.restartButtonLabel = label;
@@ -1331,6 +1348,7 @@ class Flow {
         return this;
     }
 
+    // Send a restart message
     sendRestartMessage(text) {
         if(!text || text === "") {
             return;
@@ -2124,6 +2142,7 @@ class MentionQuestion extends Question {
     }
 };
 
+// Attachment question, request files from a user
 class AttachmentQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
@@ -2243,6 +2262,7 @@ class PolarQuestion extends Question {
         this.negativeFlow = subFlow;
     }
 
+    // Set the name, label and style of the positive answer button
     setPositiveButton(name, label, style) {
         this.useButtons = true;
         this.positiveName = name;
@@ -2250,6 +2270,7 @@ class PolarQuestion extends Question {
         this.positiveStyle = style;
     }
 
+    // Set the name, label and style of the negative answer button
     setNegativeButton(name, label, style) {
         this.useButtons = true;
         this.negativeName = name;
@@ -2257,6 +2278,7 @@ class PolarQuestion extends Question {
         this.negativeStyle = style;
     }
 
+    // Set the question payload style
     setQuestionStyle(style) {
         this.questionStyle = style;
     }
@@ -2364,6 +2386,7 @@ class MultipleChoiceQuestion extends Question {
         this.options.push(new MultipleChoiceOption(regex, subFlow, value));
     }
 
+    // Add a button to the last added MultipleChoiceOption
     addButton(name, label, style) {
         this.useButtons = true;
         if(this.options && this.options.length > 0) {
@@ -2376,10 +2399,12 @@ class MultipleChoiceQuestion extends Question {
         }
     }
 
+    // Allow multiple answers
     setMultiAnswer(multiAnswer) {
         this.multiAnswer = multiAnswer;
     }
 
+    // Set the question payload style
     setQuestionStyle(style) {
         this.questionStyle = style;
     }
@@ -2506,14 +2531,17 @@ class VerificationQuestion extends Question {
         this.usePendingRequests = true;
     }
 
+    // Set the identity provider for the verification
     setProvider(provider) {
         this.provider = provider;
     }
 
+    // Set a sub flow for when a user is verified
     setVerifiedSubFlow(subFlow) {
         this.verifiedSubFlow = subFlow;
     }
 
+    // Set a sub flow for when a user declines verification
     setUnverifiedSubFlow(subFlow) {
         this.unverifiedSubFlow = subFlow;
     }
