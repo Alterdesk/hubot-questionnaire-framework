@@ -670,6 +670,14 @@ class Control {
         this.helpQuestionStyle = style;
     }
 
+    createHubotResponse(userId, chatId, isGroup) {
+        var user = new User(userId);
+        user.is_groupchat = isGroup;
+        var message = new Message(user);
+        message.room = chatId;
+        return new Response(robot, message, true);
+    }
+
     // Check if the received answer was a command and trigger it if so
     checkCommandButton(message) {
         if(!this.messengerApi) {
