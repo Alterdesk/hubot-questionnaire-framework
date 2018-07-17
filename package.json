@@ -17,6 +17,6 @@
     "node-messenger-extra": "https://github.com/Alterdesk/node-messenger-extra.git"
   },
   "optionalDependencies": {
-    "node-messenger-sdk": "file:../node-messenger-sdk"
+    "node-messenger-sdk": "https://github.com/Alterdesk/node-messenger-sdk.git"
   }
 }

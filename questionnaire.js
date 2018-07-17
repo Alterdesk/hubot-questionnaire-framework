@@ -12,7 +12,7 @@
 var Extra = require('node-messenger-extra');
 const {Response, User, Message, TextMessage, LeaveMessage, TopicMessage} = require('hubot');
 
-// Optional dependency, onyl loaded when Control.setMessengerApi() was called
+// Optional dependency, only loaded when Control.setMessengerApi() was called
 var Messenger;
 
 // Data container of answers that the user has given
@@ -207,7 +207,6 @@ class Control {
         } catch(error) {
             console.error("setMessengerApi:", error);
         }
-
     }
 
     // Override the default receiver
@@ -623,6 +622,10 @@ class Control {
     // Callback that is called when subscribed/unsubscribed to/from a chat
     setGroupSubscribedCallback(groupSubscribedCallback) {
         this.groupSubscribedCallback = groupSubscribedCallback;
+    }
+
+    setUserAnsweredCallback(userAnsweredCallback) {
+        this.userAnsweredCallback = userAnsweredCallback;
     }
 
     // Should a listener for a user be removed when a leave is detected
@@ -1499,6 +1502,12 @@ class Flow {
             // Valid answer, store in the answers object
             this.answers.add(question.answerKey, answerValue);
             console.log("Added answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
+        }
+
+        // Call user answered callback if set
+        if(this.control.userAnsweredCallback) {
+            var userId = this.control.getUserId(this.msg.message.user);
+            this.control.userAnsweredCallback(userId, question.answerKey, answerValue);
         }
 
         // Trigger sub flow if set in question, otherwise continue
