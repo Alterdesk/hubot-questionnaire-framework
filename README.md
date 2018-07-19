@@ -7,6 +7,15 @@ Framework for creating a questionnaire(follow up questions) isolated per user an
 The [Alterdesk Hubot Example](https://github.com/Alterdesk/hubot-example) uses the questionnaire framework in 
 [example.js](https://github.com/Alterdesk/hubot-example/blob/master/alterdesk-example-script/example.js)
 
+## Dependencies
+
+Required
+* [Hubot](https://hubot.github.com/)
+* [node-messenger-extra](https://github.com/Alterdesk/node-messenger-extra)
+
+Optional for request messages
+* [node-messenger-sdk](https://github.com/Alterdesk/node-messenger-sdk)
+
 ## Classes
 ### Control
 The control class can override the default Hubot message receiver to:
@@ -412,7 +421,8 @@ flow.mention("tagged", "Which users do you want to include? (Use '@' to mention 
 // Do not allow "All members" and robot mentions
 flow.mention("limitedTag", "Which users do you want to include? (Use '@' to mention users)", "Invalid mention.")
 .allAllowed(false)
-.robotAllowed(false);
+.robotAllowed(false)
+.completeMentions(false);
 
 // Always include these mentions after user gives a valid answer
 var mention = {};
@@ -449,6 +459,8 @@ To add a polar question, you can use the convenience function polar() with the f
 * Negative answer regex
 * Sub flow to start when a positive answer was given *(optional)*
 * Sub flow to start when a negative answer was given *(optional)*
+* Button to trigger positive answer *(optional)*
+* Button to trigger negative answer *(optional)*
 
 ```javascript
 // Regular expressions to use to parse positive and negative answers with
@@ -461,13 +473,17 @@ positiveFlow.email("email", "What is your email address?", "Invalid email addres
 var negativeFlow = new Flow(control);
 negativeFlow.text("reason", "That is to bad, can you give us a reason?", "Invalid answer");
 
-flow.polar("startedSubFlow", "Do you want to subscribe to our newsletter? (Yes or no)", "Invalid answer.", postiveRegex, negativeRegex, positiveFlow, negativeFlow);
+flow.polar("startedSubFlow", "Do you want to subscribe to our newsletter? (Yes or no)", "Invalid answer.")
+.positive(positiveRegex, positiveFlow)
+.positiveButton("yes", "Yes", "green")
+.negative(negativeRegex, negativeFlow)
+.positiveButton("no", "No", "red");
 ```
 
 ### MultipleChoiceQuestion
 To let the user make a choice of multiple options, the MultipleChoiceQuestion can be used. Each option is set with a 
 corresponding regex and an optional sub flow. First call multiple() on the flow and for each option call option() after 
-that.
+that. Optionally you can call button() to add a request message button to each option, depends on messenger Api instance
 ```javascript
 // Regular expressions to use to parse options with
 var emailRegex = new RegExp(/email/, 'i');
@@ -476,8 +492,20 @@ var skipRegex = new RegExp(/skip/, 'i');
 
 flow.multiple("registerBy", "Do you want to register by email, phone number or skip this question?", "Invalid choice.")
 .option(emailRegex, emailFlow)
+.button("email", "E-mail", "blue")
 .option(phoneRegex, phoneFlow)
-.option(skipRegex);
+.button("phone", "Phone number", "blue")
+.option(skipRegex)
+.button("skip", "Skip", "red");
+```
+
+### VerificationQuestion
+Ask the user to verify his/her account with the given identity provider, user can accept the request and login on the 
+identity provider or reject the request.
+```javascript
+flow.verification("userVerified", "idin")
+.verified(verifiedFlow)
+.unverified(verifiedFlow);
 ```
 
 ### Answers
@@ -588,36 +616,6 @@ Count of values that are added
 
 returns *(Integer)* - Size of added values
 
-### Listener
-#### constructor(message, callback, question)
-
-Create a new Listener instance
-* message *(Message)* - Hubot Message to create the Listener for
-* callback *(Function)* - Callback to call when an answer is received
-* question *(Question)* - Question instance that is awaiting an answer
-
-#### configure(control)
-
-Configure the listener for the given Control instance(void)
-* control *(Control)* - Control instance to configure the Listener for
-
-#### call(message)
-
-Called when a Message was received for the listener
-* message *(Message)* - Hubot Message that was received
-
-### PendingRequest
-#### constructor(message, callback, question)
-
-Create a new PendingRequest instance
-* message *(Message)* - Hubot Message to create the PendingRequest for
-* callback *(Function)* - Callback to call when an answer is received
-* question *(Question)* - Question instance that is awaiting an answer
-
-#### call(message)
-
-Called when an Answer was received for the pending request
-* message *(Message)* - Hubot Message that was received
 
 ### Control
 #### constructor()
@@ -633,26 +631,6 @@ Set the optional Api instance from node-messenger-sdk for support for request an
 
 Override the default Hubot receiver with the questionnaire receiver
 * robot *(Robot)* - Hubot Robot instance to override the receiver for
-
-#### addListener(message, listener)
-
-Add a Listener on the basis of a Message that was received
-* message *(Message)* - Hubot Message to add the Listener for
-* listener *(Listener)* - Listener to add
-
-#### removeListener(message)
-
-Remove a listener on the basis of a Message
-* message *(Message)* - Hubot Message that the Listener was added for
-
-returns *(Listener)* - Listener that was removed
-
-#### hasListener(message)
-
-Check if a listener is set for the Message
-* message *(Message)* - Hubot Message that the Listener was added for
-
-returns *(Boolean)* - If a Listener is added for the given Message
 
 #### getUserId(user)
 
@@ -1245,16 +1223,6 @@ Start the flow
 * message *(Message)* - Hubot Message instance
 * answers *(Answers)* - Answers instance
 
-#### callback(response, listener)
-
-Callback function that is used with Listeners(internal use)
-* response *(Response)* - Hubot Response instance
-* listener *(Listener)* - Listener instance
-
-#### next(response)
-
-Execute next step of the flow(internal use)
-* response *(Response)* - Hubot Response instance
 
 ### Information
 #### constructor(text, waitMs)
@@ -1360,27 +1328,6 @@ Set a summary callback function to trigger after every user answer
 
   returns *(String)* - Summary text to send
 
-#### execute(control, response, callback, answers)
-
-Execute this question(internal use)
-* control *(Control)* - Control instance to use
-* response *(Response)* - Hubot Response instance
-* callback *(Function(response, listener))* - Callback that is called when the question is answered
-  * response *(Response)* - Hubot Response instance
-  * listener *(Listener)* - Listener instance
-* answers *(Answers)* - Answers instance
-
-#### cleanup()
-
-Clean up question if timed out or stopped
-
-#### checkAndParseAnswer(matches, message)
-
-Answer given by the user is parsed and checked here
-* matches *(Array)* - Array of regular expression matches
-* message *(Message)* - Hubot Message instance
-
-returns *(Object)* - Parsed value when accepted
 
 ### TextQuestion
 #### constructor(answerKey, questionText, invalidText)
@@ -1600,6 +1547,20 @@ Set the negative answer regex and optional sub flow to start when a negative ans
 * regex *(RegExp)* - Regular expression to trigger negative answer
 * subFlow *(Flow)* - Flow to start when negative answer was given
 
+#### setPositiveButton(name, label, style)
+
+Set the name, label and style of the positive answer button, depends on messenger Api instance
+* name *(String)* - Name of the button, needs to trigger positive regex to function
+* label *(String)* - Label on the button
+* style *(String)* - Optional style of the button (defaults to 'green')
+
+#### setNegativeButton(name, label, style)
+
+Set the name, label and style of the negative answer button, depends on messenger Api instance
+* name *(String)* - Name of the button, needs to trigger negative regex to function
+* label *(String)* - Label on the button
+* style *(String)* - Optional style of the button (defaults to 'red')
+
 #### checkAndParseAnswer(matches, message)
 
 Check if the positive regex or negative regex matches, and set corresponding sub flow to execute
@@ -1623,6 +1584,13 @@ Add an option answer regex, optional sub flow and optional value
 * subFlow *(Flow)* - Flow to start when option answer was given
 * value *(Object)* - Value to set as answer when option answer was given
 
+#### addButton(name, label, style)
+
+Add a button to the last added MultipleChoiceOption, depends on messenger Api instance
+* name *(String)* - Name of the button, needs to trigger option regex to function
+* label *(String)* - Label on the button
+* style *(String)* - Optional style of the button (defaults to 'theme')
+
 #### checkAndParseAnswer(matches, message)
 
 Check the if one of the option regex matches, and set the corresponding sub flow to execute
@@ -1636,3 +1604,24 @@ Check the if one of the option regex matches, and set the corresponding sub flow
 
 Create a new MultipleChoiceOption instance(internal use)
 
+### VerificationQuestion
+#### constructor(answerKey, questionText, invalidText)
+
+Create a new VerificationQuestion instance, depends on messenger Api instance
+* answerKey *(String)* - Key to store answer in Answers instance with
+* questionText *(String)* - Text to send when the question is triggered
+* invalidText *(String)* - Text to send when the user sends an invalid answer
+
+#### setProvider(provider)
+
+Set the identity provider for the verification
+* provider *(String)* - Identity provider to use for verification
+
+#### setVerifiedSubFlow(subFlow)
+Set a sub flow for when a user is verified
+* subFlow *(Flow)* - Flow to start when the user is verified
+
+#### setUnverifiedSubFlow(subFlow)
+
+Set a sub flow for when a user declines verification
+* subFlow *(Flow)* - Flow to start when the user declines verification
