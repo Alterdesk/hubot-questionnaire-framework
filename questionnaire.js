@@ -92,11 +92,22 @@ class PendingRequest {
         this.msg = msg;
         this.callback = callback;
         this.question = question;
+        this.retryCount = 0;
     }
 
     // Called when an event was received for the request
     call(responseMessage) {
         console.log("call: \"" + responseMessage + "\"");
+
+        if(!this.question.requestMessageId) {
+            console.error("Request message id not set on pending request call, retry count: " + this.retryCount);
+            if(this.retryCount++ < 9) {
+                setTimeout(() => {
+                    this.call(responseMessage);
+                }, 500)
+                return;
+            }
+        }
 
         // Check if this response if for the correct pending request message
         var requestMessageId;
@@ -1790,8 +1801,8 @@ class Question {
 
     // Send the message text
     send(control, msg, callback) {
-        msg.send(this.questionText);
         this.setListenersAndPendingRequests(control, msg, callback);
+        msg.send(this.questionText);
     }
 
     // Set the Listeners and PendingRequests for this Question
@@ -2368,6 +2379,9 @@ class PolarQuestion extends Question {
             messageData.payload = questionPayload;
 
             var question = this;
+            question.usePendingRequests = true;
+
+            question.setListenersAndPendingRequests(control, msg, callback);
 
             // Send the message and parse result in callback
             control.messengerApi.sendMessage(messageData, function(success, json) {
@@ -2376,16 +2390,14 @@ class PolarQuestion extends Question {
                     var messageId = json["id"];
                     console.log("Question message id: " + messageId);
                     question.requestMessageId = messageId;
-                    question.usePendingRequests = true;
                 } else {
                     // Fallback
                     msg.send(question.questionText);
                 }
-                question.setListenersAndPendingRequests(control, msg, callback);
             });
         } else {
-            msg.send(this.questionText);
             this.setListenersAndPendingRequests(control, msg, callback);
+            msg.send(this.questionText);
         }
     }
 
@@ -2479,6 +2491,9 @@ class MultipleChoiceQuestion extends Question {
             messageData.payload = questionPayload;
 
             var question = this;
+            question.usePendingRequests = true;
+
+            question.setListenersAndPendingRequests(control, msg, callback);
 
             // Send the message and parse result in callback
             control.messengerApi.sendMessage(messageData, function(success, json) {
@@ -2487,7 +2502,6 @@ class MultipleChoiceQuestion extends Question {
                     var messageId = json["id"];
                     console.log("Question message id: " + messageId);
                     question.requestMessageId = messageId;
-                    question.usePendingRequests = true;
                 } else {
                     var fallbackText = question.questionText;
                     for(var i in questionPayload.questionOptions) {
@@ -2496,11 +2510,10 @@ class MultipleChoiceQuestion extends Question {
                     }
                     msg.send(fallbackText);
                 }
-                question.setListenersAndPendingRequests(control, msg, callback);
             });
         } else {
-            msg.send(this.questionText);
             this.setListenersAndPendingRequests(control, msg, callback);
+            msg.send(this.questionText);
         }
     }
 
@@ -2620,6 +2633,8 @@ class VerificationQuestion extends Question {
                 var chatId = msg.message.room;
                 var isGroup = control.isUserInGroup(msg.message.user);
 
+                question.setListenersAndPendingRequests(control, msg, callback);
+
                 control.messengerApi.askUserVerification(userId, providerId, chatId, isGroup, false, function(askSuccess, askJson) {
                     if(!askSuccess) {
                         question.flow.sendRestartMessage(question.flow.errorText);
@@ -2631,7 +2646,6 @@ class VerificationQuestion extends Question {
                     var messageId = askJson["id"];
                     console.log("Verification message id: " + messageId);
                     question.requestMessageId = messageId;
-                    question.setListenersAndPendingRequests(control, msg, callback);
                 });
             } else {
                 // Unable to get provider for this user, check if user already verified via provider
