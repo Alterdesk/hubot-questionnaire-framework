@@ -2523,9 +2523,26 @@ class MultipleChoiceQuestion extends Question {
             return null;
         }
         if(this.multiAnswer && message.text.indexOf("|") !== -1) {
-            return message.text.split("|");
+            var choices = message.text.split("|");
+            var options = [];
+            for(var index in choices) {
+                var choice = choices[index];
+                var option = this.checkAndParseChoice(choice);
+                if(option && option !== "") {
+                    options.push(option);
+                }
+            }
+            if(options && options.length > 0) {
+                return options;
+            }
+            return null;
+        } else {
+            var choice = matches[0];
+            return this.checkAndParseChoice(choice);
         }
-        var choice = matches[0];
+    }
+
+    checkAndParseChoice(choice) {
         var optionMatch = null;
         var longestMatch = null;
         for(var index in this.options) {
