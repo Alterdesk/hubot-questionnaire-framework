@@ -208,6 +208,9 @@ class Control {
 
         // Remove a questionnaire listener and pending request when a user leave is detected
         this.removeListenerOnLeave = process.env.HUBOT_QUESTIONNAIRE_REMOVE_ON_LEAVE || false;
+
+        // Milliseconds to show hubot as "Typing..."
+        this.typingDelay = process.env.HUBOT_ALTERDESK_TYPING_DELAY || 2500;
     }
 
     // Set the messenger api instance to use
@@ -788,18 +791,29 @@ class Control {
             messageData.isAux = false;
             messageData.payload = questionPayload;
 
+            var response = new Response(this.robot, message, true);
+            this.sendComposing(response);
+
             // Send the message and parse result in callback
             this.messengerApi.sendMessage(messageData, function(success, json) {
                 console.log("Send help successful: " + success);
                 if(json == null) {
                     // Fallback
-                    var response = new Response(this.robot, message, true);
                     response.send(text);
                 }
             });
         } else {
             var response = new Response(this.robot, message, true);
             response.send(text);
+        }
+    }
+
+    sendComposing(msg) {
+        if(this.typingDelay) {
+            msg.topic("typing");
+            setTimeout(() => {
+                msg.topic("stop_typing");
+            }, this.typingDelay);
         }
     }
 }
@@ -2383,6 +2397,8 @@ class PolarQuestion extends Question {
 
             question.setListenersAndPendingRequests(control, msg, callback);
 
+            control.sendComposing(msg);
+
             // Send the message and parse result in callback
             control.messengerApi.sendMessage(messageData, function(success, json) {
                 console.log("Send question successful: " + success);
@@ -2494,6 +2510,8 @@ class MultipleChoiceQuestion extends Question {
             question.usePendingRequests = true;
 
             question.setListenersAndPendingRequests(control, msg, callback);
+
+            control.sendComposing(msg);
 
             // Send the message and parse result in callback
             control.messengerApi.sendMessage(messageData, function(success, json) {
@@ -2651,6 +2669,8 @@ class VerificationQuestion extends Question {
                 var isGroup = control.isUserInGroup(msg.message.user);
 
                 question.setListenersAndPendingRequests(control, msg, callback);
+
+                control.sendComposing(msg);
 
                 control.messengerApi.askUserVerification(userId, providerId, chatId, isGroup, false, function(askSuccess, askJson) {
                     if(!askSuccess) {
