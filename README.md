@@ -539,6 +539,9 @@ var myValue = answers.get("myKey");
 Certain settings can also be set through environment variables if desired
 
 #### Variables
+Questionnaire log level
+* HUBOT_QUESTIONNAIRE_LOG_LEVEL *(String)*
+
 Response timeout milliseconds
 * HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT *(Integer)*
 

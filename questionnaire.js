@@ -14,7 +14,7 @@ const {Response, User, Message, TextMessage, LeaveMessage, TopicMessage} = requi
 const Log = require('log');
 
 // Set the log instance
-var logger = new Log(process.env.HUBOT_LOG_LEVEL || 'info');
+var logger = new Log(process.env.HUBOT_QUESTIONNAIRE_LOG_LEVEL || process.env.HUBOT_LOG_LEVEL || 'info');
 
 // Optional dependency, only loaded when Control.setMessengerApi() was called
 var Messenger;
