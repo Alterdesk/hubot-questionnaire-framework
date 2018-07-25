@@ -11,6 +11,10 @@
 // Requirements
 var Extra = require('node-messenger-extra');
 const {Response, User, Message, TextMessage, LeaveMessage, TopicMessage} = require('hubot');
+const Log = require('log');
+
+// Set the log instance
+var logger = new Log(process.env.HUBOT_LOG_LEVEL || 'info');
 
 // Optional dependency, only loaded when Control.setMessengerApi() was called
 var Messenger;
@@ -73,7 +77,7 @@ class Listener {
 
     // Called when a message was received for the listener
     call(responseMessage) {
-        console.log("call: text: \"" + responseMessage.text + "\"");
+        logger.debug("Listener::call() text: \"" + responseMessage.text + "\"");
 
         // Check if given regex matches
         this.matches = this.matcher(responseMessage);
@@ -97,10 +101,10 @@ class PendingRequest {
 
     // Called when an event was received for the request
     call(responseMessage) {
-        console.log("call: \"" + responseMessage + "\"");
+        logger.debug("PendingRequest::call() \"" + responseMessage + "\"");
 
         if(!this.question.requestMessageId) {
-            console.error("Request message id not set on pending request call, retry count: " + this.retryCount);
+            logger.error("PendingRequest::call() Request message id not set, retry count: " + this.retryCount);
             if(this.retryCount++ < 9) {
                 setTimeout(() => {
                     this.call(responseMessage);
@@ -139,7 +143,7 @@ class PendingRequest {
                 text = event;
             }
         } else {
-            console.log("Message ids do not match on pending request call");
+            logger.debug("PendingRequest::call() Message ids do not match");
         }
 
         responseMessage.text = text;
@@ -219,7 +223,7 @@ class Control {
             Messenger = require('node-messenger-sdk');
             this.messengerApi = messengerApi;
         } catch(error) {
-            console.error("setMessengerApi:", error);
+            logger.error("Control::setMessengerApi() ", error);
         }
     }
 
@@ -227,7 +231,7 @@ class Control {
     overrideReceiver(robot) {
         // Check if robot receiver is already overridden
         if(robot.defaultRobotReceiver != null) {
-            console.error("Robot receiver already overridden!")
+            logger.error("Control::overrideReceiver() Robot receiver already overridden!")
             return;
         }
 
@@ -256,12 +260,12 @@ class Control {
                 className = message.constructor.name;
             } else {
                 className = null;
-                console.error("Unable to retrieve classname for: ", message);
+                logger.error("Control::receive() Unable to retrieve classname for: ", message);
             }
 
             if(className === "TopicMessage" || message instanceof TopicMessage) {
                 var event = message.text;
-                console.log("TopicMessage: " + event);
+                logger.debug("Control::receive() TopicMessage: " + event);
                 if(event === "authenticated") {
                     if(control.authenticatedCallback) {
                         control.authenticatedCallback(message.id);
@@ -342,7 +346,7 @@ class Control {
                     return;
                 }
             } else if(className === "TextMessage" || message instanceof TextMessage) {
-                console.log("TextMessage: " + message.text);
+                logger.debug("Control::receive() TextMessage: " + message.text);
                 // Check for listeners waiting for a message
                 if (control.hasListener(message)) {
                     var listener = control.removeListener(message);
@@ -369,13 +373,13 @@ class Control {
                 // Only listen for messages in groups when mentioned
                 if(isGroup && !isMentioned && control.needMentionInGroup) {
                     // Ignoring message, not mentioned and no listeners for user in room
-                    console.log("Ignoring message, not mentioned when needed and no listeners for user in room");
+                    logger.debug("Control::receive() Ignoring message, not mentioned when needed and no listeners for user in room");
                     return;
                 }
 
                 // Check if the user has sent the help command
                 if(control.catchHelpCommand && commandString.match(control.helpRegex) != null) {
-                    console.log("Help detected");
+                    logger.debug("Control::receive() Help detected");
                     control.sendHelpMessage(message);
                     return;
                 }
@@ -386,7 +390,7 @@ class Control {
                     var match = commandString.match(control.acceptedRegex[index]);
                     if(match != null) {
                         unknownCommand = false;
-                        console.log("Command detected: " + match);
+                        logger.debug("Control::receive() Command detected: " + match);
                         break;
                     }
                 }
@@ -394,16 +398,16 @@ class Control {
                 // Stop if catch all is enabled and an unknown command was sent
                 if(control.catchAllCommands && unknownCommand) {
                     if(!isGroup || isMentioned) {
-                        console.log("Catched unknown command");
+                        logger.debug("Control::receive() Catched unknown command");
                         control.sendCatchAllMessage(message);
                     } else {
-                        console.log("Ignoring unknown command in group");
+                        logger.debug("Control::receive() Ignoring unknown command in group");
                     }
                     return;
                 }
 
             } else if(className === "LeaveMessage" || message instanceof LeaveMessage) {
-                console.log("Leave detected: " + message.user.id);
+                logger.debug("Control::receive() Leave detected: " + message.user.id);
                 if(control.removeListenerOnLeave) {
                     if(control.hasListener(message)) {
                         control.removeListener(message);
@@ -415,7 +419,7 @@ class Control {
             }
 
             // Pass through default robot receiver
-            console.log("Passing through to default receiver");
+            logger.debug("Control::receive() Passing through to default receiver");
             return robot.defaultRobotReceiver(message);
         };
     }
@@ -424,7 +428,7 @@ class Control {
     addListener(message, listener) {
         listener.configure(this);
         var userId = this.getUserId(message.user);
-        console.log("Adding listener for user " + userId + " in room " + message.room);
+        logger.debug("Control::addListener() userId: " + userId + " room: " + message.room);
         this.questionnaireListeners[message.room + userId] = listener;
         if(!this.hasTimeoutTimer(message)) {
             this.addTimeoutTimer(message, listener.msg, listener.question);
@@ -437,7 +441,7 @@ class Control {
         if(this.questionnaireListeners[message.room + userId] == null) {
             return null;
         }
-        console.log("Removing listener for user " + userId + " in room " + message.room);
+        logger.debug("Control::removeListener() userId: " + userId + " room: " + message.room);
         var listener = this.questionnaireListeners[message.room + userId];
         delete this.questionnaireListeners[message.room + userId];
         if(this.hasTimeoutTimer(message)) {
@@ -454,7 +458,7 @@ class Control {
     // Add a pending request for a user
     addPendingRequest(message, pendingRequest) {
         var userId = this.getUserId(message.user);
-        console.log("Adding pending request for user " + userId + " in room " + message.room);
+        logger.debug("Control::addPendingRequest() userId: " + userId + " room: " + message.room);
         this.questionnairePendingRequests[message.room + userId] = pendingRequest;
         if(!this.hasTimeoutTimer(message)) {
             this.addTimeoutTimer(message, pendingRequest.msg, pendingRequest.question);
@@ -467,7 +471,7 @@ class Control {
         if(this.questionnairePendingRequests[message.room + userId] == null) {
             return null;
         }
-        console.log("Removing pending request for user " + userId + " in room " + message.room);
+        logger.debug("Control::removePendingRequest() userId: " + userId + " room: " + message.room);
         var pendingRequest = this.questionnairePendingRequests[message.room + userId];
         delete this.questionnairePendingRequests[message.room + userId];
         if(this.hasTimeoutTimer(message)) {
@@ -484,7 +488,7 @@ class Control {
     // Add a timeout timer for a user
     addTimeoutTimer(message, msg, question) {
         var userId = this.getUserId(message.user);
-        console.log("Adding timeout timer for user " + userId + " in room " + message.room);
+        logger.debug("Control::addTimeoutTimer() userId: " + userId + " room: " + message.room);
         // Timeout milliseconds and callback
         var useTimeoutMs = question.timeoutMs || this.responseTimeoutMs;
         var useTimeoutText = question.timeoutText || this.responseTimeoutText;
@@ -496,7 +500,7 @@ class Control {
         };
 
         var timer = setTimeout(() => {
-            console.log("Timer timeout from user " + userId + " in room " + message.room);
+            logger.debug("Timer timeout from user " + userId + " in room " + message.room);
             question.cleanup(message);
 
             if(question.flow.stoppedCallback) {
@@ -516,7 +520,7 @@ class Control {
         if(this.questionnaireTimeoutTimers[message.room + userId] == null) {
             return;
         }
-        console.log("Removing timeout timer for user " + userId + " in room " + message.room);
+        logger.debug("Control::removeTimeoutTimer() userId: " + userId + " room: " + message.room);
         var timer = this.questionnaireTimeoutTimers[message.room + userId];
         delete this.questionnaireTimeoutTimers[message.room + userId];
         clearTimeout(timer);
@@ -669,10 +673,10 @@ class Control {
             }
         }
         if(configured) {
-            console.error("Command already configured as accepted: " + c);
+            logger.error("Control::addAcceptedCommand() Command already configured as accepted: " + c);
             return;
         }
-        console.log("Command configured as accepted: " + c);
+        logger.debug("Control::addAcceptedCommand() Command configured as accepted: " + c);
         this.acceptedCommands.push(c);
         this.acceptedRegex.push(new RegExp("^[ \\n\\r\\t]*" + c + "+[ \\n\\r\\t]*$", 'gi'));
         if(helpText != null) {
@@ -731,7 +735,7 @@ class Control {
         var messageId = message.id["message_id"];
         this.messengerApi.getMessage(messageId, roomId, isGroup, false, (success, json) => {
             if(!success) {
-                console.error("Unable to retrieve request message on checkCommandButton");
+                logger.error("Control::checkCommandButton() Unable to retrieve request message on checkCommandButton");
                 return;
             }
             if(json != null && json["user"] && json["user"]["id"] === this.robotUserId) {
@@ -796,7 +800,7 @@ class Control {
 
             // Send the message and parse result in callback
             this.messengerApi.sendMessage(messageData, function(success, json) {
-                console.log("Send help successful: " + success);
+                logger.debug("Control::sendRequestMessage() Successful: " + success);
                 if(json == null) {
                     // Fallback
                     response.send(text);
@@ -856,11 +860,11 @@ class Flow {
     // Use an alternative regular expression for the last added TextQuestion
     regex(regex) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on regex()");
+            logger.error("Flow::regex() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof TextQuestion)) {
-            console.error("Last added Question is not an instance of TextQuestion on regex()");
+            logger.error("Flow::regex() Last added Question is not an instance of TextQuestion");
             return this;
         }
         this.lastAddedQuestion.setRegex(regex);
@@ -870,11 +874,11 @@ class Flow {
     // Set the minimum and/or maximum length of the last added TextQuestion
     length(minLength, maxLength) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on length()");
+            logger.error("Flow::length() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof TextQuestion)) {
-            console.error("Last added Question is not an instance of TextQuestion on length()");
+            logger.error("Flow::length() Last added Question is not an instance of TextQuestion");
             return this;
         }
         this.lastAddedQuestion.setLength(minLength, maxLength);
@@ -884,11 +888,11 @@ class Flow {
     // Capitalize the first letter of the answer of the last added TextQuestion
     capitalize() {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on capitalize()");
+            logger.error("Flow::capitalize() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof TextQuestion)) {
-            console.error("Last added Question is not an instance of TextQuestion on capitalize()");
+            logger.error("Flow::capitalize() Last added Question is not an instance of TextQuestion");
             return this;
         }
         this.lastAddedQuestion.setFormatAnswerFunction(Extra.capitalizeFirstLetter);
@@ -898,11 +902,11 @@ class Flow {
     // Capitalize the answer as a last name of the last added TextQuestion
     lastName() {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on lastName()");
+            logger.error("Flow::lastName() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof TextQuestion)) {
-            console.error("Last added Question is not an instance of TextQuestion on lastName()");
+            logger.error("Flow::lastName() Last added Question is not an instance of TextQuestion");
             return this;
         }
         this.lastAddedQuestion.setFormatAnswerFunction(Extra.capitalizeLastName);
@@ -917,11 +921,11 @@ class Flow {
     // Set the minimum and/or maximum value range of the last added NumberQuestion
     range(minValue, maxValue) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on range()");
+            logger.error("Flow::range() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof NumberQuestion)) {
-            console.error("Last added Question is not an instance of NumberQuestion on range()");
+            logger.error("Flow::range() Last added Question is not an instance of NumberQuestion");
             return this;
         }
         this.lastAddedQuestion.setRange(minValue, maxValue);
@@ -936,11 +940,11 @@ class Flow {
     // Set the allowed email domains of the last added EmailQuestion
     domains(allowedDomains) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on domains()");
+            logger.error("Flow::domains() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof EmailQuestion)) {
-            console.error("Last added Question is not an instance of EmailQuestion on domains()");
+            logger.error("Flow::domains() Last added Question is not an instance of EmailQuestion");
             return this;
         }
         if(allowedDomains != null) {
@@ -957,11 +961,11 @@ class Flow {
     // Set the allowed country codes of the last added PhoneNumberQuestion
     countryCodes(allowedCountryCodes) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on countryCodes()");
+            logger.error("Flow::countryCodes() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof PhoneNumberQuestion)) {
-            console.error("Last added Question is not an instance of PhoneNumberQuestion on countryCodes()");
+            logger.error("Flow::countryCodes() Last added Question is not an instance of PhoneNumberQuestion");
             return this;
         }
         if(allowedCountryCodes != null) {
@@ -978,11 +982,11 @@ class Flow {
     // Add mentions to include after answer of the last added MentionQuestion
     includeMentions(mentions) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on includeMentions()");
+            logger.error("Flow::includeMentions() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof MentionQuestion)) {
-            console.error("Last added Question is not an instance of MentionQuestion on includeMentions()");
+            logger.error("Flow::includeMentions() Last added Question is not an instance of MentionQuestion");
             return this;
         }
         this.lastAddedQuestion.setIncludeMentions(mentions);
@@ -992,11 +996,11 @@ class Flow {
     // Change if the all mentioned tag is allowed of the last added MentionQuestion
     allAllowed(allowed) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on allAllowed()");
+            logger.error("Flow::allAllowed() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof MentionQuestion)) {
-            console.error("Last added Question is not an instance of MentionQuestion on allAllowed()");
+            logger.error("Flow::allAllowed() Last added Question is not an instance of MentionQuestion");
             return this;
         }
         this.lastAddedQuestion.setAllAllowed(allowed);
@@ -1006,11 +1010,11 @@ class Flow {
     // Change if the robot mentioned tag is allowed of the last added MentionQuestion
     robotAllowed(allowed) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on robotAllowed()");
+            logger.error("Flow::robotAllowed() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof MentionQuestion)) {
-            console.error("Last added Question is not an instance of MentionQuestion on robotAllowed()");
+            logger.error("Flow::robotAllowed() Last added Question is not an instance of MentionQuestion");
             return this;
         }
         this.lastAddedQuestion.setRobotAllowed(allowed);
@@ -1020,15 +1024,15 @@ class Flow {
     // Add predefined action to complete mentioned user data that were mentioned in the last added MentionQuestion
     completeMentions(onlyCompleteAll) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on completeMentions()");
+            logger.error("Flow::completeMentions() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof MentionQuestion)) {
-            console.error("Last added Question is not an instance of MentionQuestion on completeMentions()");
+            logger.error("Flow::completeMentions() Last added Question is not an instance of MentionQuestion");
             return this;
         }
         if(!this.control.messengerApi) {
-            console.error("Messenger API instance not set on completeMentions()");
+            logger.error("Flow::completeMentions() Messenger API instance not set");
             return this;
         }
         var answerKey = this.lastAddedQuestion.answerKey;
@@ -1068,11 +1072,11 @@ class Flow {
     // Set the minimum and/or maximum count of attachments of the last added AttachmentQuestion
     count(minCount, maxCount) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on count()");
+            logger.error("Flow::count() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof AttachmentQuestion)) {
-            console.error("Last added Question is not an instance of AttachmentQuestion on count()");
+            logger.error("Flow::count() Last added Question is not an instance of AttachmentQuestion");
             return this;
         }
         this.lastAddedQuestion.setCountRange(minCount, maxCount);
@@ -1082,11 +1086,11 @@ class Flow {
     // Set the minimum and/or maximum file size in bytes of attachments of the last added AttachmentQuestion
     size(minSize, maxSize) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on size()");
+            logger.error("Flow::size() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof AttachmentQuestion)) {
-            console.error("Last added Question is not an instance of AttachmentQuestion on size()");
+            logger.error("Flow::size() Last added Question is not an instance of AttachmentQuestion");
             return this;
         }
         this.lastAddedQuestion.setSizeRange(minSize, maxSize);
@@ -1096,11 +1100,11 @@ class Flow {
     // Set an array of allowed extensions for attachments of the last added AttachmentQuestion
     extensions(allowedExtensions) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on extensions()");
+            logger.error("Flow::extensions() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof AttachmentQuestion)) {
-            console.error("Last added Question is not an instance of AttachmentQuestion on extensions()");
+            logger.error("Flow::extensions() Last added Question is not an instance of AttachmentQuestion");
             return this;
         }
         this.lastAddedQuestion.addAllowedExtensions(allowedExtensions);
@@ -1115,11 +1119,11 @@ class Flow {
     // Set the positive regex and optional sub flow of the last added PolarQuestion
     positive(regex, subFlow) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on positive()");
+            logger.error("Flow::positive() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof PolarQuestion)) {
-            console.error("Last added Question is not an instance of PolarQuestion on positive()");
+            logger.error("Flow::positive() Last added Question is not an instance of PolarQuestion");
             return this;
         }
         this.lastAddedQuestion.setPositive(regex, subFlow);
@@ -1129,11 +1133,11 @@ class Flow {
     // Add a button for the positive answer of the last added PolarQuestion
     positiveButton(name, label, style) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on positiveButton()");
+            logger.error("Flow::positiveButton() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof PolarQuestion)) {
-            console.error("Last added Question is not an instance of PolarQuestion on positiveButton()");
+            logger.error("Flow::positiveButton() Last added Question is not an instance of PolarQuestion");
             return this;
         }
         this.lastAddedQuestion.setPositiveButton(name, label, style);
@@ -1143,11 +1147,11 @@ class Flow {
     // Set the negative regex and optional sub flow of the last added PolarQuestion
     negative(regex, subFlow) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on negative()");
+            logger.error("Flow::negative() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof PolarQuestion)) {
-            console.error("Last added Question is not an instance of PolarQuestion on negative()");
+            logger.error("Flow::negative() Last added Question is not an instance of PolarQuestion");
             return this;
         }
         this.lastAddedQuestion.setNegative(regex, subFlow);
@@ -1157,11 +1161,11 @@ class Flow {
     // Add a button for the negative answer of the last added PolarQuestion
     negativeButton(name, label, style) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on negativeButton()");
+            logger.error("Flow::negativeButton() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof PolarQuestion)) {
-            console.error("Last added Question is not an instance of PolarQuestion on negativeButton()");
+            logger.error("Flow::negativeButton() Last added Question is not an instance of PolarQuestion");
             return this;
         }
         this.lastAddedQuestion.setNegativeButton(name, label, style);
@@ -1176,11 +1180,11 @@ class Flow {
     // Add an option regex, optional sub flow and optional value of the last added MultipleChoiceQuestion
     option(regex, subFlow, value) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on option()");
+            logger.error("Flow::option() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof MultipleChoiceQuestion)) {
-            console.error("Last added Question is not an instance of MultipleChoiceQuestion on option()");
+            logger.error("Flow::option() Last added Question is not an instance of MultipleChoiceQuestion");
             return this;
         }
         this.lastAddedQuestion.addOption(regex, subFlow, value);
@@ -1190,11 +1194,11 @@ class Flow {
     // Add a button to the last added MultipleChoiceOption
     button(name, label, style) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on button()");
+            logger.error("Flow::button() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof MultipleChoiceQuestion)) {
-            console.error("Last added Question is not an instance of MultipleChoiceQuestion on button()");
+            logger.error("Flow::button() Last added Question is not an instance of MultipleChoiceQuestion");
             return this;
         }
         this.lastAddedQuestion.addButton(name, label, style);
@@ -1204,11 +1208,11 @@ class Flow {
     // Set the last added MultipleChoiceQuestion to allow multiple answers
     multiAnswer() {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on multiAnswer()");
+            logger.error("Flow::multiAnswer() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof MultipleChoiceQuestion)) {
-            console.error("Last added Question is not an instance of MultipleChoiceQuestion on multiAnswer()");
+            logger.error("Flow::multiAnswer() Last added Question is not an instance of MultipleChoiceQuestion");
             return this;
         }
         this.lastAddedQuestion.setMultiAnswer(true);
@@ -1218,11 +1222,11 @@ class Flow {
     // Set the question payload style for the last added MultipleChoiceQuestion
     questionStyle(style) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on questionStyle()");
+            logger.error("Flow::questionStyle() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof PolarQuestion) && !(this.lastAddedQuestion instanceof MultipleChoiceQuestion)) {
-            console.error("Last added Question is not an instance of PolarQuestion or MultipleChoiceQuestion on questionStyle()");
+            logger.error("Flow::questionStyle() Last added Question is not an instance of PolarQuestion or MultipleChoiceQuestion");
             return this;
         }
         this.lastAddedQuestion.setQuestionStyle(style);
@@ -1239,11 +1243,11 @@ class Flow {
     // Set an optional sub flow if the user is verified
     verified(subFlow) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on verified()");
+            logger.error("Flow::verified() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof VerificationQuestion)) {
-            console.error("Last added Question is not an instance of MultipleChoiceQuestion on verified()");
+            logger.error("Flow::verified() Last added Question is not an instance of MultipleChoiceQuestion");
             return this;
         }
         this.lastAddedQuestion.setVerifiedSubFlow(subFlow);
@@ -1253,11 +1257,11 @@ class Flow {
     // Set an optional sub flow if the user declines verification
     unverified(subFlow) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on unverified()");
+            logger.error("Flow::unverified() No Question added to flow");
             return this;
         }
         if(!(this.lastAddedQuestion instanceof VerificationQuestion)) {
-            console.error("Last added Question is not an instance of MultipleChoiceQuestion on unverified()");
+            logger.error("Flow::unverified() Last added Question is not an instance of MultipleChoiceQuestion");
             return this;
         }
         this.lastAddedQuestion.setUnverifiedSubFlow(subFlow);
@@ -1267,7 +1271,7 @@ class Flow {
     // Ask the last added question to the users that were mentioned a MentionQuestion earlier (multi user question)
     askMentions(mentionAnswerKey) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on askMentions()");
+            logger.error("Flow::askMentions() No Question added to flow");
             return this;
         }
         this.lastAddedQuestion.setMentionAnswerKey(mentionAnswerKey);
@@ -1277,7 +1281,7 @@ class Flow {
     // Ask the last added question to a list of user ids (multi user question)
     askUserIds(userIds) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on askUserIds()");
+            logger.error("Flow::askUserIds() No Question added to flow");
             return this;
         }
         this.lastAddedQuestion.setUserIds(userIds);
@@ -1287,7 +1291,7 @@ class Flow {
     // Break multi user question on a certain answer value, and set if the flow should continue or stop
     breakOnValue(value, stop) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on breakOnValue()");
+            logger.error("Flow::breakOnValue() No Question added to flow");
             return this;
         }
         this.lastAddedQuestion.setBreakOnValue(value, stop);
@@ -1297,7 +1301,7 @@ class Flow {
     // Break multi user question when an answer matches the given regex, and set if the flow should continue or stop
     breakOnRegex(regex, stop) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on breakOnRegex()");
+            logger.error("Flow::breakOnRegex() No Question added to flow");
             return this;
         }
         this.lastAddedQuestion.setBreakOnRegex(regex, stop);
@@ -1307,7 +1311,7 @@ class Flow {
     // Break multi user question on a certain number of answers
     breakOnCount(count) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on breakOnCount()");
+            logger.error("Flow::breakOnCount() No Question added to flow");
             return this;
         }
         this.lastAddedQuestion.setBreakOnCount(count);
@@ -1317,7 +1321,7 @@ class Flow {
     // Set a callback to format the question text with by the answers given earlier
     formatAnswer(formatAnswerFunction) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on formatAnswer()");
+            logger.error("Flow::formatAnswer() No Question added to flow");
             return this;
         }
         this.lastAddedQuestion.setFormatAnswerFunction(formatAnswerFunction);
@@ -1327,7 +1331,7 @@ class Flow {
     // Set a callback to format the question text with by the answers given earlier
     formatQuestion(formatQuestionFunction) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on formatQuestion()");
+            logger.error("Flow::formatQuestion() No Question added to flow");
             return this;
         }
         this.lastAddedQuestion.setFormatQuestionFunction(formatQuestionFunction);
@@ -1337,7 +1341,7 @@ class Flow {
     // Set a callback to summarize given answers after every user answer for a multi user question
     multiUserSummary(multiUserSummaryFunction) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on multiUserSummary()");
+            logger.error("Flow::multiUserSummary() No Question added to flow");
             return this;
         }
         this.lastAddedQuestion.setMultiUserSummaryFunction(multiUserSummaryFunction);
@@ -1347,7 +1351,7 @@ class Flow {
     // Set a callback to summarize the given answers after last added question
     summary(summaryFunction) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on summary()");
+            logger.error("Flow::summary() No Question added to flow");
             return this;
         }
         this.lastAddedQuestion.setSummaryFunction(summaryFunction);
@@ -1357,7 +1361,7 @@ class Flow {
     // Add a delay to the last added question
     delay(ms) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on delay()");
+            logger.error("Flow::delay() No Question added to flow");
             return this;
         }
         this.lastAddedQuestion.setDelay(ms);
@@ -1367,7 +1371,7 @@ class Flow {
     // Use non-default timeout for last added question
     timeout(ms, text, callback) {
         if(this.lastAddedQuestion == null) {
-            console.error("No Question added to flow on timeout()");
+            logger.error("Flow::timeout() No Question added to flow");
             return this;
         }
         this.lastAddedQuestion.setTimeout(ms, text, callback);
@@ -1413,16 +1417,16 @@ class Flow {
 
     // Start the flow
     start(msg, answers) {
-        console.log("Flow started");
+        logger.info("Flow::start()");
         if(this.steps.length === 0) {
-            console.error("No steps for flow on start");
+            logger.error("Flow::start() No steps for flow");
             this.sendRestartMessage(this.errorText);
             if(this.stoppedCallback) {
                 this.stoppedCallback(msg, answers);
             }
             return;
         } else if(msg == null) {
-            console.error("msg is null on start");
+            logger.error("Flow::start() msg is null");
             this.sendRestartMessage(this.errorText);
             if(this.stoppedCallback) {
                 this.stoppedCallback(msg, answers);
@@ -1455,7 +1459,7 @@ class Flow {
             // Let the Question check and parse the message
             var answerValue = question.checkAndParseAnswer(listener.matches, response.message);
             if(answerValue == null) {
-                console.log("No valid answer value from listener, resetting listener");
+                logger.debug("Flow::callback() No valid answer value from listener, resetting listener");
                 response.send(question.invalidText + " " + question.questionText);
                 return flow.control.addListener(response.message, new Listener(response, this.callback, question));
             }
@@ -1465,12 +1469,12 @@ class Flow {
 
             var answerValue = question.checkAndParseAnswer(pendingRequest.matches, response.message);
             if(answerValue == null) {
-                console.log("No valid answer value from pending request or wrong request message id, resetting pending request");
+                logger.debug("Flow::callback() No valid answer value from pending request or wrong request message id, resetting pending request");
                 return flow.control.addPendingRequest(response.message, new PendingRequest(response, this.callback, question));
             }
             flow.onAnswer(response, question, answerValue);
         } else {
-            console.error("Object not instance of Listener or PendingRequest on callback");
+            logger.error("Flow::callback() Object not instance of Listener or PendingRequest");
             flow.sendRestartMessage(flow.errorText);
             if(flow.stoppedCallback) {
                 flow.stoppedCallback(flow.msg, flow.answers);
@@ -1499,7 +1503,7 @@ class Flow {
             }
             var userId = flow.control.getUserId(response.message.user);
             multiAnswers.add(userId, answerValue);
-            console.log("Added multi-user answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
+            logger.debug("Flow::onAnswer() Added multi-user answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
             var answerCount = multiAnswers.size();
 
             // Check if a value was set to break multi user question on and use it
@@ -1542,7 +1546,7 @@ class Flow {
         } else {
             // Valid answer, store in the answers object
             this.answers.add(question.answerKey, answerValue);
-            console.log("Added answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
+            logger.debug("Flow::onAnswer() Added answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
         }
 
         // Call user answered callback if set
@@ -1611,15 +1615,15 @@ class Flow {
             if(step instanceof Question) {
                 var question = step;
                 if(this.answers.get(question.answerKey)) {
-                    console.log("Already have answer for \"" + question.answerKey + "\", skipping question");
+                    logger.debug("Flow::next() Already have answer for \"" + question.answerKey + "\", skipping question");
                     this.next();
                     return;
                 }
-                console.log("Flow next question: " + question.questionText);
+                logger.info("Flow::next() \"" + question.questionText + "\"");
 
                 // Delay executing this message if a delay was set
                 if(question.delayMs && question.delayMs > 0) {
-                    console.log("Executing question delayed by " + question.delayMs + " milliseconds");
+                    logger.debug("Flow::next() Executing question delayed by " + question.delayMs + " milliseconds");
                     setTimeout(() => {
                         question.execute(this.control, this.msg, this.callback, this.answers);
                     }, question.delayMs);
@@ -1633,11 +1637,11 @@ class Flow {
                 var action = step;
                 action.execute(this, this.msg, this.answers);
             } else {
-                console.error("Invalid step: ", step);
+                logger.error("Flow::next() Invalid step: ", step);
                 this.next();
             }
         } else {
-            console.log("Flow finished");
+            logger.info("Flow::next() Flow finished");
             if(this.finishedCallback != null) {
                 this.finishedCallback(this.msg, this.answers);
             }
@@ -1658,7 +1662,7 @@ class Action {
         this.callback(msg, answers, () => {
             // Wait after executing action if wait time was set
             if(this.waitMs && this.waitMs > 0) {
-                console.log("Waiting after executing action for " + this.waitMs + " milliseconds");
+                logger.debug("Action::execute() Waiting after executing action for " + this.waitMs + " milliseconds");
                 setTimeout(() => {
                     flow.next();
                 }, this.waitMs)
@@ -1682,7 +1686,7 @@ class Information {
         msg.send(this.text);
         // Wait after sending message if wait time was set
         if(this.waitMs && this.waitMs > 0) {
-            console.log("Waiting after sending information for " + this.waitMs + " milliseconds");
+            logger.debug("Information::execute() Waiting after sending information for " + this.waitMs + " milliseconds");
             setTimeout(() => {
                 flow.next();
             }, this.waitMs)
@@ -1799,7 +1803,7 @@ class Question {
                     var mention = mentions[index];
                     var userId = mention["id"];
                     if(userId.toUpperCase() === "@ALL") {
-                        console.log("Skipping @All tag on execute()");
+                        logger.debug("Question::execute() Skipping @All tag");
                         continue;
                     }
                     if(userId) {
@@ -1880,7 +1884,7 @@ class Question {
                 }
                 return;
             }
-            console.error("Empty userId list for multi-user question");
+            logger.error("Question::setListenersAndPendingRequests() Empty userId list for multi-user question");
             this.flow.sendRestartMessage(this.flow.errorText);
             if(this.flow.stoppedCallback) {
                 this.flow.stoppedCallback(flow.msg, flow.answers);
@@ -2028,7 +2032,7 @@ class EmailQuestion extends Question {
     addAllowedDomain(domain) {
         for(var index in this.allowedDomains) {
             if(domain === this.allowedDomains[index]) {
-                console.error("Domain already configured as allowed for EmailQuestion: " + domain);
+                logger.error("EmailQuestion::addAllowedDomain() Domain already configured as allowed: " + domain);
                 return;
             }
         }
@@ -2072,7 +2076,7 @@ class PhoneNumberQuestion extends Question {
     addAllowedCountryCode(code) {
         for(var index in this.allowedCountryCodes) {
             if(code === this.allowedCountryCodes[index]) {
-                console.error("Country code already configured as allowed for PhoneNumberQuestion: " + code);
+                logger.error("PhoneNumberQuestion::addAllowedCountryCode() Country code already configured as allowed: " + code);
                 return;
             }
         }
@@ -2165,19 +2169,19 @@ class MentionQuestion extends Question {
             var userId = mention["id"];
             // Skip robot mention if not allowed
             if(!this.robotAllowed && robotId !== null && userId === robotId) {
-                console.log("Removed robot mention")
+                logger.debug("MentionQuestion::checkAndParseAnswer() Removed robot mention")
                 continue;
             }
             var add = true;
             for(var index in value) {
                 if(userId === value[index]["id"]) {
-                    console.log("User id already mentioned: " + userId);
+                    logger.debug("MentionQuestion::checkAndParseAnswer() User id already mentioned: " + userId);
                     add = false;
                     break;
                 }
             }
             if(add) {
-                console.log("Adding mentioned user id: " + userId);
+                logger.debug("MentionQuestion::checkAndParseAnswer() Adding mentioned user id: " + userId);
                 value.push(mention);
             }
         }
@@ -2291,7 +2295,7 @@ class AttachmentQuestion extends Question {
     addAllowedExtension(extension) {
         for(var index in this.allowedExtensions) {
             if(extension === this.allowedExtensions[index]) {
-                console.error("Extension already configured as allowed for AttachmentQuestion: " + extension);
+                logger.error("AttachmentQuestion::addAllowedExtension() Extension already configured as allowed: " + extension);
                 return;
             }
         }
@@ -2401,10 +2405,10 @@ class PolarQuestion extends Question {
 
             // Send the message and parse result in callback
             control.messengerApi.sendMessage(messageData, function(success, json) {
-                console.log("Send question successful: " + success);
+                logger.debug("PolarQuestion:send() Successful: " + success);
                 if(json != null) {
                     var messageId = json["id"];
-                    console.log("Question message id: " + messageId);
+                    logger.debug("PolarQuestion:send() Question message id: " + messageId);
                     question.requestMessageId = messageId;
                 } else {
                     // Fallback
@@ -2515,10 +2519,10 @@ class MultipleChoiceQuestion extends Question {
 
             // Send the message and parse result in callback
             control.messengerApi.sendMessage(messageData, function(success, json) {
-                console.log("Send question successful: " + success);
+                logger.debug("MultipleChoiceQuestion:send() Successful: " + success);
                 if(json != null) {
                     var messageId = json["id"];
-                    console.log("Question message id: " + messageId);
+                    logger.debug("MultipleChoiceQuestion:send() Question message id: " + messageId);
                     question.requestMessageId = messageId;
                 } else {
                     var fallbackText = question.questionText;
@@ -2673,6 +2677,7 @@ class VerificationQuestion extends Question {
                 control.sendComposing(msg);
 
                 control.messengerApi.askUserVerification(userId, providerId, chatId, isGroup, false, function(askSuccess, askJson) {
+                    logger.debug("VerificationQuestion:sendForUserId() Successful: " + success);
                     if(!askSuccess) {
                         question.flow.sendRestartMessage(question.flow.errorText);
                         if(question.flow.stoppedCallback) {
@@ -2681,7 +2686,7 @@ class VerificationQuestion extends Question {
                         return;
                     }
                     var messageId = askJson["id"];
-                    console.log("Verification message id: " + messageId);
+                    logger.debug("VerificationQuestion:sendForUserId() Verification message id: " + messageId);
                     question.requestMessageId = messageId;
                 });
             } else {
