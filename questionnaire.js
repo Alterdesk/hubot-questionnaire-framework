@@ -2683,7 +2683,7 @@ class VerificationQuestion extends Question {
                 control.sendComposing(msg);
 
                 control.messengerApi.askUserVerification(userId, providerId, chatId, isGroup, false, function(askSuccess, askJson) {
-                    logger.debug("VerificationQuestion:sendForUserId() Successful: " + success);
+                    logger.debug("VerificationQuestion:sendForUserId() Successful: " + askSuccess);
                     if(!askSuccess) {
                         question.flow.sendRestartMessage(question.flow.errorText);
                         if(question.flow.stoppedCallback) {
