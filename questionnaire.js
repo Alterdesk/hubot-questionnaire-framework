@@ -1463,6 +1463,9 @@ class Flow {
                 response.send(question.invalidText + " " + question.questionText);
                 return flow.control.addListener(response.message, new Listener(response, this.callback, question));
             }
+            if(flow.control.hasPendingRequest(response.message)) {
+                flow.control.removePendingRequest(response.message);
+            }
             flow.onAnswer(response, question, answerValue);
         } else if(listenerOrPendingRequest instanceof PendingRequest) {
             var pendingRequest = listenerOrPendingRequest;
@@ -1471,6 +1474,9 @@ class Flow {
             if(answerValue == null) {
                 logger.debug("Flow::callback() No valid answer value from pending request or wrong request message id, resetting pending request");
                 return flow.control.addPendingRequest(response.message, new PendingRequest(response, this.callback, question));
+            }
+            if(flow.control.hasListener(response.message)) {
+                flow.control.removeListener(response.message);
             }
             flow.onAnswer(response, question, answerValue);
         } else {
