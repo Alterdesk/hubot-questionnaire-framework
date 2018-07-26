@@ -7,6 +7,15 @@ Framework for creating a questionnaire(follow up questions) isolated per user an
 The [Alterdesk Hubot Example](https://github.com/Alterdesk/hubot-example) uses the questionnaire framework in 
 [example.js](https://github.com/Alterdesk/hubot-example/blob/master/alterdesk-example-script/example.js)
 
+## Dependencies
+
+Required
+* [Hubot](https://hubot.github.com/)
+* [node-messenger-extra](https://github.com/Alterdesk/node-messenger-extra)
+
+Optional for request messages
+* [node-messenger-sdk](https://github.com/Alterdesk/node-messenger-sdk)
+
 ## Classes
 ### Control
 The control class can override the default Hubot message receiver to:
@@ -93,6 +102,22 @@ control.setMessageDeletedCallback(function(userId, messageId, chatId, isGroup) {
 });
 ```
 
+#### User verified event
+Detect when a user accepts or rejects a verification request(user is verified when accepted is received)
+```javascript
+control.setVerificationCallback(function(userId, messageId, chatId, isGroup, accepted) {
+        console.log("Verification: id: " + messageId + " user: " + userId + " chat: " + chatId + " isGroup: " + isGroup + " accepted: " + accepted);
+    });
+```
+
+#### User answers request question
+Detect when user answers a question request message
+```javascript
+control.setQuestionCallback(function(userId, messageId, chatId, isGroup, options) {
+        console.log("Question: id: " + messageId + " user: " + userId + " chat: " + chatId + " isGroup: " + isGroup + " options: " + options);
+    });
+```
+
 #### Group member events
 Detect when users are added in or removed from a groupchat.
 ```javascript
@@ -113,6 +138,14 @@ Detect when Hubot is subscribed or unsubscribed from a groupchat.
 ```javascript
 control.setGroupSubscribedCallback(function(groupId, subscribed) {
     console.log("Subscribed: " + subscribed + " chat: " + groupId);
+});
+```
+
+#### User answered question event
+Detect that a user has answered a question during a Flow
+```javascript
+control.setUserAnsweredCallback(function(userId, answerKey, answerValue) {
+    console.log("User answered: userId: " + userId + " key: " + answerKey + " value: " + answerValue);
 });
 ```
 
@@ -388,7 +421,8 @@ flow.mention("tagged", "Which users do you want to include? (Use '@' to mention 
 // Do not allow "All members" and robot mentions
 flow.mention("limitedTag", "Which users do you want to include? (Use '@' to mention users)", "Invalid mention.")
 .allAllowed(false)
-.robotAllowed(false);
+.robotAllowed(false)
+.completeMentions(false);
 
 // Always include these mentions after user gives a valid answer
 var mention = {};
@@ -425,6 +459,8 @@ To add a polar question, you can use the convenience function polar() with the f
 * Negative answer regex
 * Sub flow to start when a positive answer was given *(optional)*
 * Sub flow to start when a negative answer was given *(optional)*
+* Button to trigger positive answer *(optional)*
+* Button to trigger negative answer *(optional)*
 
 ```javascript
 // Regular expressions to use to parse positive and negative answers with
@@ -437,13 +473,17 @@ positiveFlow.email("email", "What is your email address?", "Invalid email addres
 var negativeFlow = new Flow(control);
 negativeFlow.text("reason", "That is to bad, can you give us a reason?", "Invalid answer");
 
-flow.polar("startedSubFlow", "Do you want to subscribe to our newsletter? (Yes or no)", "Invalid answer.", postiveRegex, negativeRegex, positiveFlow, negativeFlow);
+flow.polar("startedSubFlow", "Do you want to subscribe to our newsletter? (Yes or no)", "Invalid answer.")
+.positive(positiveRegex, positiveFlow)
+.positiveButton("yes", "Yes", "green")
+.negative(negativeRegex, negativeFlow)
+.positiveButton("no", "No", "red");
 ```
 
 ### MultipleChoiceQuestion
 To let the user make a choice of multiple options, the MultipleChoiceQuestion can be used. Each option is set with a 
 corresponding regex and an optional sub flow. First call multiple() on the flow and for each option call option() after 
-that.
+that. Optionally you can call button() to add a request message button to each option, depends on messenger Api instance
 ```javascript
 // Regular expressions to use to parse options with
 var emailRegex = new RegExp(/email/, 'i');
@@ -452,57 +492,20 @@ var skipRegex = new RegExp(/skip/, 'i');
 
 flow.multiple("registerBy", "Do you want to register by email, phone number or skip this question?", "Invalid choice.")
 .option(emailRegex, emailFlow)
+.button("email", "E-mail", "blue")
 .option(phoneRegex, phoneFlow)
-.option(skipRegex);
+.button("phone", "Phone number", "blue")
+.option(skipRegex)
+.button("skip", "Skip", "red");
 ```
 
-### Listener
-The listener class is used to await an answer from a user in a room
-* Answer regex to check the message that was received
-* Passes along the Answers object
-* Automatically times out if a response takes too long
-
-Listener constructor parameters
-* Response or msg
-* Callback function when an answer is received
-* Answers object for collection answers and other data
-* Regex to check answer with *(optional)*
-* Timeout milliseconds *(optional)*
-* Timeout callback *(optional)*
-
-#### Adding a Listener manually
-You can also add a listener to the control instance by message manually
+### VerificationQuestion
+Ask the user to verify his/her account with the given identity provider, user can accept the request and login on the 
+identity provider or reject the request.
 ```javascript
-// Adding a listener after a start command was heard
-control.addListener(msg.message, new Listener(msg, callbackOne, new Answers(), question));
-
-// Adding a listener after a response
-control.addListener(response.message, new Listener(response, callbackTwo, listener.answers, question));
-```
-
-#### Listener callback
-The callback function that is given to the Listener constructor is called when a message was received.
-
-Example of a listener callback
-```javascript
-var callbackOne = function(response, listener) {
-    // Check if the stop regex was triggered
-    if(listener.stop) {
-        response.send("Stopped the questionnaire");
-        return;
-    }
-    
-    // Check if rexex accepted the answer
-    if(listener.matches == null) {
-        response.send("Answer not accepted by regex, What is the answer for question one?");
-        return control.addListener(response.message, new Listener(response, callbackOne, listener.answers));
-    }
-    // Valid answer, store in the answers object
-    listener.answers.answerOne = response.message.text;
-    
-    response.send("What is the answer for question two?");
-    return control.addListener(response.message, new Listener(response, callbackTwo, listener.answers));
-};
+flow.verification("userVerified", "idin")
+.verified(verifiedFlow)
+.unverified(verifiedFlow);
 ```
 
 ### Answers
@@ -536,11 +539,17 @@ var myValue = answers.get("myKey");
 Certain settings can also be set through environment variables if desired
 
 #### Variables
+Questionnaire log level
+* HUBOT_QUESTIONNAIRE_LOG_LEVEL *(String)*
+
 Response timeout milliseconds
 * HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT *(Integer)*
 
 Response timeout text to send on timeout
 * HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT_TEXT *(String)*
+
+Need to mention robot in group to trigger command
+* HUBOT_QUESTIONNAIRE_NEED_MENTION_IN_GROUP *(Boolean)*
 
 Catch commands that are not present in the accepted commands list
 * HUBOT_QUESTIONNAIRE_CATCH_ALL *(Boolean)*
@@ -548,13 +557,22 @@ Catch commands that are not present in the accepted commands list
 Catch all text to send on unaccepted command
 * HUBOT_QUESTIONNAIRE_CATCH_ALL_TEXT *(String)*
 
+Catch all button name to use on unaccepted command, depends on messenger Api instance
+* HUBOT_QUESTIONNAIRE_CATCH_ALL_BUTTON_NAME *(String)*
+
+Catch all button label to use on unaccepted command, depends on messenger Api instance
+* HUBOT_QUESTIONNAIRE_CATCH_ALL_BUTTON_LABEL *(String)*
+
+Catch all button style to use on unaccepted command, depends on messenger Api instance
+* HUBOT_QUESTIONNAIRE_CATCH_ALL_BUTTON_STYLE *(String)*
+
 Override default hubot help command
 * HUBOT_QUESTIONNAIRE_CATCH_HELP *(Boolean)*
 
 Help text to send when default hubot help command is overridden
 * HUBOT_QUESTIONNAIRE_CATCH_HELP_TEXT *(String)*
 
-Remove a questionnaire listener when a user leave is detected
+Remove a questionnaire listener and pending request when a user leave is detected
 * HUBOT_QUESTIONNAIRE_REMOVE_ON_LEAVE *(Boolean)*
 
 #### Set an environment variable
@@ -601,54 +619,21 @@ Count of values that are added
 
 returns *(Integer)* - Size of added values
 
-### Listener
-#### constructor(message, callback, answers, question)
-
-Create a new Listener instance
-* message *(Message)* - Hubot Message to create the Listener for
-* callback *(Function)* - Callback to call when an answer is received
-* answers *(Answers)* - Answers instance that stores the answers for this session
-* question *(Question)* - Question instance that is awaiting an answer
-
-#### configure(control)
-
-Configure the listener for the given Control instance(void)
-* control *(Control)* - Control instance to configure the Listener for
-
-#### call(message)
-
-Called when a Message was received for the listener
-* message *(Message)* - Hubot Message that was received
 
 ### Control
 #### constructor()
 
 Create a new Control instance
 
+#### setMessengerApi(messengerApi)
+
+Set the optional Api instance from node-messenger-sdk for support for request and verification messages
+* messengerApi *(Api)* - Api instance
+
 #### overrideReceiver(robot)
 
 Override the default Hubot receiver with the questionnaire receiver
 * robot *(Robot)* - Hubot Robot instance to override the receiver for
-
-#### addListener(message, listener)
-
-Add a Listener on the basis of a Message that was received
-* message *(Message)* - Hubot Message to add the Listener for
-* listener *(Listener)* - Listener to add
-
-#### removeListener(message)
-
-Remove a listener on the basis of a Message
-* message *(Message)* - Hubot Message that the Listener was added for
-
-returns *(Listener)* - Listener that was removed
-
-#### hasListener(message)
-
-Check if a listener is set for the Message
-* message *(Message)* - Hubot Message that the Listener was added for
-
-returns *(Boolean)* - If a Listener is added for the given Message
 
 #### getUserId(user)
 
@@ -694,6 +679,13 @@ Set if unknown commands should be catched
 Set the text to send when an unknown command is catched
 * text *(String)* - Text to send when an unknown command is catched
 
+#### setCatchAllButton(name, label, style)
+
+Add a button to the catch all message
+* name *(String)* - Name of the button, text received when button is pressed
+* label *(String)* - Label on the button
+* style *(String)* - Optional style of the button (defaults to 'theme')
+
 #### setCatchHelp(catch)
 
 Set if the default Hubot help should be overridden
@@ -703,6 +695,18 @@ Set if the default Hubot help should be overridden
 
 Set the text to send when the help command is triggered
 * text *(String)* - Text to send when help command is triggered
+
+#### setHelpQuestionStyle(style)
+
+Set the style of request message to use when buttons are added to the help message
+* style *(String)* - Request message style
+
+#### createHubotResponse(userId, chatId, isGroup)
+
+Create a Hubot Response object for a given user and chat
+* userId *(String)* - Alterdesk user id
+* chatId *(String)* - Alterdesk chat id
+* isGroup *(Boolean)* - If the chat is a groupchat or one-to-one chat
 
 #### setAuthenticatedCallback(callback)
 
@@ -758,6 +762,27 @@ Callback that is called when a message is deleted
   * chatId *(String)* - Alterdesk chat id
   * isGroup *(Boolean)* - If the chat is a groupchat or one-to-one chat
 
+
+#### setVerificationCallback(callback)
+
+Detect when a user accepts or rejects a verification request(user is verified when accepted is received)
+* callback *(Function(userId, messageId, chatId, isGroup, accepted))* - Function callback when a verification is answered
+  * userId *(String)* - Alterdesk user id
+  * messageId *(String)* - Alterdesk message id
+  * chatId *(String)* - Alterdesk chat id
+  * isGroup *(Boolean)* - If the chat is a groupchat or one-to-one chat
+  * accepted *(Boolean)* - If the verification request was accepted or rejected
+
+#### setQuestionCallback(callback)
+
+Detect when user answers a question request message
+* callback *(Function(userId, messageId, chatId, isGroup, options))* - Function callback when a request is answered
+  * userId *(String)* - Alterdesk user id
+  * messageId *(String)* - Alterdesk message id
+  * chatId *(String)* - Alterdesk chat id
+  * isGroup *(Boolean)* - If the chat is a groupchat or one-to-one chat
+  * options *(Array)* - Array of chosen options
+
 #### setGroupMemberCallback(callback)
 
 Callback that is called when a group member is added or removed
@@ -774,16 +799,26 @@ Callback that is called when subscribed/unsubscribed to/from a groupchat
   * groupId *(String)* - Alterdesk group chat id
   * subscribed *(Boolean)* - If hubot is subscribed or unsubscribed
 
+#### setUserAnsweredCallback(callback)
+
+Detect that a user has answered a question during a Flow
+* callback *(Function(userId, answerKey, answerValue))* - Function callback when a user answers a question during a flow
+  * userId *(String)* - Alterdesk user id
+  * answerKey *(String)* - Answer key that is answered
+  * answerValue *(String)* - Answer value
+
 #### setRemoveListenerOnLeave(remove)  
 
 Set if a Listener should be removed when a LeaveMessage for the user is received
 * remove *(Boolean)* - If the Listener should be removed
 
-#### addAcceptedCommand(command, helpText) 
+#### addAcceptedCommand(command, helpText, buttonLabel, buttonStyle) 
 
 Add an accepted command
 * command *(String)* - Command text to listen for
 * helpText *(String)* - Help text to show when the help command is triggered
+* buttonLabel *(String)* - Optional button label for this command in help message, depends on messenger Api instance
+* buttonLabel *(String)* - Optional button style for this command in help message, depends on messenger Api instance
 
 ### Flow
 #### constructor(control, stopText, errorText)
@@ -932,6 +967,11 @@ Change if the robot mentioned tag is allowed of the last added MentionQuestion
 
 returns *(Flow)* - Flow instance
 
+#### completeMentions(onlyCompleteAll)
+
+Fill in all user data for the last added MentionQuestion, depends on messenger Api instance
+* onlyCompleteAll *(Boolean)* - Only retrieve user data when all mention is used
+
 #### attachment(answerKey, questionText, invalidText)
 
 Add an AttachmentQuestion to the Flow
@@ -981,11 +1021,29 @@ Set the positive regex and optional sub flow of the last added PolarQuestion
 
 returns *(Flow)* - Flow instance
 
+#### positiveButton(name, label, style)
+
+Add a button to the question message for a positive answer, depends on messenger Api instance
+* name *(String)* - Name of the button, needs to trigger positive regex to function
+* label *(String)* - Label on the button
+* style *(String)* - Optional style of the button (defaults to 'green')
+
+returns *(Flow)* - Flow instance
+
 #### negative(regex, subFlow)
 
 Set the negative regex and optional sub flow of the last added PolarQuestion
 * regex *(RegExp)* - Regular expression to trigger negative answer
 * subFlow *(Flow)* - Flow to start when negative answer was given
+
+returns *(Flow)* - Flow instance
+
+#### negativeButton(name, label, style)
+
+Add a button to the question message for a negative answer, depends on messenger Api instance
+* name *(String)* - Name of the button, needs to trigger negative regex to function
+* label *(String)* - Label on the button
+* style *(String)* - Optional style of the button (defaults to 'green')
 
 returns *(Flow)* - Flow instance
 
@@ -1005,6 +1063,49 @@ Add an option regex, optional sub flow and optional value of the last added Mult
 * subFlow *(Flow)* - Flow to start when option answer was given
 * value *(Object)* - Value to set as answer when option answer was given
 
+returns *(Flow)* - Flow instance
+
+#### button(name, label, style)
+
+Add a button to the question message for the last added option, depends on messenger Api instance
+* name *(String)* - Name of the button, needs to trigger option regex to function
+* label *(String)* - Label on the button
+* style *(String)* - Optional style of the button (defaults to 'theme')
+
+returns *(Flow)* - Flow instance
+
+#### multiAnswer()
+
+Set the last added MultipleChoiceQuestion to allow answering with multiple options, depends on messenger Api instance
+
+returns *(Flow)* - Flow instance
+
+#### questionStyle(style)
+
+Set the question payload style for the last added MultipleChoiceQuestion, depends on messenger Api instance
+* style *(String)* - Request message question style
+
+returns *(Flow)* - Flow instance
+
+#### verification(answerKey, provider)
+
+Add a VerificationQuestion to the Flow, depends on messenger Api instance
+* answerKey *(String)* - Key to store answer in Answers instance with
+* provider *(String)* - Identity provider to use for verification
+
+returns *(Flow)* - Flow instance
+
+#### verified(subFlow)
+
+Set an optional sub flow if the user is verified to the last added VerificationQuestion
+* subFlow *(Flow)* - Flow to start when the user is verified
+
+returns *(Flow)* - Flow instance
+
+#### unverified(subFlow)
+
+Set an optional sub flow if the user declines verification to the last added VerificationQuestion
+* subFlow *(Flow)* - Flow to start when the user declines verification
 
 returns *(Flow)* - Flow instance
 
@@ -1103,6 +1204,13 @@ Use non-default timeout for last added question
 
 returns *(Flow)* - Flow instance
 
+#### restartButton(name, label, style)
+
+Set a restart button for error, stop and timeout messages, depends on messenger Api instance
+* name *(String)* - Name of the button, needs to trigger flow start regex to function
+* label *(String)* - Label on the button
+* style *(String)* - Optional style of the button (defaults to 'theme')
+
 #### finish(callback)
 
 Set the flow finished callback function
@@ -1118,16 +1226,6 @@ Start the flow
 * message *(Message)* - Hubot Message instance
 * answers *(Answers)* - Answers instance
 
-#### callback(response, listener)
-
-Callback function that is used with Listeners(internal use)
-* response *(Response)* - Hubot Response instance
-* listener *(Listener)* - Listener instance
-
-#### next(response)
-
-Execute next step of the flow(internal use)
-* response *(Response)* - Hubot Response instance
 
 ### Information
 #### constructor(text, waitMs)
@@ -1233,27 +1331,6 @@ Set a summary callback function to trigger after every user answer
 
   returns *(String)* - Summary text to send
 
-#### execute(control, response, callback, answers)
-
-Execute this question(internal use)
-* control *(Control)* - Control instance to use
-* response *(Response)* - Hubot Response instance
-* callback *(Function(response, listener))* - Callback that is called when the question is answered
-  * response *(Response)* - Hubot Response instance
-  * listener *(Listener)* - Listener instance
-* answers *(Answers)* - Answers instance
-
-#### cleanup()
-
-Clean up question if timed out or stopped
-
-#### checkAndParseAnswer(matches, message)
-
-Answer given by the user is parsed and checked here
-* matches *(Array)* - Array of regular expression matches
-* message *(Message)* - Hubot Message instance
-
-returns *(Object)* - Parsed value when accepted
 
 ### TextQuestion
 #### constructor(answerKey, questionText, invalidText)
@@ -1473,6 +1550,20 @@ Set the negative answer regex and optional sub flow to start when a negative ans
 * regex *(RegExp)* - Regular expression to trigger negative answer
 * subFlow *(Flow)* - Flow to start when negative answer was given
 
+#### setPositiveButton(name, label, style)
+
+Set the name, label and style of the positive answer button, depends on messenger Api instance
+* name *(String)* - Name of the button, needs to trigger positive regex to function
+* label *(String)* - Label on the button
+* style *(String)* - Optional style of the button (defaults to 'green')
+
+#### setNegativeButton(name, label, style)
+
+Set the name, label and style of the negative answer button, depends on messenger Api instance
+* name *(String)* - Name of the button, needs to trigger negative regex to function
+* label *(String)* - Label on the button
+* style *(String)* - Optional style of the button (defaults to 'red')
+
 #### checkAndParseAnswer(matches, message)
 
 Check if the positive regex or negative regex matches, and set corresponding sub flow to execute
@@ -1496,6 +1587,13 @@ Add an option answer regex, optional sub flow and optional value
 * subFlow *(Flow)* - Flow to start when option answer was given
 * value *(Object)* - Value to set as answer when option answer was given
 
+#### addButton(name, label, style)
+
+Add a button to the last added MultipleChoiceOption, depends on messenger Api instance
+* name *(String)* - Name of the button, needs to trigger option regex to function
+* label *(String)* - Label on the button
+* style *(String)* - Optional style of the button (defaults to 'theme')
+
 #### checkAndParseAnswer(matches, message)
 
 Check the if one of the option regex matches, and set the corresponding sub flow to execute
@@ -1509,3 +1607,24 @@ Check the if one of the option regex matches, and set the corresponding sub flow
 
 Create a new MultipleChoiceOption instance(internal use)
 
+### VerificationQuestion
+#### constructor(answerKey, questionText, invalidText)
+
+Create a new VerificationQuestion instance, depends on messenger Api instance
+* answerKey *(String)* - Key to store answer in Answers instance with
+* questionText *(String)* - Text to send when the question is triggered
+* invalidText *(String)* - Text to send when the user sends an invalid answer
+
+#### setProvider(provider)
+
+Set the identity provider for the verification
+* provider *(String)* - Identity provider to use for verification
+
+#### setVerifiedSubFlow(subFlow)
+Set a sub flow for when a user is verified
+* subFlow *(Flow)* - Flow to start when the user is verified
+
+#### setUnverifiedSubFlow(subFlow)
+
+Set a sub flow for when a user declines verification
+* subFlow *(Flow)* - Flow to start when the user declines verification

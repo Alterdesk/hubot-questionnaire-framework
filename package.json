@@ -14,6 +14,10 @@
   "license": "MIT",
   "dependencies": {
     "hubot": "^2.19.0",
+    "log": "1.4.0",
     "node-messenger-extra": "https://github.com/Alterdesk/node-messenger-extra.git"
+  },
+  "optionalDependencies": {
+    "node-messenger-sdk": "https://github.com/Alterdesk/node-messenger-sdk.git"
   }
 }
