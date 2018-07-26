@@ -1433,6 +1433,22 @@ class Flow {
             }
             return;
         }
+        // Check for Schedule API pre-filled answers
+        if(msg.message && msg.message.answers) {
+            if(answers) {
+                var preAnswers = msg.message.answers;
+                var keys = preAnswers.keys();
+                if(keys) {
+                    for(var index in keys) {
+                        var key = keys[index];
+                        answers.add(key, preAnswers.get(key))
+                    }
+                }
+            } else {
+                answers = msg.message.answers;
+            }
+            logger.debug("Flow::start() got pre-filled answers", answers);
+        }
         this.msg = msg;
         this.answers = answers || new Answers();
         this.next();
