@@ -1602,6 +1602,10 @@ class Flow {
             if(subFlow.restartButtonStyle == null) {
                 subFlow.restartButtonStyle= flow.restartButtonStyle;
             }
+
+            // Copy sub flow finished callback
+            var subFlowFinish = subFlow.finishedCallback;
+
             // Continue current flow when sub flow finishes
             subFlow.finish(function(response, answers) {
                 // Call summary function if set
@@ -1610,6 +1614,11 @@ class Flow {
                     if(summary && summary !== "") {
                         response.send(summary);
                     }
+                }
+
+                // Call sub flow finished callback if was set
+                if(subFlowFinish) {
+                    subFlowFinish(this.msg, this.answers);
                 }
 
                 flow.next();
