@@ -1686,22 +1686,19 @@ class Flow {
 class Action {
     constructor(callback, waitMs) {
         this.callback = callback;
-        this.waitMs = waitMs;
+        this.waitMs = waitMs || 0;
     }
 
     // Execute this action
     execute(flow, msg, answers) {
         // Trigger action callback
         this.callback(msg, answers, () => {
-            // Wait after executing action if wait time was set
-            if(this.waitMs && this.waitMs > 0) {
+            if(this.waitMs > 0) {
                 logger.debug("Action::execute() Waiting after executing action for " + this.waitMs + " milliseconds");
-                setTimeout(() => {
-                    flow.next();
-                }, this.waitMs)
-            } else {
-                flow.next();
             }
+            setTimeout(() => {
+                flow.next();
+            }, this.waitMs);
         });
     }
 };
@@ -1710,22 +1707,19 @@ class Action {
 class Information {
     constructor(text, waitMs) {
         this.text = text;
-        this.waitMs = waitMs;
+        this.waitMs = waitMs || 0;
     }
 
     // Execute this information message
     execute(flow, msg) {
         // Send information message text
         msg.send(this.text);
-        // Wait after sending message if wait time was set
-        if(this.waitMs && this.waitMs > 0) {
+        if(this.waitMs > 0) {
             logger.debug("Information::execute() Waiting after sending information for " + this.waitMs + " milliseconds");
-            setTimeout(() => {
-                flow.next();
-            }, this.waitMs)
-        } else {
-            flow.next();
         }
+        setTimeout(() => {
+            flow.next();
+        }, this.waitMs);
     }
 };
 
