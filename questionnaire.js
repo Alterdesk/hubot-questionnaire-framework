@@ -1650,7 +1650,7 @@ class Flow {
                     this.next();
                     return;
                 }
-                logger.info("Flow::next() \"" + question.questionText + "\"");
+                logger.info("Flow::next() Question: \"" + question.questionText + "\"");
 
                 // Delay executing this message if a delay was set
                 if(question.delayMs && question.delayMs > 0) {
@@ -1663,9 +1663,11 @@ class Flow {
                 }
             } else if(step instanceof Information) {
                 var information = step;
+                logger.info("Flow::next() Information: \"" + information.text + "\"");
                 information.execute(this, this.msg);
             } else if(step instanceof Action) {
                 var action = step;
+                logger.info("Flow::next() Action");
                 action.execute(this, this.msg, this.answers);
             } else {
                 logger.error("Flow::next() Invalid step: ", step);
