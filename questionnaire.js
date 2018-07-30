@@ -82,7 +82,7 @@ class Listener {
         // Check if given regex matches
         this.matches = this.matcher(responseMessage);
 
-        // Check if stop regex maches
+        // Check if stop regex matches
         this.stop = this.stopMatcher(responseMessage);
 
         // Call callback
@@ -130,7 +130,7 @@ class PendingRequest {
                 if(responseMessage.id && responseMessage.id["options"]) {
                     var options = responseMessage.id["options"];
                     var optionText = "";
-                    for(var index in options) {
+                    for(let index in options) {
                         if(optionText.length > 0) {
                             optionText += "|";
                         }
@@ -386,7 +386,7 @@ class Control {
 
                 // Check if an accepted command was sent
                 var unknownCommand = true;
-                for(var index in control.acceptedRegex) {
+                for(let index in control.acceptedRegex) {
                     var match = commandString.match(control.acceptedRegex[index]);
                     if(match != null) {
                         unknownCommand = false;
@@ -657,7 +657,7 @@ class Control {
 
     // Add commands that the overridden receiver will accept
     addAcceptedCommands(commands) {
-        for(var index in commands) {
+        for(let index in commands) {
             this.addAcceptedCommand(commands[index]);
         }
     }
@@ -666,7 +666,7 @@ class Control {
     addAcceptedCommand(command, helpText, buttonLabel, buttonStyle) {
         var c = command.toLowerCase();
         var configured = false;
-        for(var index in this.acceptedCommands) {
+        for(let index in this.acceptedCommands) {
             if(c === this.acceptedCommands[index]) {
                 configured = true;
                 break;
@@ -711,7 +711,7 @@ class Control {
         var acceptedCommand = false;
         var options = message.id["options"];
         var optionText = "";
-        for(var index in options) {
+        for(let index in options) {
             if(optionText.length > 0) {
                 optionText += ",";
             }
@@ -719,7 +719,7 @@ class Control {
         }
         var helpCommand = optionText.match(this.helpRegex);
         if(!helpCommand) {
-            for(var index in this.acceptedCommands) {
+            for(let index in this.acceptedCommands) {
                 if(optionText === this.acceptedCommands[index]) {
                     acceptedCommand = true;
                     break;
@@ -754,7 +754,7 @@ class Control {
     // Send the help message
     sendHelpMessage(message) {
         var helpText = this.catchHelpText;
-        for(var field in this.acceptedHelpTexts) {
+        for(let field in this.acceptedHelpTexts) {
             helpText += "\n • \'" + field + "\' - " + this.acceptedHelpTexts[field];
         }
         var questionPayload;
@@ -762,7 +762,7 @@ class Control {
             questionPayload = new Messenger.QuestionPayload();
             questionPayload.multiAnswer = false;
             questionPayload.style = this.helpQuestionStyle || "horizontal";
-            for(var key in this.acceptedButtonLabels) {
+            for(let key in this.acceptedButtonLabels) {
                 var buttonStyle = this.acceptedButtonStyles[key] || "theme";
                 questionPayload.addOption(key, this.acceptedButtonLabels[key], buttonStyle);
             }
@@ -1439,7 +1439,7 @@ class Flow {
                 var preAnswers = msg.message.answers;
                 var keys = preAnswers.keys();
                 if(keys) {
-                    for(var index in keys) {
+                    for(let index in keys) {
                         var key = keys[index];
                         answers.add(key, preAnswers.get(key))
                     }
@@ -1506,8 +1506,6 @@ class Flow {
 
     // Process question answer
     onAnswer(response, question, answerValue) {
-        var flow = question.flow;
-
         // Format the given answer if a function was set
         if(question.formatAnswerFunction) {
             var formatted = question.formatAnswerFunction(answerValue);
@@ -1523,7 +1521,7 @@ class Flow {
                 multiAnswers = new Answers();
                 this.answers.add(question.answerKey, multiAnswers);
             }
-            var userId = flow.control.getUserId(response.message.user);
+            var userId = this.control.getUserId(response.message.user);
             multiAnswers.add(userId, answerValue);
             logger.debug("Flow::onAnswer() Added multi-user answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
             var answerCount = multiAnswers.size();
@@ -1553,9 +1551,9 @@ class Flow {
             if(breaking) {
                 question.cleanup(response.message);
                 if(stopping) {
-                    flow.sendRestartMessage(flow.stopText);
-                    if(flow.stoppedCallback) {
-                        flow.stoppedCallback(flow.msg, flow.answers);
+                    this.sendRestartMessage(this.stopText);
+                    if(this.stoppedCallback) {
+                        this.stoppedCallback(this.msg, this.answers);
                     }
                     return;
                 }
@@ -1577,64 +1575,14 @@ class Flow {
             this.control.userAnsweredCallback(userId, question.answerKey, answerValue);
         }
 
+        // Call summary function if set
+        question.sendSummary(response, this.answers);
+
         // Trigger sub flow if set in question, otherwise continue
         if(question.subFlow != null) {
-            var subFlow = question.subFlow;
-            // Set control when null
-            if(subFlow.control == null) {
-                subFlow.control = flow.control;
-            }
-            // Set stop text when null
-            if(subFlow.stopText == null) {
-                subFlow.stopText = flow.stopText;
-            }
-            // Set error text when null
-            if(subFlow.errorText == null) {
-                subFlow.errorText = flow.errorText;
-            }
-            // Set restart button when null
-            if(subFlow.restartButtonName == null){
-                subFlow.restartButtonName = flow.restartButtonName;
-            }
-            if(subFlow.restartButtonLabel == null) {
-                subFlow.restartButtonLabel = flow.restartButtonLabel;
-            }
-            if(subFlow.restartButtonStyle == null) {
-                subFlow.restartButtonStyle= flow.restartButtonStyle;
-            }
-
-            // Copy sub flow finished callback
-            var subFlowFinish = subFlow.finishedCallback;
-
-            // Continue current flow when sub flow finishes
-            subFlow.finish(function(response, answers) {
-                // Call summary function if set
-                if(question.summaryFunction != null) {
-                    var summary = question.summaryFunction(this.answers);
-                    if(summary && summary !== "") {
-                        response.send(summary);
-                    }
-                }
-
-                // Call sub flow finished callback if was set
-                if(subFlowFinish) {
-                    subFlowFinish(this.msg, this.answers);
-                }
-
-                flow.next();
-            });
-            // Start the sub flow
-            subFlow.start(this.msg, this.answers);
+            this.startSubFlow(question.subFlow);
         } else {
-            // Call summary function if set
-            if(question.summaryFunction != null) {
-                var summary = question.summaryFunction(this.answers);
-                if(summary && summary !== "") {
-                    response.send(summary);
-                }
-            }
-
-            flow.next();
+            this.next();
         }
     }
 
@@ -1645,10 +1593,36 @@ class Flow {
             var step = this.steps[this.currentStep++];
             if(step instanceof Question) {
                 var question = step;
-                if(this.answers.get(question.answerKey)) {
-                    logger.debug("Flow::next() Already have answer for \"" + question.answerKey + "\", skipping question");
-                    this.next();
-                    return;
+                var answerValue = this.answers.get(question.answerKey);
+                if(answerValue) {
+                    // If question is already checked and parsed
+                    if(question.parsed) {
+                        logger.debug("Flow::next() Already have parsed answer \"" + answerValue + "\" for \"" + question.answerKey + "\", skipping question");
+                        // Call summary function if set
+                        question.sendSummary(response, this.answers);
+                        // Trigger sub flow if set in question, otherwise continue
+                        if(question.subFlow != null) {
+                            this.startSubFlow(question.subFlow);
+                        } else {
+                            this.next();
+                        }
+                        return;
+                    }
+                    // Check and parse pre-filled answer
+                    var userId = this.control.getUserId(this.msg.message.user);
+                    var chatId = this.msg.message.room;
+                    var isGroup = this.control.isUserInGroup(this.msg.message.user);
+                    var message = this.control.createHubotResponse(userId, chatId, isGroup);
+                    message.text = answerValue;
+                    var matches = answerValue.match(question.regex);
+                    var parsedValue = question.checkAndParseAnswer(matches, message);
+                    if(parsedValue) {
+                        logger.debug("Flow::next() Got pre-filled answer \"" + parsedValue + "\" for \"" + question.answerKey + "\", skipping question");
+                        this.onAnswer(this.msg, question, parsedValue)
+                        return;
+                    } else {
+                        logger.error("Flow::next() Rejected pre-filled answer \"" + answerValue + "\" for \"" + question.answerKey + "\" matches: ", matches);
+                    }
                 }
                 logger.info("Flow::next() Question: \"" + question.questionText + "\"");
 
@@ -1679,6 +1653,46 @@ class Flow {
                 this.finishedCallback(this.msg, this.answers);
             }
         }
+    }
+
+    startSubFlow(subFlow) {
+        // Set control when null
+        if(subFlow.control == null) {
+            subFlow.control = this.control;
+        }
+        // Set stop text when null
+        if(subFlow.stopText == null) {
+            subFlow.stopText = this.stopText;
+        }
+        // Set error text when null
+        if(subFlow.errorText == null) {
+            subFlow.errorText = this.errorText;
+        }
+        // Set restart button when null
+        if(subFlow.restartButtonName == null){
+            subFlow.restartButtonName = this.restartButtonName;
+        }
+        if(subFlow.restartButtonLabel == null) {
+            subFlow.restartButtonLabel = this.restartButtonLabel;
+        }
+        if(subFlow.restartButtonStyle == null) {
+            subFlow.restartButtonStyle = this.restartButtonStyle;
+        }
+
+        // Copy sub flow finished callback
+        var subFlowFinish = subFlow.finishedCallback;
+
+        // Continue current flow when sub flow finishes
+        subFlow.finish((response, answers) => {
+            // Call sub flow finished callback if was set
+            if(subFlowFinish) {
+                subFlowFinish(this.msg, this.answers);
+            }
+
+            this.next();
+        });
+        // Start the sub flow
+        subFlow.start(this.msg, this.answers);
     }
 };
 
@@ -1809,6 +1823,16 @@ class Question {
         this.isMultiUser = true;
     }
 
+    // Call summary function if set
+    sendSummary(response, answers) {
+        if(this.summaryFunction != null) {
+            var summary = this.summaryFunction(answers);
+            if(summary && summary !== "") {
+                response.send(summary);
+            }
+        }
+    }
+
     // Execute this question
     execute(control, msg, callback, answers) {
 
@@ -1826,7 +1850,7 @@ class Question {
             var mentions = answers.get(this.mentionAnswerKey);
             if(mentions) {
                 this.userIds = [];
-                for(var index in mentions) {
+                for(let index in mentions) {
                     var mention = mentions[index];
                     var userId = mention["id"];
                     if(userId.toUpperCase() === "@ALL") {
@@ -1889,7 +1913,7 @@ class Question {
                 };
 
                 // Create listener for every user id
-                for(var index in this.userIds) {
+                for(let index in this.userIds) {
                     var userId = this.userIds[index];
 
                     // Create Message for each user id in list
@@ -1936,7 +1960,7 @@ class Question {
             this.flow.control.removePendingRequest(msg);
         }
         if(this.multiUserMessages != null) {
-            for(var index in this.multiUserMessages) {
+            for(let index in this.multiUserMessages) {
                 var userMessage = this.multiUserMessages[index];
                 this.flow.control.removeListener(userMessage);
                 this.flow.control.removePendingRequest(userMessage);
@@ -1974,6 +1998,7 @@ class TextQuestion extends Question {
             return null;
         }
         if(this.acceptedLength(message.text)) {
+            this.parsed = true;
             return message.text;
         }
         return null;
@@ -2012,6 +2037,7 @@ class NumberQuestion extends Question {
         }
         var value = parseFloat(message.text);
         if(this.inRange(value)) {
+            this.parsed = true;
             return value;
         }
         return null;
@@ -2045,10 +2071,12 @@ class EmailQuestion extends Question {
         }
         var email = matches[0];
         if(this.allowedDomains.length === 0) {
+            this.parsed = true;
             return email;
         }
-        for(var index in this.allowedDomains) {
+        for(let index in this.allowedDomains) {
             if(email.endsWith(this.allowedDomains[index])) {
+                this.parsed = true;
                 return email;
             }
         }
@@ -2057,7 +2085,7 @@ class EmailQuestion extends Question {
 
     // Add a domain to limit accepted answers to
     addAllowedDomain(domain) {
-        for(var index in this.allowedDomains) {
+        for(let index in this.allowedDomains) {
             if(domain === this.allowedDomains[index]) {
                 logger.error("EmailQuestion::addAllowedDomain() Domain already configured as allowed: " + domain);
                 return;
@@ -2068,7 +2096,7 @@ class EmailQuestion extends Question {
 
     // Add a list of accepted domains
     addAllowedDomains(domains) {
-        for(var index in domains) {
+        for(let index in domains) {
             this.addAllowedDomain(domains[index]);
         }
     }
@@ -2089,10 +2117,12 @@ class PhoneNumberQuestion extends Question {
         }
         var phone = matches[0];
         if(this.allowedCountryCodes.length === 0) {
+            this.parsed = true;
             return phone;
         }
-        for(var index in this.allowedCountryCodes) {
+        for(let index in this.allowedCountryCodes) {
             if(phone.startsWith(this.allowedCountryCodes[index])) {
+                this.parsed = true;
                 return phone;
             }
         }
@@ -2101,7 +2131,7 @@ class PhoneNumberQuestion extends Question {
 
     // Add a country code to limit accepted answers to
     addAllowedCountryCode(code) {
-        for(var index in this.allowedCountryCodes) {
+        for(let index in this.allowedCountryCodes) {
             if(code === this.allowedCountryCodes[index]) {
                 logger.error("PhoneNumberQuestion::addAllowedCountryCode() Country code already configured as allowed: " + code);
                 return;
@@ -2112,7 +2142,7 @@ class PhoneNumberQuestion extends Question {
 
     // Add a list of accepted country codes
     addAllowedCountryCodes(codes) {
-        for(var index in codes) {
+        for(let index in codes) {
             this.addAllowedCountryCode(codes[index]);
         }
     }
@@ -2158,6 +2188,7 @@ class MentionQuestion extends Question {
             var mention = {};
             mention["id"] = "@all";
             value.push(mention);
+            this.parsed = true;
             return value;
         }
 
@@ -2191,7 +2222,7 @@ class MentionQuestion extends Question {
         }
 
         // Check for duplicates and robot mention
-        for(var index in mentions) {
+        for(let index in mentions) {
             var mention = mentions[index];
             var userId = mention["id"];
             // Skip robot mention if not allowed
@@ -2200,7 +2231,7 @@ class MentionQuestion extends Question {
                 continue;
             }
             var add = true;
-            for(var index in value) {
+            for(let index in value) {
                 if(userId === value[index]["id"]) {
                     logger.debug("MentionQuestion::checkAndParseAnswer() User id already mentioned: " + userId);
                     add = false;
@@ -2216,11 +2247,11 @@ class MentionQuestion extends Question {
         // If a valid answer has been given, add the include mention list
         if(value.length != 0) {
             if(this.includeMentions != null) {
-                for(var index in this.includeMentions) {
+                for(let index in this.includeMentions) {
                     var includeMention = this.includeMentions[index];
                     var userId = includeMention["id"];
                     var add = true;
-                    for(var i in value) {
+                    for(let i in value) {
                         if(userId === value[i]["id"]) {
                             add = false;
                             break;
@@ -2231,6 +2262,7 @@ class MentionQuestion extends Question {
                     }
                 }
             }
+            this.parsed = true;
             return value;
         }
         return null;
@@ -2252,7 +2284,7 @@ class AttachmentQuestion extends Question {
         }
         var value = [];
 
-        for(var index in message.attachments) {
+        for(let index in message.attachments) {
             var attachment = message.attachments[index];
             if(this.minSize !== null || this.maxSize !== null) {
                 var size = parseFloat(attachment["size"]);
@@ -2263,7 +2295,7 @@ class AttachmentQuestion extends Question {
             if(this.allowedExtensions.length != 0) {
                 var name = attachment["name"];
                 var allowed = false;
-                for(var i in this.allowedExtensions) {
+                for(let i in this.allowedExtensions) {
                     if(name.endsWith(this.allowedExtensions[i])) {
                         allowed = true;
                         break;
@@ -2277,6 +2309,7 @@ class AttachmentQuestion extends Question {
         }
 
         if(value.length != 0 && this.inCountRange(value.length)) {
+            this.parsed = true;
             return value;
         }
         return null;
@@ -2320,7 +2353,7 @@ class AttachmentQuestion extends Question {
 
     // Add an extension to limit accepted answers to
     addAllowedExtension(extension) {
-        for(var index in this.allowedExtensions) {
+        for(let index in this.allowedExtensions) {
             if(extension === this.allowedExtensions[index]) {
                 logger.error("AttachmentQuestion::addAllowedExtension() Extension already configured as allowed: " + extension);
                 return;
@@ -2331,7 +2364,7 @@ class AttachmentQuestion extends Question {
 
     // Add a list of accepted extensions
     addAllowedExtensions(extensions) {
-        for(var index in extensions) {
+        for(let index in extensions) {
             this.addAllowedExtension(extensions[index]);
         }
     }
@@ -2453,9 +2486,11 @@ class PolarQuestion extends Question {
         if(matches == null || message.text == null) {
             return null;
         } else if(message.text.match(this.positiveRegex)) {
+            this.parsed = true;
             this.setSubFlow(this.positiveFlow);
             return true;
         } else if(message.text.match(this.negativeRegex)) {
+            this.parsed = true;
             this.setSubFlow(this.negativeFlow);
             return false;
         }
@@ -2512,7 +2547,7 @@ class MultipleChoiceQuestion extends Question {
             var questionPayload = new Messenger.QuestionPayload();
             questionPayload.multiAnswer = this.multiAnswer;
             questionPayload.style = this.questionStyle || "horizontal";
-            for(var i in this.options) {
+            for(let i in this.options) {
                 var option = this.options[i];
 
                 var label = option.label || option.regex;
@@ -2553,7 +2588,7 @@ class MultipleChoiceQuestion extends Question {
                     question.requestMessageId = messageId;
                 } else {
                     var fallbackText = question.questionText;
-                    for(var i in questionPayload.questionOptions) {
+                    for(let i in questionPayload.questionOptions) {
                         var option = questionPayload.questionOptions[i];
                         fallbackText += "\n • \"" + option.name + "\" - " + option.label;
                     }
@@ -2574,7 +2609,7 @@ class MultipleChoiceQuestion extends Question {
         if(this.multiAnswer && message.text.indexOf("|") !== -1) {
             var choices = message.text.split("|");
             var options = [];
-            for(var index in choices) {
+            for(let index in choices) {
                 var choice = choices[index];
                 var option = this.checkAndParseChoice(choice);
                 if(option && option !== "") {
@@ -2582,6 +2617,7 @@ class MultipleChoiceQuestion extends Question {
                 }
             }
             if(options && options.length > 0) {
+                this.parsed = true;
                 return options;
             }
             return null;
@@ -2594,7 +2630,7 @@ class MultipleChoiceQuestion extends Question {
     checkAndParseChoice(choice) {
         var optionMatch = null;
         var longestMatch = null;
-        for(var index in this.options) {
+        for(let index in this.options) {
             var option = this.options[index];
             var match = choice.match(option.regex);
             if(match) {
@@ -2615,9 +2651,12 @@ class MultipleChoiceQuestion extends Question {
             // Return value if set
             var value = optionMatch.value;
             if(typeof value !== typeof undefined) {
+                this.parsed = true;
                 return value;
             }
         }
+
+        this.parsed = longestMatch != null;
         // Return text match
         return longestMatch;
     }
@@ -2666,7 +2705,7 @@ class VerificationQuestion extends Question {
         }
 
         if(this.isMultiUser && this.userIds && this.userIds.length > 0) {
-            for(var index in this.userIds) {
+            for(let index in this.userIds) {
                 this.sendForUserId(control, msg, callback, this.userIds[index]);
             }
         } else {
@@ -2687,7 +2726,7 @@ class VerificationQuestion extends Question {
                 return;
             }
             var providerId;
-            for(var i in providerJson) {
+            for(let i in providerJson) {
                 var provider = providerJson[i];
                 if(provider["name"] === question.provider) {
                     providerId = provider["provider_id"];
@@ -2728,7 +2767,7 @@ class VerificationQuestion extends Question {
                     }
                     var isVerified = false;
                     var userVerifications = verificationsJson["user"];
-                    for(var i in userVerifications) {
+                    for(let i in userVerifications) {
                         var verification = userVerifications[i];
                         if(verification["name"] === question.provider) {
                             isVerified = true;
@@ -2756,9 +2795,11 @@ class VerificationQuestion extends Question {
         }
         var event = message.text;
         if(event === "conversation_verification_accepted" || event === "groupchat_verification_accepted") {
+            this.parsed = true;
             this.setSubFlow(this.verifiedSubFlow);
             return true;
         } else if(event === "conversation_verification_rejected" || event === "groupchat_verification_rejected") {
+            this.parsed = true;
             this.setSubFlow(this.unverifiedSubFlow);
             return false;
         }
