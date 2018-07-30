@@ -30,6 +30,12 @@ class Answers {
         this.data[key] = value;
     }
 
+    remove(key) {
+        var value = this.data[key];
+        delete this.data[key];
+        return value;
+    }
+
     // Get a value by key
     get(key) {
         return this.data[key];
@@ -73,6 +79,13 @@ class Listener {
                 return responseMessage.text.match(control.stopRegex);
             }
         };
+
+        // Matcher for back regex
+        this.backMatcher = (responseMessage) => {
+            if (responseMessage.text != null && control.backRegex != null) {
+                return responseMessage.text.match(control.backRegex);
+            }
+        };
     }
 
     // Called when a message was received for the listener
@@ -84,6 +97,9 @@ class Listener {
 
         // Check if stop regex matches
         this.stop = this.stopMatcher(responseMessage);
+
+        // Check if back regex matches
+        this.back = this.backMatcher(responseMessage);
 
         // Call callback
         this.callback(new Response(this.msg.robot, responseMessage, true), this);
@@ -178,6 +194,7 @@ class Control {
 
         // Regular expressions
         this.stopRegex = new RegExp(/^[ \n\r\t]*stop[ \n\r\t]*$/, 'gi');
+        this.backRegex = new RegExp(/^[ \n\r\t]*back[ \n\r\t]*$/, 'gi');
         this.helpRegex = new RegExp(/^[ \n\r\t]*help[ \n\r\t]*$/, 'gi');
         this.robotUserId;
         this.robotMentionRegex;
@@ -550,6 +567,11 @@ class Control {
     // Regex to check if user wants to stop the current process
     setStopRegex(s) {
         this.stopRegex = s;
+    }
+
+    // Regex to check if user wants to correct the last question
+    setBackRegex(b) {
+        this.backRegex = b;
     }
 
     // Regex to check if user wants help
@@ -1386,6 +1408,12 @@ class Flow {
         return this;
     }
 
+    // Set the message to send when the back regex was triggered
+    backMessage(text) {
+        this.backText = text;
+        return this;
+    }
+
     // Send a restart message
     sendRestartMessage(text) {
         if(!text || text === "") {
@@ -1464,10 +1492,28 @@ class Flow {
 
             // Check if the stop regex was triggered
             if(listener.stop) {
+                logger.debug("Flow::callback() stop regex triggered");
                 question.cleanup(response.message);
                 flow.sendRestartMessage(flow.stopText);
                 if(flow.stoppedCallback) {
                     flow.stoppedCallback(flow.msg, flow.answers);
+                }
+                return;
+            }
+
+            // Check if the back regex was triggered
+            if(listener.back) {
+                logger.debug("Flow::callback() back regex triggered");
+                question.cleanup(response.message);
+                // Send back text message if set
+                if(flow.backText && flow.backText != "") {
+                    response.send(flow.backText)
+                }
+                // Try go go back
+                if(!flow.previous()) {
+                    logger.debug("Flow::callback() Unable to go back, restarting flow");
+                    flow.currentStep = 0;
+                    flow.next();
                 }
                 return;
             }
@@ -1588,6 +1634,7 @@ class Flow {
 
     // Execute next question
     next() {
+        logger.info("Flow::next() Step " + this.currentStep);
         // Check if has more steps or flow is finished
         if(this.currentStep < this.steps.length) {
             var step = this.steps[this.currentStep++];
@@ -1599,7 +1646,7 @@ class Flow {
                     if(question.parsed) {
                         logger.debug("Flow::next() Already have parsed answer \"" + answerValue + "\" for \"" + question.answerKey + "\", skipping question");
                         // Call summary function if set
-                        question.sendSummary(response, this.answers);
+                        question.sendSummary(this.msg, this.answers);
                         // Trigger sub flow if set in question, otherwise continue
                         if(question.subFlow != null) {
                             this.startSubFlow(question.subFlow);
@@ -1655,7 +1702,50 @@ class Flow {
         }
     }
 
+    // Find and remove last given answer and ask question again
+    previous(ignoreSuperFlow) {
+        let checkStep = this.currentStep;
+        while(checkStep >= 0) {
+            var step = this.steps[checkStep];
+            logger.info("Flow::previous() Step " + checkStep);
+            if(step instanceof Question) {
+                let question = step;
+                logger.info("Flow::previous() Question: \"" + question.questionText + "\"");
+
+                if(question.subFlow) {
+                    if(question.subFlow.previous(true)) {
+                        return true;
+                    }
+                }
+
+                let removedAnswer = this.answers.remove(question.answerKey);
+                if(removedAnswer != null) {
+                    logger.info("Flow::previous() Removed answer: key: \"" + question.answerKey + "\" value: \"" + removedAnswer + "\"");
+                    question.parsed = false;
+                    question.subFlow = null;
+                    this.currentStep = checkStep;
+                    this.next();
+                    return true;
+                }
+            }
+            if(checkStep == 0) {
+                break;
+            }
+            checkStep--;
+        }
+
+        if(this.superFlow && !ignoreSuperFlow) {
+            return this.superFlow.previous();
+        }
+
+        return false;
+    }
+
+    // Start a sub flow
     startSubFlow(subFlow) {
+        // Set this instance as the super flow
+        subFlow.superFlow = this;
+
         // Set control when null
         if(subFlow.control == null) {
             subFlow.control = this.control;
@@ -1667,6 +1757,10 @@ class Flow {
         // Set error text when null
         if(subFlow.errorText == null) {
             subFlow.errorText = this.errorText;
+        }
+        // Set back text when null
+        if(subFlow.backText == null) {
+            subFlow.backText = this.backText;
         }
         // Set restart button when null
         if(subFlow.restartButtonName == null){
