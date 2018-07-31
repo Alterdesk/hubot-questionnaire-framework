@@ -568,10 +568,23 @@ class Control {
     setStopRegex(s) {
         this.stopRegex = s;
     }
+    // Message text to send when a Flow is stopped with the stop command
+    setFlowStopText(text) {
+        this.flowStopText = text;
+    }
 
     // Regex to check if user wants to correct the last question
     setBackRegex(b) {
         this.backRegex = b;
+    }
+    // Message text to send when going back a question with the back command
+    setFlowBackText(text) {
+        this.flowBackText = text;
+    }
+
+    // Message text to send when a flow stops with an error
+    setFlowErrorText(text) {
+        this.flowErrorText = text;
     }
 
     // Regex to check if user wants help
@@ -846,10 +859,17 @@ class Control {
 
 // Class for a flow of questions
 class Flow {
-    constructor(control, stopText, errorText) {
-        this.control = control;
-        this.stopText = stopText;
-        this.errorText = errorText;
+    constructor(control, stopText, errorText, backText) {
+        if(control) {
+            this.control = control;
+            this.stopText = stopText || control.flowStopText;
+            this.errorText = errorText || control.flowErrorText;
+            this.backText = backText || control.flowBackText;
+        } else {
+            this.stopText = stopText;
+            this.errorText = errorText;
+            this.backText = backText;
+        }
         this.currentStep = 0;
         this.steps = [];
     }
@@ -1405,12 +1425,6 @@ class Flow {
         this.restartButtonName = name;
         this.restartButtonLabel = label;
         this.restartButtonStyle = style;
-        return this;
-    }
-
-    // Set the message to send when the back regex was triggered
-    backMessage(text) {
-        this.backText = text;
         return this;
     }
 

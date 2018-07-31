@@ -527,10 +527,32 @@ var answers = new Answers();
 answers.add("myKey", myValue);
 ```
 
+#### Remove an answer
+Remove an answer by key, the remove function returns the value
+```javascript
+var removedValue = answers.remove("myKey");
+```
+
 #### Get an answer
 To get an answer, you can retrieve the answer value by key
 ```javascript
 var myValue = answers.get("myKey");
+```
+
+#### Get used keys
+Get an array of keys of answers that are given
+```javascript
+var keys = answers.keys();
+for(let i in keys) {
+    var key = keys[i];
+    var value = answers.get(key);
+}
+```
+
+#### Answer collection size
+Get the size of the collection of answers
+```javascript
+var size = answers.size();
 ```
 
 ## Other
@@ -607,6 +629,13 @@ Get a value by key
 
 returns *(Object)* - Value corresponding to the key
 
+#### remove(key)
+
+Remove a value by key
+* key *(String)* - Key that the requested value was added with
+
+returns *(Object)* - Removed value that corresponds to the key
+
 #### keys()
 
 Get the keys that are added
@@ -653,6 +682,26 @@ returns *(Boolean)* - If the user is talking from a groupchat
 
 Set the regular expression to stop flows on
 * regexp *(RegExp)* - Regular Expression to stop flows with
+
+#### setFlowStopText(text)
+
+Set the message text to send when a Flow is stopped with the stop command
+* text *(String)* - Text to send on Flow stop
+
+#### setBackRegex(regexp)
+
+Set the regular expression to go back in a flow with
+* regexp *(RegExp)* - Regular Expression to go back in flow with
+
+#### setFlowBackText(text)
+
+Set the message text to send when going back a question with the back command
+* text *(String)* - Text to send on back command
+
+#### setFlowErrorText(text)
+
+Set the message text to send when a flow stops with an error
+* text *(String)* - Text to send on Flow error
 
 #### setHelpRegex(regexp)
 
@@ -821,12 +870,13 @@ Add an accepted command
 * buttonLabel *(String)* - Optional button style for this command in help message, depends on messenger Api instance
 
 ### Flow
-#### constructor(control, stopText, errorText)
+#### constructor(control, stopText, errorText, backText)
 
 Create a new Flow instance
 * control *(Control)* - Control instance to use
-* stopText *(String)* - Message text to send when the flow is stopped
-* errorText *(String)* - Message text to send when the flow stops with an error
+* stopText *(String)* - Optional override message text to send when the flow is stopped
+* errorText *(String)* - Optional override message text to send when the flow stops with an error
+* backText *(String)* - Optional override message text to send when going back a question
 
 #### add(question)
 
