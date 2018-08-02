@@ -1669,20 +1669,25 @@ class Flow {
                         }
                         return;
                     }
-                    // Check and parse pre-filled answer
-                    var userId = this.control.getUserId(this.msg.message.user);
-                    var chatId = this.msg.message.room;
-                    var isGroup = this.control.isUserInGroup(this.msg.message.user);
-                    var message = this.control.createHubotResponse(userId, chatId, isGroup);
-                    message.text = answerValue;
-                    var matches = answerValue.match(question.regex);
-                    var parsedValue = question.checkAndParseAnswer(matches, message);
-                    if(parsedValue) {
-                        logger.debug("Flow::next() Got pre-filled answer \"" + parsedValue + "\" for \"" + question.answerKey + "\", skipping question");
-                        this.onAnswer(this.msg, question, parsedValue)
-                        return;
+
+                    if(answerValue instanceof Answers) {
+                        // TODO Parse and check answers here
                     } else {
-                        logger.error("Flow::next() Rejected pre-filled answer \"" + answerValue + "\" for \"" + question.answerKey + "\" matches: ", matches);
+                        // Check and parse pre-filled answer
+                        var userId = this.control.getUserId(this.msg.message.user);
+                        var chatId = this.msg.message.room;
+                        var isGroup = this.control.isUserInGroup(this.msg.message.user);
+                        var message = this.control.createHubotResponse(userId, chatId, isGroup);
+                        message.text = answerValue;
+                        var matches = answerValue.match(question.regex);
+                        var parsedValue = question.checkAndParseAnswer(matches, message);
+                        if(parsedValue) {
+                            logger.debug("Flow::next() Got pre-filled answer \"" + parsedValue + "\" for \"" + question.answerKey + "\", skipping question");
+                            this.onAnswer(this.msg, question, parsedValue)
+                            return;
+                        } else {
+                            logger.error("Flow::next() Rejected pre-filled answer \"" + answerValue + "\" for \"" + question.answerKey + "\" matches: ", matches);
+                        }
                     }
                 }
                 logger.info("Flow::next() Question: \"" + question.questionText + "\"");
