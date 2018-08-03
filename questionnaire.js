@@ -1523,8 +1523,9 @@ class Flow {
                 if(flow.backText && flow.backText != "") {
                     response.send(flow.backText)
                 }
+                let userId = flow.control.getUserId(response.message.user);
                 // Try go go back
-                if(!flow.previous()) {
+                if(!flow.previous(false, userId)) {
                     logger.debug("Flow::callback() Unable to go back, restarting flow");
                     flow.currentStep = 0;
                     flow.next();
@@ -1615,14 +1616,16 @@ class Flow {
                     if(this.stoppedCallback) {
                         this.stoppedCallback(this.msg, this.answers);
                     }
-                    return;
+                    return true;
                 }
             }
 
             // Check if still waiting for more answers
             if(!breaking && question.userIds.length > answerCount) {
-                return;
+                return false;
             }
+
+            question.parsedMultiUser = true;
         } else {
             // Valid answer, store in the answers object
             this.answers.add(question.answerKey, answerValue);
@@ -1644,6 +1647,7 @@ class Flow {
         } else {
             this.next();
         }
+        return true;
     }
 
     // Execute next question
@@ -1656,8 +1660,8 @@ class Flow {
                 var question = step;
                 var answerValue = this.answers.get(question.answerKey);
                 if(answerValue) {
-                    // If question is already checked and parsed
-                    if(question.parsed) {
+                    // If question is already checked and parsed and was asked to a single user
+                    if((question.parsed && !question.isMultiUser) || (question.isMultiUser && question.parsedMultiUser)) {
                         logger.debug("Flow::next() Already have parsed answer \"" + answerValue + "\" for \"" + question.answerKey + "\", skipping question");
                         // Call summary function if set
                         question.sendSummary(this.msg, this.answers);
@@ -1670,20 +1674,49 @@ class Flow {
                         return;
                     }
 
+                    var chatId = this.msg.message.room;
+                    var isGroup = this.control.isUserInGroup(this.msg.message.user);
+
                     if(answerValue instanceof Answers) {
-                        // TODO Parse and check answers here
+                        var multiAnswers = answerValue;
+                        var userIds = multiAnswers.keys();
+                        if(userIds.length > 1 && !question.isMultiUser) {
+                            logger.warning("Flow::next() Got pre-filled multi-user answers for single user question \"" + question.answerKey + "\", forcing question to be multi-user");
+                            question.isMultiUser = true;
+                        }
+                        for(let index in userIds) {
+                            var userId = userIds[index];
+                            var userAnswer = multiAnswers.get(userId);
+                            var matches;
+                            if(userAnswer && userAnswer.match) {
+                                matches = userAnswer.match(question.regex);
+                            }
+                            var message = this.control.createHubotResponse(userId, chatId, isGroup);
+                            message.text = userAnswer;
+                            var parsedValue = question.checkAndParseAnswer(matches, message);
+                            if(parsedValue) {
+                                logger.debug("Flow::next() Got pre-filled multi-user answer \"" + parsedValue + "\" for \"" + question.answerKey + "\"");
+                                if(this.onAnswer(this.msg, question, parsedValue)) {
+                                    logger.debug("Flow::next() Got all pre-filled user answers for multi-user question \"" + question.answerKey + "\", skipping question");
+                                    return;
+                                }
+                            } else {
+                                logger.error("Flow::next() Rejected pre-filled multi-user answer \"" + userAnswer + "\" for \"" + question.answerKey + "\" matches: ", matches);
+                            }
+                        }
                     } else {
                         // Check and parse pre-filled answer
                         var userId = this.control.getUserId(this.msg.message.user);
-                        var chatId = this.msg.message.room;
-                        var isGroup = this.control.isUserInGroup(this.msg.message.user);
+                        var matches;
+                        if(answerValue && answerValue.match) {
+                            matches = answerValue.match(question.regex);
+                        }
                         var message = this.control.createHubotResponse(userId, chatId, isGroup);
                         message.text = answerValue;
-                        var matches = answerValue.match(question.regex);
                         var parsedValue = question.checkAndParseAnswer(matches, message);
                         if(parsedValue) {
                             logger.debug("Flow::next() Got pre-filled answer \"" + parsedValue + "\" for \"" + question.answerKey + "\", skipping question");
-                            this.onAnswer(this.msg, question, parsedValue)
+                            this.onAnswer(this.msg, question, parsedValue);
                             return;
                         } else {
                             logger.error("Flow::next() Rejected pre-filled answer \"" + answerValue + "\" for \"" + question.answerKey + "\" matches: ", matches);
@@ -1722,7 +1755,7 @@ class Flow {
     }
 
     // Find and remove last given answer and ask question again
-    previous(ignoreSuperFlow) {
+    previous(ignoreSuperFlow, userId) {
         let checkStep = this.currentStep;
         while(checkStep >= 0) {
             var step = this.steps[checkStep];
@@ -1732,15 +1765,29 @@ class Flow {
                 logger.info("Flow::previous() Question: \"" + question.questionText + "\"");
 
                 if(question.subFlow) {
-                    if(question.subFlow.previous(true)) {
+                    if(question.subFlow.previous(true, userId)) {
                         return true;
                     }
                 }
 
-                let removedAnswer = this.answers.remove(question.answerKey);
+                let removedAnswer;
+                if(question.isMultiUser) {
+                    var multiAnswers = this.answers.get(question.answerKey);
+                    if(multiAnswers) {
+                        removedAnswer = multiAnswers.remove(userId);
+                    }
+                } else {
+                    removedAnswer = this.answers.remove(question.answerKey);
+                }
+
                 if(removedAnswer != null) {
-                    logger.info("Flow::previous() Removed answer: key: \"" + question.answerKey + "\" value: \"" + removedAnswer + "\"");
+                    if(question.isMultiUser) {
+                        logger.info("Flow::previous() Removed multi-user answer: key: \"" + question.answerKey + "\" value: \"" + removedAnswer + "\" user: \"" + userId + "\"");
+                    } else {
+                        logger.info("Flow::previous() Removed answer: key: \"" + question.answerKey + "\" value: \"" + removedAnswer + "\"");
+                    }
                     question.parsed = false;
+                    question.parsedMultiUser = false;
                     question.subFlow = null;
                     this.currentStep = checkStep;
                     this.next();
