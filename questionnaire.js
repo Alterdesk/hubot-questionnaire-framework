@@ -1585,7 +1585,12 @@ class Flow {
             var userId = this.control.getUserId(response.message.user);
             multiAnswers.add(userId, answerValue);
             logger.debug("Flow::onAnswer() Added multi-user answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
-            var answerCount = multiAnswers.size();
+            var answerCount = 0;
+            for(let index in question.userIds) {
+                if(multiAnswers.get(question.userIds[index])) {
+                    answerCount++;
+                }
+            }
 
             // Check if a value was set to break multi user question on and use it
             var breaking = false;
