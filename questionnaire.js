@@ -1701,7 +1701,7 @@ class Flow {
                             var parsedValue = question.checkAndParseAnswer(matches, message);
                             if(parsedValue) {
                                 logger.debug("Flow::next() Got pre-filled multi-user answer \"" + parsedValue + "\" for \"" + question.answerKey + "\"");
-                                if(this.onAnswer(this.msg, question, parsedValue)) {
+                                if(this.onAnswer(message, question, parsedValue)) {
                                     logger.debug("Flow::next() Got all pre-filled user answers for multi-user question \"" + question.answerKey + "\", skipping question");
                                     return;
                                 }
