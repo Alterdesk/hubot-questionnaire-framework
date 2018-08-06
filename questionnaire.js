@@ -2614,6 +2614,7 @@ class PolarQuestion extends Question {
             var styleNegative = this.negativeStyle || "red";
             questionPayload.addOption(nameNegative, labelNegative, styleNegative);
 
+            // TODO Only ask users that have not answered yet
             if(this.userIds && this.userIds.length > 0) {
                 questionPayload.addUserIds(this.userIds);
             } else {
@@ -2648,13 +2649,15 @@ class PolarQuestion extends Question {
 
     // Check if the positive regex or negative regex matches, and set corresponding sub flow to execute
     checkAndParseAnswer(matches, message) {
-        if(matches == null || message.text == null) {
+        let value = message.text;
+        if(value == null || (matches == null && (typeof(value) !== "boolean"))) {
             return null;
-        } else if(message.text.match(this.positiveRegex)) {
+        }
+        if((typeof(value) === "boolean" && value) || value.match(this.positiveRegex)) {
             this.parsed = true;
             this.setSubFlow(this.positiveFlow);
             return true;
-        } else if(message.text.match(this.negativeRegex)) {
+        } else if((typeof(value) === "boolean" && !value) || value.match(this.negativeRegex)) {
             this.parsed = true;
             this.setSubFlow(this.negativeFlow);
             return false;
@@ -2730,6 +2733,7 @@ class MultipleChoiceQuestion extends Question {
                 var style = option.style || "theme";
                 questionPayload.addOption(name, label, style);
             }
+            // TODO Only ask users that have not answered yet
             if(this.userIds && this.userIds.length > 0) {
                 questionPayload.addUserIds(this.userIds);
             } else {
@@ -2868,7 +2872,7 @@ class VerificationQuestion extends Question {
             }
             return;
         }
-
+        // TODO Only ask users that have not answered yet
         if(this.isMultiUser && this.userIds && this.userIds.length > 0) {
             for(let index in this.userIds) {
                 this.sendForUserId(control, msg, callback, this.userIds[index]);
