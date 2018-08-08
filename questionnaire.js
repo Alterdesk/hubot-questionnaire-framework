@@ -872,6 +872,8 @@ class Flow {
         }
         this.currentStep = 0;
         this.steps = [];
+        this.parsedAnswerKeys = {};
+        this.parsedMultiUserAnswers = {};
     }
 
     // Add a question to the flow
@@ -1592,6 +1594,13 @@ class Flow {
                 }
             }
 
+            let parsedUserIds = this.parsedMultiUserAnswers[question.answerKey];
+            if(!parsedUserIds) {
+                parsedUserIds = {};
+                this.parsedMultiUserAnswers[question.answerKey] = parsedUserIds;
+            }
+            parsedUserIds[userId] = true;
+
             // Check if a value was set to break multi user question on and use it
             var breaking = false;
             var stopping = false;
@@ -1629,13 +1638,13 @@ class Flow {
             if(!breaking && question.userIds.length > answerCount) {
                 return false;
             }
-
-            question.parsedMultiUser = true;
         } else {
             // Valid answer, store in the answers object
             this.answers.add(question.answerKey, answerValue);
             logger.debug("Flow::onAnswer() Added answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
         }
+
+        this.parsedAnswerKeys[question.answerKey] = true;
 
         // Call user answered callback if set
         if(this.control.userAnsweredCallback) {
@@ -1666,7 +1675,7 @@ class Flow {
                 var answerValue = this.answers.get(question.answerKey);
                 if(answerValue) {
                     // If question is already checked and parsed and was asked to a single user
-                    if((question.parsed && !question.isMultiUser) || (question.isMultiUser && question.parsedMultiUser)) {
+                    if(this.parsedAnswerKeys[question.answerKey] && !question.isMultiUser) {
                         logger.debug("Flow::next() Already have parsed answer \"" + answerValue + "\" for \"" + question.answerKey + "\", skipping question");
                         // Call summary function if set
                         question.sendSummary(this.msg, this.answers);
@@ -1689,8 +1698,13 @@ class Flow {
                             logger.warning("Flow::next() Got pre-filled multi-user answers for single user question \"" + question.answerKey + "\", forcing question to be multi-user");
                             question.isMultiUser = true;
                         }
+                        let parsedUserIds = this.parsedMultiUserAnswers[question.answerKey];
                         for(let index in userIds) {
                             var userId = userIds[index];
+                            if(parsedUserIds && parsedUserIds[userId]) {
+                                logger.debug("Flow::next() Already parsed multi-user answer from \"" + userId + "\" for \"" + question.answerKey + "\"");
+                                continue;
+                            }
                             var userAnswer = multiAnswers.get(userId);
                             var matches;
                             if(userAnswer && userAnswer.match) {
@@ -1788,11 +1802,14 @@ class Flow {
                 if(removedAnswer != null) {
                     if(question.isMultiUser) {
                         logger.info("Flow::previous() Removed multi-user answer: key: \"" + question.answerKey + "\" value: \"" + removedAnswer + "\" user: \"" + userId + "\"");
+                        let parsedUserIds = this.parsedMultiUserAnswers[question.answerKey];
+                        if(parsedUserIds) {
+                            parsedUserIds[userId] = false;
+                        }
                     } else {
                         logger.info("Flow::previous() Removed answer: key: \"" + question.answerKey + "\" value: \"" + removedAnswer + "\"");
                     }
-                    question.parsed = false;
-                    question.parsedMultiUser = false;
+                    this.parsedAnswerKeys[question.answerKey] = false;
                     question.subFlow = null;
                     this.currentStep = checkStep;
                     this.next();
@@ -2163,7 +2180,6 @@ class TextQuestion extends Question {
             return null;
         }
         if(this.acceptedLength(message.text)) {
-            this.parsed = true;
             return message.text;
         }
         return null;
@@ -2202,7 +2218,6 @@ class NumberQuestion extends Question {
         }
         var value = parseFloat(message.text);
         if(this.inRange(value)) {
-            this.parsed = true;
             return value;
         }
         return null;
@@ -2236,12 +2251,10 @@ class EmailQuestion extends Question {
         }
         var email = matches[0];
         if(this.allowedDomains.length === 0) {
-            this.parsed = true;
             return email;
         }
         for(let index in this.allowedDomains) {
             if(email.endsWith(this.allowedDomains[index])) {
-                this.parsed = true;
                 return email;
             }
         }
@@ -2282,12 +2295,10 @@ class PhoneNumberQuestion extends Question {
         }
         var phone = matches[0];
         if(this.allowedCountryCodes.length === 0) {
-            this.parsed = true;
             return phone;
         }
         for(let index in this.allowedCountryCodes) {
             if(phone.startsWith(this.allowedCountryCodes[index])) {
-                this.parsed = true;
                 return phone;
             }
         }
@@ -2353,7 +2364,6 @@ class MentionQuestion extends Question {
             var mention = {};
             mention["id"] = "@all";
             value.push(mention);
-            this.parsed = true;
             return value;
         }
 
@@ -2427,7 +2437,6 @@ class MentionQuestion extends Question {
                     }
                 }
             }
-            this.parsed = true;
             return value;
         }
         return null;
@@ -2474,7 +2483,6 @@ class AttachmentQuestion extends Question {
         }
 
         if(value.length != 0 && this.inCountRange(value.length)) {
-            this.parsed = true;
             return value;
         }
         return null;
@@ -2654,11 +2662,9 @@ class PolarQuestion extends Question {
             return null;
         }
         if((typeof(value) === "boolean" && value) || value.match(this.positiveRegex)) {
-            this.parsed = true;
             this.setSubFlow(this.positiveFlow);
             return true;
         } else if((typeof(value) === "boolean" && !value) || value.match(this.negativeRegex)) {
-            this.parsed = true;
             this.setSubFlow(this.negativeFlow);
             return false;
         }
@@ -2786,7 +2792,6 @@ class MultipleChoiceQuestion extends Question {
                 }
             }
             if(options && options.length > 0) {
-                this.parsed = true;
                 return options;
             }
             return null;
@@ -2820,12 +2825,10 @@ class MultipleChoiceQuestion extends Question {
             // Return value if set
             var value = optionMatch.value;
             if(typeof value !== typeof undefined) {
-                this.parsed = true;
                 return value;
             }
         }
 
-        this.parsed = longestMatch != null;
         // Return text match
         return longestMatch;
     }
@@ -2964,11 +2967,9 @@ class VerificationQuestion extends Question {
         }
         var event = message.text;
         if(event === "conversation_verification_accepted" || event === "groupchat_verification_accepted") {
-            this.parsed = true;
             this.setSubFlow(this.verifiedSubFlow);
             return true;
         } else if(event === "conversation_verification_rejected" || event === "groupchat_verification_rejected") {
-            this.parsed = true;
             this.setSubFlow(this.unverifiedSubFlow);
             return false;
         }
