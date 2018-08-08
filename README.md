@@ -477,7 +477,7 @@ flow.polar("startedSubFlow", "Do you want to subscribe to our newsletter? (Yes o
 .positive(positiveRegex, positiveFlow)
 .positiveButton("yes", "Yes", "green")
 .negative(negativeRegex, negativeFlow)
-.positiveButton("no", "No", "red");
+.negativeButton("no", "No", "red");
 ```
 
 ### MultipleChoiceQuestion
