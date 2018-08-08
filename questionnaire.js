@@ -2036,7 +2036,7 @@ class Question {
                     var mention = mentions[index];
                     var userId = mention["id"];
                     if(userId.toUpperCase() === "@ALL") {
-                        logger.debug("Question::execute() Skipping @All tag");
+                        logger.error("Question::execute() Skipping @All tag");
                         continue;
                     }
                     if(userId) {
@@ -2056,6 +2056,26 @@ class Question {
         msg.send(this.questionText);
     }
 
+    getRemainingUserIds() {
+        if(!this.userIds || this.userIds.length == 0 || !this.flow) {
+            return null;
+        }
+        let parsedUserIds = this.flow.parsedMultiUserAnswers[this.answerKey];
+        if(!parsedUserIds || parsedUserIds.length == 0) {
+            return this.userIds;
+        }
+
+        let remainingUserIds = [];
+        for(let index in this.userIds) {
+            let userId = this.userIds[index];
+            if(parsedUserIds[userId]) {
+                continue;
+            }
+            remainingUserIds.push(userId);
+        }
+        return remainingUserIds;
+    }
+
     // Set the Listeners and PendingRequests for this Question
     setListenersAndPendingRequests(control, msg, callback) {
         // Check if listeners or pending requests should be added
@@ -2064,9 +2084,10 @@ class Question {
         }
 
         // Check if the question should be asked to multiple users
-        if(this.isMultiUser) {
+        if(this.isMultiUser && this.userIds && this.userIds.length > 0) {
+            let remainingUserIds = this.getRemainingUserIds();
             // Check if user id list is available and not empty
-            if(this.userIds && this.userIds.length > 0) {
+            if(remainingUserIds && remainingUserIds.length > 0) {
                 var question = this;
                 question.timedOut = false;
                 question.multiUserMessages = [];
@@ -2095,8 +2116,8 @@ class Question {
                 };
 
                 // Create listener for every user id
-                for(let index in this.userIds) {
-                    var userId = this.userIds[index];
+                for(let index in remainingUserIds) {
+                    var userId = remainingUserIds[index];
 
                     // Create Message for each user id in list
                     var user = new User(userId);
@@ -2622,9 +2643,14 @@ class PolarQuestion extends Question {
             var styleNegative = this.negativeStyle || "red";
             questionPayload.addOption(nameNegative, labelNegative, styleNegative);
 
-            // TODO Only ask users that have not answered yet
-            if(this.userIds && this.userIds.length > 0) {
-                questionPayload.addUserIds(this.userIds);
+            if(this.isMultiUser && this.userIds && this.userIds.length > 0) {
+                let remainingUserIds = this.getRemainingUserIds();
+                if(remainingUserIds && remainingUserIds.length > 0) {
+                    questionPayload.addUserIds(remainingUserIds);
+                } else {
+                    logger.error("PolarQuestion:send() Got no remaining user ids for multi-user question: " + this.answerKey);
+                    questionPayload.addUserId(control.getUserId(msg.message.user));
+                }
             } else {
                 questionPayload.addUserId(control.getUserId(msg.message.user));
             }
@@ -2739,9 +2765,14 @@ class MultipleChoiceQuestion extends Question {
                 var style = option.style || "theme";
                 questionPayload.addOption(name, label, style);
             }
-            // TODO Only ask users that have not answered yet
-            if(this.userIds && this.userIds.length > 0) {
-                questionPayload.addUserIds(this.userIds);
+            if(this.isMultiUser && this.userIds && this.userIds.length > 0) {
+                let remainingUserIds = this.getRemainingUserIds();
+                if(remainingUserIds && remainingUserIds.length > 0) {
+                    questionPayload.addUserIds(remainingUserIds);
+                } else {
+                    logger.error("MultipleChoiceQuestion:send() Got no remaining user ids for multi-user question: " + this.answerKey);
+                    questionPayload.addUserId(control.getUserId(msg.message.user));
+                }
             } else {
                 questionPayload.addUserId(control.getUserId(msg.message.user));
             }
@@ -2875,10 +2906,15 @@ class VerificationQuestion extends Question {
             }
             return;
         }
-        // TODO Only ask users that have not answered yet
         if(this.isMultiUser && this.userIds && this.userIds.length > 0) {
-            for(let index in this.userIds) {
-                this.sendForUserId(control, msg, callback, this.userIds[index]);
+            let remainingUserIds = this.getRemainingUserIds();
+            if(remainingUserIds && remainingUserIds.length > 0) {
+                for(let index in remainingUserIds) {
+                    this.sendForUserId(control, msg, callback, remainingUserIds[index]);
+                }
+            } else {
+                logger.error("VerificationQuestion:send() Got no remaining user ids for multi-user question: " + this.answerKey);
+                this.sendForUserId(control, msg, callback, control.getUserId(msg.message.user));
             }
         } else {
             this.sendForUserId(control, msg, callback, control.getUserId(msg.message.user));
