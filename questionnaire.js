@@ -2070,21 +2070,39 @@ class Question {
     }
 
     getRemainingUserIds() {
-        if(!this.userIds || this.userIds.length == 0 || !this.flow) {
+        if(!this.userIds || this.userIds.length == 0) {
+            logger.error("Question::getRemainingUserIds() userIds is null or empty");
+            return null;
+        }
+        if(!this.flow) {
+            logger.error("Question::getRemainingUserIds() Flow is null");
             return null;
         }
         let parsedUserIds = this.flow.parsedMultiUserAnswers[this.answerKey];
         if(!parsedUserIds || parsedUserIds.length == 0) {
             return this.userIds;
         }
+        let answers = this.flow.answers;
+        if(!answers) {
+            logger.error("Question::getRemainingUserIds() Answers is null");
+            return null;
+        }
+        let multiAnswers = answers.get(this.answerKey);
+        if(!answers) {
+            return this.userIds;
+        }
 
         let remainingUserIds = [];
         for(let index in this.userIds) {
             let userId = this.userIds[index];
-            if(parsedUserIds[userId]) {
+            let answerValue = multiAnswers.get(userId);
+            if(answerValue != null && parsedUserIds[userId]) {
                 continue;
             }
             remainingUserIds.push(userId);
+        }
+        if(remainingUserIds.length == 0) {
+            logger.error("Question::getRemainingUserIds() Resulting user id list is empty");
         }
         return remainingUserIds;
     }
