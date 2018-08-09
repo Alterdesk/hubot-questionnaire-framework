@@ -1739,21 +1739,39 @@ class Flow {
 
                     if(answerValue instanceof Answers) {
                         var multiAnswers = answerValue;
-                        var userIds = multiAnswers.keys();
-                        if(userIds.length > 0 && !question.isMultiUser) {
+                        var checkUserIds = [];
+                        if(question.userIds != null) {
+                            for(let index in question.userIds) {
+                                var userId = question.userIds[index];
+                                if(!checkUserIds.includes(userId)) {
+                                    checkUserIds.push(userId);
+                                }
+                            }
+                        }
+                        var multiUserIds = multiAnswers.keys();
+                        for(let index in multiUserIds) {
+                            var userId = multiUserIds[index];
+                            if(!checkUserIds.includes(userId)) {
+                                checkUserIds.push(userId);
+                            }
+                        }
+                        if(checkUserIds.length > 0 && !question.isMultiUser) {
                             logger.warning("Flow::next() Got pre-filled multi-user answers for single user question \"" + question.answerKey + "\", forcing question to be multi-user");
                             question.isMultiUser = true;
                         }
                         let parsedUserIds = this.parsedMultiUserAnswers[question.answerKey];
                         let parsedAnswers = 0;
-                        for(let index in userIds) {
-                            var userId = userIds[index];
+                        for(let index in checkUserIds) {
+                            var userId = checkUserIds[index];
+                            var userAnswer = multiAnswers.get(userId);
+                            if(userAnswer == null) {
+                                continue;
+                            }
                             if(parsedUserIds && parsedUserIds[userId]) {
                                 logger.debug("Flow::next() Already parsed multi-user answer from \"" + userId + "\" for \"" + question.answerKey + "\"");
                                 parsedAnswers++
                                 continue;
                             }
-                            var userAnswer = multiAnswers.get(userId);
                             var matches;
                             if(userAnswer && userAnswer.match) {
                                 matches = userAnswer.match(question.regex);
@@ -1771,7 +1789,7 @@ class Flow {
                                 logger.error("Flow::next() Rejected pre-filled multi-user answer \"" + userAnswer + "\" for \"" + question.answerKey + "\" matches: ", matches);
                             }
                         }
-                        if(parsedAnswers > 0 && parsedAnswers == userIds.length) {
+                        if(parsedAnswers > 0 && parsedAnswers == checkUserIds.length) {
                             logger.debug("Flow::next() Parsed all pre-filled user answers for multi-user question \"" + question.answerKey + "\", skipping question");
                             this.questionDone(question);
                             return;
