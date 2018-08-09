@@ -1726,7 +1726,7 @@ class Flow {
             if(step instanceof Question) {
                 var question = step;
                 var answerValue = this.answers.get(question.answerKey);
-                if(answerValue) {
+                if(answerValue != null) {
                     // If question is already checked and parsed and was asked to a single user
                     if(this.parsedAnswerKeys[question.answerKey] && !question.isMultiUser) {
                         logger.debug("Flow::next() Already have parsed answer \"" + answerValue + "\" for \"" + question.answerKey + "\", skipping question");
