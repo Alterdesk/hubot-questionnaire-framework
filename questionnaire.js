@@ -1652,16 +1652,69 @@ class Flow {
             this.control.userAnsweredCallback(userId, question.answerKey, answerValue);
         }
 
+        this.questionDone(question);
+        return true;
+    }
+
+    questionDone(question) {
+        logger.info("Flow::questionDone() answerKey: \"" + question.answerKey + "\"");
         // Call summary function if set
-        question.sendSummary(response, this.answers);
+        if(question.summaryFunction != null) {
+            var summary = question.summaryFunction(this.answers);
+            if(summary && summary !== "") {
+                this.msg.send(summary);
+            }
+        }
 
         // Trigger sub flow if set in question, otherwise continue
         if(question.subFlow != null) {
-            this.startSubFlow(question.subFlow);
+            // Set this instance as the super flow
+            subFlow.superFlow = this;
+
+            // Set control when null
+            if(subFlow.control == null) {
+                subFlow.control = this.control;
+            }
+            // Set stop text when null
+            if(subFlow.stopText == null) {
+                subFlow.stopText = this.stopText;
+            }
+            // Set error text when null
+            if(subFlow.errorText == null) {
+                subFlow.errorText = this.errorText;
+            }
+            // Set back text when null
+            if(subFlow.backText == null) {
+                subFlow.backText = this.backText;
+            }
+            // Set restart button when null
+            if(subFlow.restartButtonName == null){
+                subFlow.restartButtonName = this.restartButtonName;
+            }
+            if(subFlow.restartButtonLabel == null) {
+                subFlow.restartButtonLabel = this.restartButtonLabel;
+            }
+            if(subFlow.restartButtonStyle == null) {
+                subFlow.restartButtonStyle = this.restartButtonStyle;
+            }
+
+            // Copy sub flow finished callback
+            var subFlowFinish = subFlow.finishedCallback;
+
+            // Continue current flow when sub flow finishes
+            subFlow.finish((response, answers) => {
+                // Call sub flow finished callback if was set
+                if(subFlowFinish) {
+                    subFlowFinish(this.msg, this.answers);
+                }
+
+                this.next();
+            });
+            // Start the sub flow
+            subFlow.start(this.msg, this.answers);
         } else {
             this.next();
         }
-        return true;
     }
 
     // Execute next question
@@ -1677,14 +1730,7 @@ class Flow {
                     // If question is already checked and parsed and was asked to a single user
                     if(this.parsedAnswerKeys[question.answerKey] && !question.isMultiUser) {
                         logger.debug("Flow::next() Already have parsed answer \"" + answerValue + "\" for \"" + question.answerKey + "\", skipping question");
-                        // Call summary function if set
-                        question.sendSummary(this.msg, this.answers);
-                        // Trigger sub flow if set in question, otherwise continue
-                        if(question.subFlow != null) {
-                            this.startSubFlow(question.subFlow);
-                        } else {
-                            this.next();
-                        }
+                        this.questionDone(question);
                         return;
                     }
 
@@ -1694,15 +1740,17 @@ class Flow {
                     if(answerValue instanceof Answers) {
                         var multiAnswers = answerValue;
                         var userIds = multiAnswers.keys();
-                        if(userIds.length > 1 && !question.isMultiUser) {
+                        if(userIds.length > 0 && !question.isMultiUser) {
                             logger.warning("Flow::next() Got pre-filled multi-user answers for single user question \"" + question.answerKey + "\", forcing question to be multi-user");
                             question.isMultiUser = true;
                         }
                         let parsedUserIds = this.parsedMultiUserAnswers[question.answerKey];
+                        let parsedAnswers = 0;
                         for(let index in userIds) {
                             var userId = userIds[index];
                             if(parsedUserIds && parsedUserIds[userId]) {
                                 logger.debug("Flow::next() Already parsed multi-user answer from \"" + userId + "\" for \"" + question.answerKey + "\"");
+                                parsedAnswers++
                                 continue;
                             }
                             var userAnswer = multiAnswers.get(userId);
@@ -1713,7 +1761,7 @@ class Flow {
                             var message = this.control.createHubotResponse(userId, chatId, isGroup);
                             message.text = userAnswer;
                             var parsedValue = question.checkAndParseAnswer(matches, message);
-                            if(parsedValue) {
+                            if(parsedValue != null) {
                                 logger.debug("Flow::next() Got pre-filled multi-user answer \"" + parsedValue + "\" for \"" + question.answerKey + "\"");
                                 if(this.onAnswer(message, question, parsedValue)) {
                                     logger.debug("Flow::next() Got all pre-filled user answers for multi-user question \"" + question.answerKey + "\", skipping question");
@@ -1722,6 +1770,11 @@ class Flow {
                             } else {
                                 logger.error("Flow::next() Rejected pre-filled multi-user answer \"" + userAnswer + "\" for \"" + question.answerKey + "\" matches: ", matches);
                             }
+                        }
+                        if(parsedAnswers > 0 && parsedAnswers == userIds.length) {
+                            logger.debug("Flow::next() Parsed all pre-filled user answers for multi-user question \"" + question.answerKey + "\", skipping question");
+                            this.questionDone(question);
+                            return;
                         }
                     } else {
                         // Check and parse pre-filled answer
@@ -1733,7 +1786,7 @@ class Flow {
                         var message = this.control.createHubotResponse(userId, chatId, isGroup);
                         message.text = answerValue;
                         var parsedValue = question.checkAndParseAnswer(matches, message);
-                        if(parsedValue) {
+                        if(parsedValue != null) {
                             logger.debug("Flow::next() Got pre-filled answer \"" + parsedValue + "\" for \"" + question.answerKey + "\", skipping question");
                             this.onAnswer(this.msg, question, parsedValue);
                             return;
@@ -1742,7 +1795,7 @@ class Flow {
                         }
                     }
                 }
-                logger.info("Flow::next() Question: \"" + question.questionText + "\"");
+                logger.info("Flow::next() Question: answerKey: \"" + question.answerKey + "\" questionText: \"" + question.questionText + "\"");
 
                 // Delay executing this message if a delay was set
                 if(question.delayMs && question.delayMs > 0) {
@@ -1827,54 +1880,6 @@ class Flow {
         }
 
         return false;
-    }
-
-    // Start a sub flow
-    startSubFlow(subFlow) {
-        // Set this instance as the super flow
-        subFlow.superFlow = this;
-
-        // Set control when null
-        if(subFlow.control == null) {
-            subFlow.control = this.control;
-        }
-        // Set stop text when null
-        if(subFlow.stopText == null) {
-            subFlow.stopText = this.stopText;
-        }
-        // Set error text when null
-        if(subFlow.errorText == null) {
-            subFlow.errorText = this.errorText;
-        }
-        // Set back text when null
-        if(subFlow.backText == null) {
-            subFlow.backText = this.backText;
-        }
-        // Set restart button when null
-        if(subFlow.restartButtonName == null){
-            subFlow.restartButtonName = this.restartButtonName;
-        }
-        if(subFlow.restartButtonLabel == null) {
-            subFlow.restartButtonLabel = this.restartButtonLabel;
-        }
-        if(subFlow.restartButtonStyle == null) {
-            subFlow.restartButtonStyle = this.restartButtonStyle;
-        }
-
-        // Copy sub flow finished callback
-        var subFlowFinish = subFlow.finishedCallback;
-
-        // Continue current flow when sub flow finishes
-        subFlow.finish((response, answers) => {
-            // Call sub flow finished callback if was set
-            if(subFlowFinish) {
-                subFlowFinish(this.msg, this.answers);
-            }
-
-            this.next();
-        });
-        // Start the sub flow
-        subFlow.start(this.msg, this.answers);
     }
 };
 
@@ -2003,16 +2008,6 @@ class Question {
     setMultiUserSummaryFunction(multiUserSummaryFunction) {
         this.multiUserSummaryFunction = multiUserSummaryFunction;
         this.isMultiUser = true;
-    }
-
-    // Call summary function if set
-    sendSummary(response, answers) {
-        if(this.summaryFunction != null) {
-            var summary = this.summaryFunction(answers);
-            if(summary && summary !== "") {
-                response.send(summary);
-            }
-        }
     }
 
     // Execute this question
