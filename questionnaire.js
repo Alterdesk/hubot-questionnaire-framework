@@ -1669,40 +1669,40 @@ class Flow {
         // Trigger sub flow if set in question, otherwise continue
         if(question.subFlow != null) {
             // Set this instance as the super flow
-            subFlow.superFlow = this;
+            question.subFlow.superFlow = this;
 
             // Set control when null
-            if(subFlow.control == null) {
-                subFlow.control = this.control;
+            if(question.subFlow.control == null) {
+                question.subFlow.control = this.control;
             }
             // Set stop text when null
-            if(subFlow.stopText == null) {
-                subFlow.stopText = this.stopText;
+            if(question.subFlow.stopText == null) {
+                question.subFlow.stopText = this.stopText;
             }
             // Set error text when null
-            if(subFlow.errorText == null) {
-                subFlow.errorText = this.errorText;
+            if(question.subFlow.errorText == null) {
+                question.subFlow.errorText = this.errorText;
             }
             // Set back text when null
-            if(subFlow.backText == null) {
-                subFlow.backText = this.backText;
+            if(question.subFlow.backText == null) {
+                question.subFlow.backText = this.backText;
             }
             // Set restart button when null
-            if(subFlow.restartButtonName == null){
-                subFlow.restartButtonName = this.restartButtonName;
+            if(question.subFlow.restartButtonName == null){
+                question.subFlow.restartButtonName = this.restartButtonName;
             }
-            if(subFlow.restartButtonLabel == null) {
-                subFlow.restartButtonLabel = this.restartButtonLabel;
+            if(question.subFlow.restartButtonLabel == null) {
+                question.subFlow.restartButtonLabel = this.restartButtonLabel;
             }
-            if(subFlow.restartButtonStyle == null) {
-                subFlow.restartButtonStyle = this.restartButtonStyle;
+            if(question.subFlow.restartButtonStyle == null) {
+                question.subFlow.restartButtonStyle = this.restartButtonStyle;
             }
 
             // Copy sub flow finished callback
-            var subFlowFinish = subFlow.finishedCallback;
+            var subFlowFinish = question.subFlow.finishedCallback;
 
             // Continue current flow when sub flow finishes
-            subFlow.finish((response, answers) => {
+            question.subFlow.finish((response, answers) => {
                 // Call sub flow finished callback if was set
                 if(subFlowFinish) {
                     subFlowFinish(this.msg, this.answers);
@@ -1711,7 +1711,7 @@ class Flow {
                 this.next();
             });
             // Start the sub flow
-            subFlow.start(this.msg, this.answers);
+            question.subFlow.start(this.msg, this.answers);
         } else {
             this.next();
         }
