@@ -1353,12 +1353,32 @@ class Flow {
     }
 
     // Break multi user question on a certain number of answers
-    breakOnCount(count) {
+    breakOnCount(count, stop) {
         if(this.lastAddedQuestion == null) {
             logger.error("Flow::breakOnCount() No Question added to flow");
             return this;
         }
-        this.lastAddedQuestion.setBreakOnCount(count);
+        this.lastAddedQuestion.setBreakOnCount(count, stop);
+        return this;
+    }
+
+    // Stop the flow when a certain answer value, optionally set an answer value by key
+    stopOnValue(value, sendMessage, setAnswerKey, setAnswerValue) {
+        if(this.lastAddedQuestion == null) {
+            logger.error("Flow::stopOnValue() No Question added to flow");
+            return this;
+        }
+        this.lastAddedQuestion.setStopOnValue(value, sendMessage, setAnswerKey, setAnswerValue);
+        return this;
+    }
+
+    // Stop the flow when an answer matches the given regex, optionally set an answer value by key
+    stopOnRegex(regex, sendMessage, setAnswerKey, setAnswerValue) {
+        if(this.lastAddedQuestion == null) {
+            logger.error("Flow::stopOnRegex() No Question added to flow");
+            return this;
+        }
+        this.lastAddedQuestion.setStopOnRegex(regex, sendMessage, setAnswerKey, setAnswerValue);
         return this;
     }
 
@@ -1464,17 +1484,11 @@ class Flow {
         logger.info("Flow::start()");
         if(this.steps.length === 0) {
             logger.error("Flow::start() No steps for flow");
-            this.sendRestartMessage(this.errorText);
-            if(this.stoppedCallback) {
-                this.stoppedCallback(msg, answers);
-            }
+            this.stop();
             return;
         } else if(msg == null) {
             logger.error("Flow::start() msg is null");
-            this.sendRestartMessage(this.errorText);
-            if(this.stoppedCallback) {
-                this.stoppedCallback(msg, answers);
-            }
+            this.stop();
             return;
         }
         // Check for Schedule API pre-filled answers
@@ -1510,10 +1524,7 @@ class Flow {
             if(listener.stop) {
                 logger.debug("Flow::callback() stop regex triggered");
                 question.cleanup(response.message);
-                flow.sendRestartMessage(flow.stopText);
-                if(flow.stoppedCallback) {
-                    flow.stoppedCallback(flow.msg, flow.answers);
-                }
+                flow.stop(question);
                 return;
             }
 
@@ -1560,10 +1571,7 @@ class Flow {
             flow.onAnswer(response, question, answerValue);
         } else {
             logger.error("Flow::callback() Object not instance of Listener or PendingRequest");
-            flow.sendRestartMessage(flow.errorText);
-            if(flow.stoppedCallback) {
-                flow.stoppedCallback(flow.msg, flow.answers);
-            }
+            flow.stop(question);
         }
     }
 
@@ -1626,10 +1634,7 @@ class Flow {
             if(breaking) {
                 question.cleanup(response.message);
                 if(stopping) {
-                    this.sendRestartMessage(this.stopText);
-                    if(this.stoppedCallback) {
-                        this.stoppedCallback(this.msg, this.answers);
-                    }
+                    this.stop(question);
                     return true;
                 }
             }
@@ -1650,6 +1655,15 @@ class Flow {
         if(this.control.userAnsweredCallback) {
             var userId = this.control.getUserId(this.msg.message.user);
             this.control.userAnsweredCallback(userId, question.answerKey, answerValue);
+        }
+
+        if(question.stopOnValue && question.stopOnValue === answerValue) {
+            this.stop(question);
+            return true;
+        }
+        if(question.stopOnRegex && answerValue.match && answerValue.match(question.stopOnRegex) != null) {
+            this.stop(question);
+            return true;
         }
 
         this.questionDone(question);
@@ -1698,6 +1712,11 @@ class Flow {
                 question.subFlow.restartButtonStyle = this.restartButtonStyle;
             }
 
+            // Set stopped callback when null
+            if(question.subFlow.stoppedCallback == null) {
+                question.subFlow.stoppedCallback = this.stoppedCallback;
+            }
+
             // Copy sub flow finished callback
             var subFlowFinish = question.subFlow.finishedCallback;
 
@@ -1714,6 +1733,23 @@ class Flow {
             question.subFlow.start(this.msg, this.answers);
         } else {
             this.next();
+        }
+    }
+
+    // Stop the flow
+    stop(question) {
+        if(question) {
+            if(question.onStopAnswerKey && question.onStopAnswerValue != null) {
+                this.answers.add(question.onStopAnswerKey, question.onStopAnswerValue);
+            }
+            if(question.sendMessageOnStop) {
+                this.sendRestartMessage(this.stopText);
+            }
+        } else {
+            this.sendRestartMessage(this.stopText);
+        }
+        if(this.stoppedCallback) {
+            this.stoppedCallback(this.msg, this.answers);
         }
     }
 
@@ -1951,6 +1987,7 @@ class Question {
         this.isMultiUser = false;
         this.useListeners = true;
         this.usePendingRequests = false;
+        this.sendMessageOnStop = true;
     }
 
     // Set the parent flow
@@ -2017,9 +2054,26 @@ class Question {
     }
 
     // Break this multi user question when a certain number of answers is reached
-    setBreakOnCount(count) {
+    setBreakOnCount(count, stop) {
         this.breakOnCount = count;
+        this.stopOnBreak = stop;
         this.isMultiUser = true;
+    }
+
+    // Stop the flow when a certain answer value, optionally set an answer value by key
+    setStopOnValue(value, sendMessage, setAnswerKey, setAnswerValue) {
+        this.stopOnValue = value;
+        this.sendMessageOnStop = sendMessage;
+        this.onStopAnswerKey = setAnswerKey;
+        this.onStopAnswerValue = setAnswerValue;
+    }
+
+    // Stop the flow when an answer matches the given regex, optionally set an answer value by key
+    setStopOnRegex(regex, sendMessage, setAnswerKey, setAnswerValue) {
+        this.stopOnRegex = regex;
+        this.sendMessageOnStop = sendMessage;
+        this.onStopAnswerKey = setAnswerKey;
+        this.onStopAnswerValue = setAnswerValue;
     }
 
     // Set a summary callback function to trigger after every user answer
@@ -2030,7 +2084,6 @@ class Question {
 
     // Execute this question
     execute(control, msg, callback, answers) {
-
         if(this.formatQuestionFunction != null) {
             var formatted = this.formatQuestionFunction(answers);
             if(formatted && formatted !== "") {
