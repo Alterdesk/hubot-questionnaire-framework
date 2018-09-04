@@ -15,6 +15,7 @@ const PhoneNumberQuestion = require('./questions/phone-number-question.js');
 const PendingRequest = require('./pending-request.js');
 const PolarQuestion = require('./questions/polar-question.js');
 const Question = require('./questions/question.js');
+const StopConditionAction = require('./actions/stop-condition-action.js');
 const TextQuestion = require('./questions/text-question.js');
 const VerificationQuestion = require('./questions/verification-question.js');
 
@@ -677,6 +678,37 @@ class Flow {
             return this;
         }
         this.lastAddedAction.setShowIndex(indexText, indexOptionText, maxAttempts);
+        return this;
+    }
+
+    stopCondition(sendMessageOnStop, waitMs) {
+        this.add(new StopConditionAction(this, sendMessageOnStop, waitMs));
+        return this;
+    }
+
+    stopAnswerCondition(answerKey, answerValue) {
+        if(this.lastAddedAction == null) {
+            Logger.error("Flow::stopAnswerCondition() No Action added to flow");
+            return this;
+        }
+        if(!(this.lastAddedAction instanceof StopConditionAction)) {
+            Logger.error("Flow::stopAnswerCondition() Last added Action is not an instance of StopConditionAction");
+            return this;
+        }
+        this.lastAddedAction.addAnswerCondition(answerKey, answerValue);
+        return this;
+    }
+
+    stopConditionSet(answerKey, answerValue) {
+        if(this.lastAddedAction == null) {
+            Logger.error("Flow::stopConditionSet() No Action added to flow");
+            return this;
+        }
+        if(!(this.lastAddedAction instanceof StopConditionAction)) {
+            Logger.error("Flow::stopConditionSet() Last added Action is not an instance of StopConditionAction");
+            return this;
+        }
+        this.lastAddedAction.setAnswerOnStop(answerKey, answerValue);
         return this;
     }
 
