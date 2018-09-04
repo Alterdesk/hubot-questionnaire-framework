@@ -7,7 +7,7 @@ const Logger = require('./../logger.js');
 class FuzzyAction extends Action {
     constructor(flow, answerKey, questionText, invalidText, waitMs) {
         super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback)
+            this.start(response, answers, flowCallback);
         }, waitMs);
 
         this.flow = flow;

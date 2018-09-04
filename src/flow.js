@@ -15,6 +15,7 @@ const PhoneNumberQuestion = require('./questions/phone-number-question.js');
 const PendingRequest = require('./pending-request.js');
 const PolarQuestion = require('./questions/polar-question.js');
 const Question = require('./questions/question.js');
+const SetAnswerAction = require('./actions/set-answer-action.js');
 const StopConditionAction = require('./actions/stop-condition-action.js');
 const TextQuestion = require('./questions/text-question.js');
 const VerificationQuestion = require('./questions/verification-question.js');
@@ -709,6 +710,11 @@ class Flow {
             return this;
         }
         this.lastAddedAction.setAnswerOnStop(answerKey, answerValue);
+        return this;
+    }
+
+    setAnswer(answerKey, answerValue) {
+        this.add(new SetAnswerAction(answerKey, answerValue));
         return this;
     }
 
