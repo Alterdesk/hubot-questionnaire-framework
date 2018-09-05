@@ -27,6 +27,7 @@ class VerificationQuestion extends Question {
     send(control, msg, callback) {
         // Unable to preform question without messenger api
         if(!control.messengerApi) {
+            Logger.error("VerificationQuestion:send() Messenger API instance not set");
             this.flow.sendRestartMessage(this.flow.errorText);
             if(this.flow.stoppedCallback) {
                 this.flow.stoppedCallback(this.flow.msg, this.flow.answers);

@@ -245,10 +245,6 @@ class Flow {
             Logger.error("Flow::completeMentions() Last added Question is not an instance of MentionQuestion");
             return this;
         }
-        if(!this.control.messengerApi) {
-            Logger.error("Flow::completeMentions() Messenger API instance not set");
-            return this;
-        }
         var answerKey = this.lastAddedQuestion.answerKey;
         this.action((response, answers, flowCallback) => {
             if(!this.msg) {

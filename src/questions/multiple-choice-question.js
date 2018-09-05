@@ -107,6 +107,9 @@ class MultipleChoiceQuestion extends Question {
                 }
             });
         } else {
+            if(this.useButtons) {
+                Logger.error("MultipleChoiceQuestion:send() Messenger API instance not set");
+            }
             this.setListenersAndPendingRequests(control, msg, callback);
             msg.send(this.questionText);
         }

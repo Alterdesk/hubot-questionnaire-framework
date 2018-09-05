@@ -115,6 +115,9 @@ class PolarQuestion extends Question {
                 }
             });
         } else {
+            if(this.useButtons) {
+                Logger.error("PolarQuestion:send() Messenger API instance not set");
+            }
             this.setListenersAndPendingRequests(control, msg, callback);
             msg.send(this.questionText);
         }
