@@ -691,6 +691,19 @@ class Flow {
         return this;
     }
 
+    combineMatchesFuzzy(combineMatches) {
+        if(this.lastAddedAction == null) {
+            Logger.error("Flow::combineMatchesFuzzy() No Action added to flow");
+            return this;
+        }
+        if(!(this.lastAddedAction instanceof FuzzyAction)) {
+            Logger.error("Flow::combineMatchesFuzzy() Last added Action is not an instance of FuzzyAction");
+            return this;
+        }
+        this.lastAddedAction.setCombineMatches(combineMatches);
+        return this;
+    }
+
     stopCondition(sendMessageOnStop, waitMs) {
         this.add(new StopConditionAction(this, sendMessageOnStop, waitMs));
         return this;

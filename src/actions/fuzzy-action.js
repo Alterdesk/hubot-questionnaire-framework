@@ -20,6 +20,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         this.attempts = 0;
         this.maxAttempts = 0;
         this.alwaysConfirm = true;
+        this.combineMatches = true;
         this.indexOptions = ["abc","def","ghi","jkl","mno","pqrs","tuv","wxyz"];
     }
 
@@ -178,18 +179,23 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         }
 
         Logger.debug("FuzzyAction::checkText() Always confirm: " + this.alwaysConfirm);
-        if(!this.alwaysConfirm && matchedCandidates.length === 1) {
+        if(!this.alwaysConfirm && matchedCandidates.length === 1 && possibleCandidates.length === 0) {
             this.done(matchedCandidates[0]);
             return;
         }
 
         this.answers.remove(this.answerKey);
 
-        if(this.maxAttempts > 0 && this.attempts >= this.maxAttempts) {     // TODO Check if "index" was set
+        // TODO Check if "index" was set
+        // TODO Check if "did you mean" was set
+        if(this.maxAttempts > 0 && this.attempts >= this.maxAttempts) {
             this.showIndex();
-        } else if(matchedCandidates.length > 0) {     // TODO Check if "did you mean" was set
+        } else if(this.combineMatches && matchedCandidates.length > 0 && possibleCandidates.length > 0) {
+            var optionCandidates = matchedCandidates.concat(possibleCandidates);
+            this.showCandidates(optionCandidates, this.didYouMeanText, true);
+        } else if(matchedCandidates.length > 0) {
             this.showCandidates(matchedCandidates, this.didYouMeanText, true);
-        } else if(possibleCandidates.length > 0) {     // TODO Check if "did you mean" was set
+        } else if(possibleCandidates.length > 0) {
             this.showCandidates(possibleCandidates, this.didYouMeanText, true);
         } else {
             this.askText(this.reformulateText || this.questionText);
@@ -232,6 +238,10 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
 
     setAlwaysConfirm(alwaysConfirm) {
         this.alwaysConfirm = alwaysConfirm;
+    }
+
+    setCombineMatches(combineMatches) {
+        this.combineMatches = combineMatches;
     }
 }
 
