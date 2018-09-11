@@ -241,7 +241,7 @@ class FuzzyCandidate {
     getDistance(word) {
         var nameDistance = Levenshtein(word, this.name);
         Logger.debug("FuzzyCandidate::getDistance() word: " + word + " name: " + this.name + " distance: " + nameDistance);
-        if(nameDistance === 0 || this.aliases.length === 0) {
+        if(nameDistance === 0 || !this.aliases || this.aliases.length === 0) {
             return nameDistance;
         }
         var aliasDistance;
