@@ -678,6 +678,19 @@ class Flow {
         return this;
     }
 
+    alwaysConfirmFuzzy(alwaysConfirm) {
+        if(this.lastAddedAction == null) {
+            Logger.error("Flow::alwaysConfirmFuzzy() No Action added to flow");
+            return this;
+        }
+        if(!(this.lastAddedAction instanceof FuzzyAction)) {
+            Logger.error("Flow::alwaysConfirmFuzzy() Last added Action is not an instance of FuzzyAction");
+            return this;
+        }
+        this.lastAddedAction.setAlwaysConfirm(alwaysConfirm);
+        return this;
+    }
+
     stopCondition(sendMessageOnStop, waitMs) {
         this.add(new StopConditionAction(this, sendMessageOnStop, waitMs));
         return this;

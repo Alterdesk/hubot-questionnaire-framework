@@ -19,6 +19,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         this.maxLevenshteinDistance = 2;
         this.attempts = 0;
         this.maxAttempts = 0;
+        this.alwaysConfirm = true;
         this.indexOptions = ["abc","def","ghi","jkl","mno","pqrs","tuv","wxyz"];
     }
 
@@ -176,7 +177,8 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
             }
         }
 
-        if(matchedCandidates.length === 1) {
+        Logger.debug("FuzzyAction::checkText() Always confirm: " + this.alwaysConfirm);
+        if(!this.alwaysConfirm && matchedCandidates.length === 1) {
             this.done(matchedCandidates[0]);
             return;
         }
@@ -226,6 +228,10 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         this.didNotButtonName = name;
         this.didNotButtonLabel = label;
         this.didNotButtonStyle = style;
+    }
+
+    setAlwaysConfirm(alwaysConfirm) {
+        this.alwaysConfirm = alwaysConfirm;
     }
 }
 
