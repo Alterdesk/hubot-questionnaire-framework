@@ -151,34 +151,60 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         var answerValue = this.answers.get(this.answerKey);
         Logger.debug("FuzzyAction::checkText() Checking: attempt: " + this.attempts + " key: " + this.answerKey + " value: " + answerValue);
 
+        // Copy candidates
+        var checkCandidates = this.candidates.slice();
         var possibleCandidates = [];
         var matchedCandidates = [];
 
         var start = Date.now();
 
+        var checkWords = [];
+
         var words = answerValue.match(Extra.getTextRegex());
         for(let i in words) {
             var word = words[i];
             if(word.length < this.minWordLength) {
-                Logger.debug("FuzzyAction::checkText() Skipping word, too short: " + word);
+//                Logger.debug("FuzzyAction::checkText() Skipping word, too short: " + word);
                 continue;
             }
             word = word.toLowerCase();
+            if(checkWords.indexOf(word) !== -1) {
+//                Logger.debug("FuzzyAction::checkText() Word already in check list: " + word);
+                continue;
+            }
+            checkWords.push(word);
+        }
 
-            for(let index in this.candidates) {
-                var candidate = this.candidates[index];
+        for(let i in checkWords) {
+            var word = checkWords[i];
+
+            let removeCandidates = [];
+
+            for(let i in checkCandidates) {
+                var candidate = checkCandidates[i];
                 var distance = candidate.getDistance(word);
                 if(distance === 0) {
                     Logger.debug("FuzzyAction::checkText() Exact match candidate: " + candidate.name);
-                    matchedCandidates.push(candidate);
+                    if(matchedCandidates.indexOf(candidate) === -1) {
+                        matchedCandidates.push(candidate);
+                        removeCandidates.push(candidate);
+                    }
                 } else if(distance <= this.maxLevenshteinDistance) {
                     Logger.debug("FuzzyAction::checkText() Possible candidate: " + candidate.name);
-                    possibleCandidates.push(candidate);
+                    if(possibleCandidates.indexOf(candidate) === -1) {
+                        possibleCandidates.push(candidate);
+                    }
                 }
+            }
+
+            // Remove exact matches, don't need to check again
+            for(let i in removeCandidates) {
+                var removeCandidate = removeCandidates[i];
+                var index = checkCandidates.indexOf(removeCandidate);
+                checkCandidates.splice(index, 1);
             }
         }
 
-        Logger.debug("FuzzyAction::checkText() Always confirm: " + this.alwaysConfirm);
         if(!this.alwaysConfirm && matchedCandidates.length === 1 && possibleCandidates.length === 0) {
             this.done(matchedCandidates[0]);
             return;
@@ -191,7 +217,19 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         if(this.maxAttempts > 0 && this.attempts >= this.maxAttempts) {
             this.showIndex();
         } else if(this.combineMatches && matchedCandidates.length > 0 && possibleCandidates.length > 0) {
-            var optionCandidates = matchedCandidates.concat(possibleCandidates);
+            var optionCandidates = [];
+            for(let i in matchedCandidates) {
+                var candidate = matchedCandidates[i];
+                if(optionCandidates.indexOf(candidate) === -1) {
+                    optionCandidates.push(candidate);
+                }
+            }
+            for(let i in possibleCandidates) {
+                var candidate = possibleCandidates[i];
+                if(optionCandidates.indexOf(candidate) === -1) {
+                    optionCandidates.push(candidate);
+                }
+            }
             this.showCandidates(optionCandidates, this.didYouMeanText, true);
         } else if(matchedCandidates.length > 0) {
             this.showCandidates(matchedCandidates, this.didYouMeanText, true);
@@ -256,7 +294,7 @@ class FuzzyCandidate {
 
     getDistance(word) {
         var nameDistance = Levenshtein(word, this.name);
-        Logger.debug("FuzzyCandidate::getDistance() word: " + word + " name: " + this.name + " distance: " + nameDistance);
+//        Logger.debug("FuzzyCandidate::getDistance() word: " + word + " name: " + this.name + " distance: " + nameDistance);
         if(nameDistance === 0 || !this.aliases || this.aliases.length === 0) {
             return nameDistance;
         }
@@ -264,7 +302,7 @@ class FuzzyCandidate {
         for(let index in this.aliases) {
             var alias = this.aliases[index];
             var distance = Levenshtein(word, alias);
-            Logger.debug("FuzzyCandidate::getDistance() word: " + word + " alias: " + alias + " distance: " + distance);
+//            Logger.debug("FuzzyCandidate::getDistance() word: " + word + " alias: " + alias + " distance: " + distance);
             if(distance === 0) {
                 return 0;
             } else if(!aliasDistance) {
