@@ -753,6 +753,9 @@ class Flow {
         if(!text || text === "") {
             return;
         }
+        if(!this.msg || !this.msg.message || !this.msg.message.user) {
+            return;
+        }
         var questionPayload;
         if(this.control.messengerApi && this.restartButtonName && this.restartButtonLabel) {
             questionPayload = this.control.createQuestionPayload();
