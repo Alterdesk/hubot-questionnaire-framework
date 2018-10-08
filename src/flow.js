@@ -851,8 +851,9 @@ class Flow {
             var answerValue = question.checkAndParseAnswer(listener.matches, response.message);
             if(answerValue == null) {
                 Logger.debug("Flow::callback() No valid answer value from listener, resetting listener");
-                response.send(question.invalidText + " " + question.questionText);
-                return flow.control.addListener(response.message, new Listener(response, this.callback, question));
+                response.send(question.invalidText);
+                question.send(flow.control, flow.msg, this.callback);
+                return ;
             }
             if(flow.control.hasPendingRequest(response.message)) {
                 flow.control.removePendingRequest(response.message);
