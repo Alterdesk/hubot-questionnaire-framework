@@ -129,10 +129,10 @@ class PolarQuestion extends Question {
         if(value == null || (matches == null && (typeof(value) !== "boolean"))) {
             return null;
         }
-        if((typeof(value) === "boolean" && value) || value.match(this.positiveRegex)) {
+        if((typeof(value) === "boolean" && value) || (value.match && value.match(this.positiveRegex))) {
             this.setSubFlow(this.positiveFlow);
             return true;
-        } else if((typeof(value) === "boolean" && !value) || value.match(this.negativeRegex)) {
+        } else if((typeof(value) === "boolean" && !value) || (value.match && value.match(this.negativeRegex))) {
             this.setSubFlow(this.negativeFlow);
             return false;
         }
