@@ -214,9 +214,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
 
         // TODO Check if "index" was set
         // TODO Check if "did you mean" was set
-        if(this.maxAttempts > 0 && this.attempts >= this.maxAttempts) {
-            this.showIndex();
-        } else if(this.combineMatches && matchedCandidates.length > 0 && possibleCandidates.length > 0) {
+        if(this.combineMatches && matchedCandidates.length > 0 && possibleCandidates.length > 0) {
             var optionCandidates = [];
             for(let i in matchedCandidates) {
                 var candidate = matchedCandidates[i];
@@ -235,6 +233,8 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
             this.showCandidates(matchedCandidates, this.didYouMeanText, true);
         } else if(possibleCandidates.length > 0) {
             this.showCandidates(possibleCandidates, this.didYouMeanText, true);
+        } else if(this.maxAttempts > 0 && this.attempts >= this.maxAttempts) {
+            this.showIndex();
         } else {
             this.askText(this.reformulateText || this.questionText);
         }
