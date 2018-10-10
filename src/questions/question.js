@@ -13,6 +13,7 @@ class Question {
         this.isMultiUser = false;
         this.useListeners = true;
         this.usePendingRequests = false;
+        this.resendOnInvalid = true;
         this.sendMessageOnStop = true;
     }
 

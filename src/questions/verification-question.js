@@ -5,8 +5,8 @@ const Question = require('./question.js');
 class VerificationQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
-        this.useListeners = false;
         this.usePendingRequests = true;
+        this.resendOnInvalid = false;
     }
 
     // Set the identity provider for the verification

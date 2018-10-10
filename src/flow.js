@@ -851,8 +851,12 @@ class Flow {
             var answerValue = question.checkAndParseAnswer(listener.matches, response.message);
             if(answerValue == null) {
                 Logger.debug("Flow::callback() No valid answer value from listener, resetting listener");
-                response.send(question.invalidText);
-                question.send(flow.control, flow.msg, this.callback);
+                if(question.resendOnInvalid) {
+                    response.send(question.invalidText);
+                    question.send(flow.control, flow.msg, this.callback);
+                } else {
+                    flow.control.addListener(response.message, new Listener(response, this.callback, question));
+                }
                 return ;
             }
             if(flow.control.hasPendingRequest(response.message)) {
