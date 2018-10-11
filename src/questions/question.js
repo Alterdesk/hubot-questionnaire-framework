@@ -11,6 +11,7 @@ class Question {
         this.questionText = questionText || "QUESTION_TEXT";
         this.invalidText = invalidText || "INVALID_TEXT";
         this.isMultiUser = false;
+        this.isCheckpoint = false;
         this.useListeners = true;
         this.usePendingRequests = false;
         this.resendOnInvalid = true;
@@ -52,6 +53,11 @@ class Question {
         this.timeoutMs = ms;
         this.timeoutText = text;
         this.timeoutCallback = callback;
+    }
+
+    // Mark this question as a checkpoint
+    setCheckpoint(checkpoint) {
+        this.isCheckpoint = checkpoint;
     }
 
     // Ask this question to users that were mentioned earlier

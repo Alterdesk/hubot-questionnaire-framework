@@ -22,16 +22,18 @@ const VerificationQuestion = require('./questions/verification-question.js');
 
 // Class for a flow of questions
 class Flow {
-    constructor(control, stopText, errorText, backText) {
+    constructor(control, stopText, errorText, backText, checkpointText) {
         if(control) {
             this.control = control;
             this.stopText = stopText || control.flowStopText;
             this.errorText = errorText || control.flowErrorText;
             this.backText = backText || control.flowBackText;
+            this.checkpointText = checkpointText || control.flowCheckpointText;
         } else {
             this.stopText = stopText;
             this.errorText = errorText;
             this.backText = backText;
+            this.checkpointText = checkpointText;
         }
         this.currentStep = 0;
         this.steps = [];
@@ -478,6 +480,16 @@ class Flow {
         return this;
     }
 
+    // Mark this question as a checkpoint
+    checkpoint() {
+        if(this.lastAddedQuestion == null) {
+            Logger.error("Flow::checkpoint() No Question added to flow");
+            return this;
+        }
+        this.lastAddedQuestion.setCheckpoint(true);
+        return this;
+    }
+
     // Ask the last added question to the users that were mentioned a MentionQuestion earlier (multi user question)
     askMentions(mentionAnswerKey) {
         if(this.lastAddedQuestion == null) {
@@ -838,9 +850,26 @@ class Flow {
                     response.send(flow.backText)
                 }
                 let userId = flow.control.getUserId(response.message.user);
-                // Try go go back
-                if(!flow.previous(false, userId)) {
+                // Try to go back
+                if(!flow.previous(false, userId, false)) {
                     Logger.debug("Flow::callback() Unable to go back, restarting flow");
+                    flow.currentStep = 0;
+                    flow.next();
+                }
+                return;
+            }
+
+            if(listener.checkpoint) {
+                Logger.debug("Flow::callback() checkpoint regex triggered");
+                question.cleanup(response.message);
+                // Send checkpoint text message if set
+                if(flow.checkpointText && flow.checkpointText != "") {
+                    response.send(flow.checkpointText)
+                }
+                let userId = flow.control.getUserId(response.message.user);
+                // Try to go to last checkpoint
+                if(!flow.previous(false, userId, true)) {
+                    Logger.debug("Flow::callback() Unable to go back to last checkpoint, restarting flow");
                     flow.currentStep = 0;
                     flow.next();
                 }
@@ -1042,6 +1071,10 @@ class Flow {
         if(subFlow.backText == null) {
             subFlow.backText = this.backText;
         }
+        // Set checkpoint text when null
+        if(subFlow.checkpointText == null) {
+            subFlow.checkpointText = this.checkpointText;
+        }
         // Set restart button when null
         if(subFlow.restartButtonName == null){
             subFlow.restartButtonName = this.restartButtonName;
@@ -1231,7 +1264,7 @@ class Flow {
     }
 
     // Find and remove last given answer and ask question again
-    previous(ignoreSuperFlow, userId) {
+    previous(ignoreSuperFlow, userId, checkpoint) {
         if(this.isStopped) {
             return;
         }
@@ -1244,7 +1277,7 @@ class Flow {
                 Logger.info("Flow::previous() Question: \"" + question.questionText + "\"");
 
                 if(question.subFlow) {
-                    if(question.subFlow.previous(true, userId)) {
+                    if(question.subFlow.previous(true, userId, checkpoint)) {
                         return true;
                     }
                 }
@@ -1272,6 +1305,10 @@ class Flow {
                     this.parsedAnswerKeys[question.answerKey] = false;
                     question.subFlow = null;
                     this.currentStep = checkStep;
+                    if(checkpoint && !question.isCheckpoint) {
+                        Logger.info("Flow::previous() Question is not a checkpoint, continuing");
+                        continue;
+                    }
                     this.next();
                     return true;
                 }
@@ -1283,7 +1320,7 @@ class Flow {
         }
 
         if(this.superFlow && !ignoreSuperFlow) {
-            return this.superFlow.previous();
+            return this.superFlow.previous(false, userId, checkpoint);
         }
 
         return false;

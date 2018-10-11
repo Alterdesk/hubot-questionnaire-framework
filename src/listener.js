@@ -37,6 +37,13 @@ class Listener {
                 return responseMessage.text.match(control.backRegex);
             }
         };
+
+        // Matcher for checkpoint regex
+        this.checkpointMatcher = (responseMessage) => {
+            if (responseMessage.text != null && control.checkpointRegex != null) {
+                return responseMessage.text.match(control.checkpointRegex);
+            }
+        };
     }
 
     // Called when a message was received for the listener
@@ -51,6 +58,9 @@ class Listener {
 
         // Check if back regex matches
         this.back = this.backMatcher(responseMessage);
+
+        // Check if checkpoint regex matches
+        this.checkpoint = this.checkpointMatcher(responseMessage);
 
         // Call callback
         this.callback(new Response(this.msg.robot, responseMessage, true), this);

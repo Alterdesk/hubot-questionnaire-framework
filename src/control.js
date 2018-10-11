@@ -26,7 +26,8 @@ class Control {
 
         // Regular expressions
         this.stopRegex = new RegExp(/^[ \n\r\t]*stop[ \n\r\t]*$/, 'gi');
-        this.backRegex = new RegExp(/^[ \n\r\t]*back[ \n\r\t]*$/, 'gi');
+        this.backRegex = null;//new RegExp(/^[ \n\r\t]*back[ \n\r\t]*$/, 'gi');
+        this.checkpointRegex = null;//new RegExp(/^[ \n\r\t]*checkpoint[ \n\r\t]*$/, 'gi');
         this.helpRegex = new RegExp(/^[ \n\r\t]*help[ \n\r\t]*$/, 'gi');
         this.robotUserId;
         this.robotMentionRegex;
@@ -412,6 +413,15 @@ class Control {
     // Message text to send when going back a question with the back command
     setFlowBackText(text) {
         this.flowBackText = text;
+    }
+
+    // Regex to check if user wants to correct the last checkpoint
+    setCheckpointRegex(c) {
+        this.checkpointRegex = c;
+    }
+    // Message text to send when going back to last checkpoint with the checkpoint command
+    setFlowCheckpointText(text) {
+        this.flowCheckpointText = text;
     }
 
     // Message text to send when a flow stops with an error
