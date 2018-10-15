@@ -853,7 +853,6 @@ class Flow {
                 // Try to go back
                 if(!flow.previous(false, userId, false)) {
                     Logger.debug("Flow::callback() Unable to go back, restarting flow");
-                    flow.currentStep = 0;
                     flow.next();
                 }
                 return;
@@ -870,7 +869,6 @@ class Flow {
                 // Try to go to last checkpoint
                 if(!flow.previous(false, userId, true)) {
                     Logger.debug("Flow::callback() Unable to go back to last checkpoint, restarting flow");
-                    flow.currentStep = 0;
                     flow.next();
                 }
                 return;
@@ -1268,10 +1266,9 @@ class Flow {
         if(this.isStopped) {
             return;
         }
-        let checkStep = this.currentStep;
-        while(checkStep >= 0) {
-            var step = this.steps[checkStep];
-            Logger.info("Flow::previous() Step " + checkStep);
+        while(this.currentStep >= 0) {
+            var step = this.steps[this.currentStep];
+            Logger.info("Flow::previous() Step " + this.currentStep);
             if(step instanceof Question) {
                 let question = step;
                 Logger.info("Flow::previous() Question: \"" + question.questionText + "\"");
@@ -1304,7 +1301,6 @@ class Flow {
                     }
                     this.parsedAnswerKeys[question.answerKey] = false;
                     question.subFlow = null;
-                    this.currentStep = checkStep;
                     if(checkpoint && !question.isCheckpoint) {
                         Logger.info("Flow::previous() Question is not a checkpoint, continuing");
                         continue;
@@ -1313,10 +1309,10 @@ class Flow {
                     return true;
                 }
             }
-            if(checkStep == 0) {
+            if(this.currentStep == 0) {
                 break;
             }
-            checkStep--;
+            this.currentStep--;
         }
 
         if(this.superFlow && !ignoreSuperFlow) {
