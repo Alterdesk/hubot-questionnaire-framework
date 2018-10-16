@@ -53,7 +53,7 @@ class Answers {
         return answersObject;
     }
 
-    static toAnswers(object) {
+    static fromObject(object) {
         if(!object) {
             return null;
         }
@@ -66,7 +66,7 @@ class Answers {
             var key = keys[index];
             var value = object[key];
             if(typeof value === 'object') {
-                answers.add(key, Answers.toAnswers(value));
+                answers.add(key, Answers.fromObject(value));
             } else {
                 answers.add(key, value);
             }
