@@ -7,6 +7,11 @@ class Action {
         this.waitMs = waitMs || 0;
     }
 
+    // Set the parent flow
+    setFlow(flow) {
+        this.flow = flow;
+    }
+
     // Set the sub flow to execute after this action
     setSubFlow(subFlow) {
         this.subFlow = subFlow;

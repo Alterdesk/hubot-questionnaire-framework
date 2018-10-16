@@ -3,6 +3,7 @@ const Extra = require('node-messenger-extra');
 const Action = require('./actions/action.js');
 const Answers = require('./answers.js');
 const AttachmentQuestion = require('./questions/attachment-question.js');
+const BackAction = require('./actions/back-action.js');
 const EmailQuestion = require('./questions/email-question.js');
 const FuzzyAction = require('./actions/fuzzy-action.js');
 const Information = require('./information.js');
@@ -39,7 +40,7 @@ class Flow {
         this.steps = [];
         this.parsedAnswerKeys = {};
         this.parsedMultiUserAnswers = {};
-        this.isStopped = false;
+        this.isRunning = false;
     }
 
     // Add a step to the flow
@@ -50,8 +51,10 @@ class Flow {
             this.lastAddedQuestion = question;
         } else if(step instanceof Action) {
             let action = step;
+            action.setFlow(this);
             this.lastAddedAction = action;
         }
+        step.addedAfterStart = this.isRunning;
         this.steps.push(step);
         return this;
     }
@@ -752,6 +755,11 @@ class Flow {
         return this;
     }
 
+    back(checkpoint) {
+        this.add(new BackAction(checkpoint));
+        return this;
+    }
+
     // Set a restart button for error, stop and timeout messages
     restartButton(name, label, style) {
         this.restartButtonName = name;
@@ -795,6 +803,7 @@ class Flow {
     // Start the flow
     start(msg, answers) {
         Logger.info("Flow::start()");
+        this.isRunning = true;
         if(this.steps.length === 0) {
             Logger.error("Flow::start() No steps for flow");
             this.stop(true);
@@ -849,9 +858,8 @@ class Flow {
                 if(flow.backText && flow.backText != "") {
                     response.send(flow.backText)
                 }
-                let userId = flow.control.getUserId(response.message.user);
                 // Try to go back
-                if(!flow.previous(false, userId, false)) {
+                if(!flow.previous(false)) {
                     Logger.debug("Flow::callback() Unable to go back, restarting flow");
                     flow.next();
                 }
@@ -865,9 +873,8 @@ class Flow {
                 if(flow.checkpointText && flow.checkpointText != "") {
                     response.send(flow.checkpointText)
                 }
-                let userId = flow.control.getUserId(response.message.user);
                 // Try to go to last checkpoint
-                if(!flow.previous(false, userId, true)) {
+                if(!flow.previous(true)) {
                     Logger.debug("Flow::callback() Unable to go back to last checkpoint, restarting flow");
                     flow.next();
                 }
@@ -1004,7 +1011,7 @@ class Flow {
     }
 
     questionStop(question) {
-        if(this.isStopped) {
+        if(!this.isRunning) {
             return;
         }
         Logger.info("Flow::questionStop()");
@@ -1015,7 +1022,7 @@ class Flow {
     }
 
     questionDone(question) {
-        if(this.isStopped) {
+        if(!this.isRunning) {
             return;
         }
         Logger.info("Flow::questionDone() answerKey: \"" + question.answerKey + "\"");
@@ -1036,7 +1043,7 @@ class Flow {
     }
 
     actionDone(action) {
-        if(this.isStopped) {
+        if(!this.isRunning) {
             return;
         }
         Logger.info("Flow::actionDone()");
@@ -1109,12 +1116,12 @@ class Flow {
 
     // Stop the flow
     stop(sendMessage) {
-        if(this.isStopped) {
+        if(!this.isRunning) {
             // Already stopped
             return;
         }
         Logger.info("Flow::stop()");
-        this.isStopped = true;
+        this.isRunning = false;
         // TODO Add Flow.cleanup() that calls Listener/PendingRequest cleanup()
         for(let index in this.steps) {
             var step = this.steps[index];
@@ -1133,7 +1140,7 @@ class Flow {
 
     // Execute next question
     next() {
-        if(this.isStopped) {
+        if(!this.isRunning) {
             return;
         }
         Logger.info("Flow::next() Step " + this.currentStep);
@@ -1262,42 +1269,33 @@ class Flow {
     }
 
     // Find and remove last given answer and ask question again
-    previous(ignoreSuperFlow, userId, checkpoint) {
-        if(this.isStopped) {
+    previous(checkpoint, ignoreSuperFlow) {
+        if(!this.isRunning) {
             return;
         }
         while(this.currentStep >= 0) {
             var step = this.steps[this.currentStep];
-            Logger.info("Flow::previous() Step " + this.currentStep);
+            var className = "";
+            if(step && step.constructor) {
+                className = step.constructor.name;
+            }
+            Logger.info("Flow::previous() Step " + this.currentStep + " \"" + className + "\"");
             if(step instanceof Question) {
                 let question = step;
-                Logger.info("Flow::previous() Question: \"" + question.questionText + "\"");
-
                 if(question.subFlow) {
-                    if(question.subFlow.previous(true, userId, checkpoint)) {
+                    Logger.info("Flow::previous() Question: \"" + question.answerKey + "\" has sub flow");
+                    if(question.subFlow.previous(checkpoint, true)) {
                         return true;
                     }
                 }
+                Logger.info("Flow::previous() Question: \"" + question.answerKey + "\": " + question.questionText);
 
-                let removedAnswer;
-                if(question.isMultiUser) {
-                    var multiAnswers = this.answers.get(question.answerKey);
-                    if(multiAnswers) {
-                        removedAnswer = multiAnswers.remove(userId);
-                    }
-                } else {
-                    removedAnswer = this.answers.remove(question.answerKey);
-                }
+                let removedAnswer = this.answers.remove(question.answerKey);
 
                 if(removedAnswer != null) {
-                    if(question.isMultiUser) {
-                        Logger.info("Flow::previous() Removed multi-user answer: key: \"" + question.answerKey + "\" value: \"" + removedAnswer + "\" user: \"" + userId + "\"");
-                        let parsedUserIds = this.parsedMultiUserAnswers[question.answerKey];
-                        if(parsedUserIds) {
-                            parsedUserIds[userId] = false;
-                        }
-                    } else {
-                        Logger.info("Flow::previous() Removed answer: key: \"" + question.answerKey + "\" value: \"" + removedAnswer + "\"");
+                    Logger.info("Flow::previous() Removed answer: key: \"" + question.answerKey + "\" value: \"" + removedAnswer + "\"");
+                    if(question.isMultiUser && this.parsedMultiUserAnswers[question.answerKey]) {
+                        delete this.parsedMultiUserAnswers[question.answerKey];
                     }
                     this.parsedAnswerKeys[question.answerKey] = false;
                     question.subFlow = null;
@@ -1309,14 +1307,19 @@ class Flow {
                     return true;
                 }
             }
+            if(step && step.addedAfterStart) {
+                Logger.info("Flow::previous() Step added after start, removing \"" + className + "\" from flow");
+                this.steps.pop();
+            }
             if(this.currentStep == 0) {
+                Logger.info("Flow::previous() Beginning of flow reached");
                 break;
             }
             this.currentStep--;
         }
 
         if(this.superFlow && !ignoreSuperFlow) {
-            return this.superFlow.previous(false, userId, checkpoint);
+            return this.superFlow.previous(checkpoint);
         }
 
         return false;
