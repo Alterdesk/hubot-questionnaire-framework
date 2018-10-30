@@ -35,6 +35,10 @@ class Answers {
         return this.keys().length;
     }
 
+    toJson() {
+        return JSON.stringify(this.toObject());
+    }
+
     toObject() {
         var answersObject = {};
         var keys = this.keys();
