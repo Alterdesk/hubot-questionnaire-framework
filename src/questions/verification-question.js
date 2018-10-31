@@ -1,3 +1,4 @@
+const Answers = require('./../answers.js');
 const Logger = require('./../logger.js');
 const Question = require('./question.js');
 
@@ -14,6 +15,10 @@ class VerificationQuestion extends Question {
         this.provider = provider;
     }
 
+    setRetrieveAttributes(retrieveAttributes) {
+        this.useFinalize = retrieveAttributes;
+    }
+
     // Set a sub flow for when a user is verified
     setVerifiedSubFlow(subFlow) {
         this.verifiedSubFlow = subFlow;
@@ -25,6 +30,10 @@ class VerificationQuestion extends Question {
     }
 
     send(control, msg, callback) {
+        this.control = control;
+        this.chatId = msg.message.room;
+        this.isGroup = control.isUserInGroup(msg.message.user);
+
         // Unable to preform question without messenger api
         if(!control.messengerApi) {
             Logger.error("VerificationQuestion:send() Messenger API instance not set");
@@ -50,54 +59,49 @@ class VerificationQuestion extends Question {
     }
 
     sendForUserId(control, msg, callback, userId) {
-        var question = this;
-
         // Try to retrieve provider for user
-        control.messengerApi.getUserProviders(userId, function(providerSuccess, providerJson) {
+        control.messengerApi.getUserProviders(userId, (providerSuccess, providerJson) => {
             if(!providerSuccess) {
-                question.flow.sendRestartMessage(question.flow.errorText);
-                if(question.flow.stoppedCallback) {
-                    question.flow.stoppedCallback(question.flow.msg, question.flow.answers);
+                this.flow.sendRestartMessage(this.flow.errorText);
+                if(this.flow.stoppedCallback) {
+                    this.flow.stoppedCallback(this.flow.msg, this.flow.answers);
                 }
                 return;
             }
             var providerId;
             for(let i in providerJson) {
                 var provider = providerJson[i];
-                if(provider["name"] === question.provider) {
+                if(provider["name"] === this.provider) {
                     providerId = provider["provider_id"];
                     break;
                 }
             }
             if(providerId) {
                 // Got provider, send verification request
-                var chatId = msg.message.room;
-                var isGroup = control.isUserInGroup(msg.message.user);
-
-                question.setListenersAndPendingRequests(control, msg, callback);
+                this.setListenersAndPendingRequests(control, msg, callback);
 
                 control.sendComposing(msg);
 
-                control.messengerApi.askUserVerification(userId, providerId, chatId, isGroup, false, function(askSuccess, askJson) {
+                control.messengerApi.askUserVerification(userId, providerId, this.chatId, this.isGroup, false, (askSuccess, askJson) => {
                     Logger.debug("VerificationQuestion:sendForUserId() Successful: " + askSuccess);
                     if(!askSuccess) {
-                        question.flow.sendRestartMessage(question.flow.errorText);
-                        if(question.flow.stoppedCallback) {
-                            question.flow.stoppedCallback(question.flow.msg, question.flow.answers);
+                        this.flow.sendRestartMessage(this.flow.errorText);
+                        if(this.flow.stoppedCallback) {
+                            this.flow.stoppedCallback(this.flow.msg, this.flow.answers);
                         }
                         return;
                     }
                     var messageId = askJson["id"];
                     Logger.debug("VerificationQuestion:sendForUserId() Verification message id: " + messageId);
-                    question.requestMessageId = messageId;
+                    this.requestMessageId = messageId;
                 });
             } else {
                 // Unable to get provider for this user, check if user already verified via provider
-                control.messengerApi.getUserVerifications(userId, function(verificationsSuccess, verificationsJson) {
+                control.messengerApi.getUserVerifications(userId, (verificationsSuccess, verificationsJson) => {
                     if(!verificationsSuccess) {
-                        question.flow.sendRestartMessage(question.flow.errorText);
-                        if(question.flow.stoppedCallback) {
-                            question.flow.stoppedCallback(question.flow.msg, question.flow.answers);
+                        this.flow.sendRestartMessage(this.flow.errorText);
+                        if(this.flow.stoppedCallback) {
+                            this.flow.stoppedCallback(this.flow.msg, this.flow.answers);
                         }
                         return;
                     }
@@ -105,18 +109,18 @@ class VerificationQuestion extends Question {
                     var userVerifications = verificationsJson["user"];
                     for(let i in userVerifications) {
                         var verification = userVerifications[i];
-                        if(verification["name"] === question.provider) {
+                        if(verification["name"] === this.provider) {
                             isVerified = true;
                             break;
                         }
                     }
                     if(isVerified) {
-                        question.setSubFlow(question.verifiedSubFlow);
-                        question.flow.onAnswer(msg, question, true);
+                        this.setSubFlow(this.verifiedSubFlow);
+                        this.flow.onAnswer(msg, this, true);
                     } else {
-                        question.flow.sendRestartMessage(question.flow.errorText);
-                        if(question.flow.stoppedCallback) {
-                            question.flow.stoppedCallback(question.flow.msg, question.flow.answers);
+                        this.flow.sendRestartMessage(this.flow.errorText);
+                        if(this.flow.stoppedCallback) {
+                            this.flow.stoppedCallback(this.flow.msg, this.flow.answers);
                         }
                         return;
                     }
@@ -138,6 +142,43 @@ class VerificationQuestion extends Question {
             return false;
         }
         return null;
+    }
+
+    // Asynchronously retrieve verification attributes
+    finalize(answers, callback) {
+        if(!answers.get(this.answerKey)) {
+            Logger.error("VerificationQuestion:finalize() Not verified");
+            callback();
+            return;
+        }
+        if(!this.control || !this.control.messengerApi || !this.requestMessageId) {
+            Logger.error("VerificationQuestion:finalize() Messenger API instance not set or data incomplete");
+            callback();
+            return;
+        }
+        this.control.messengerApi.getMessage(this.requestMessageId, this.chatId, this.isGroup, false, (success, json) => {
+            if(!success) {
+                Logger.error("VerificationQuestion:finalize() Unable to retrieve message");
+                callback();
+                return;
+            }
+            var payload = json["payload"];
+            if(!payload || payload["type"] !== "verification_request") {
+                Logger.error("VerificationQuestion:finalize() Message has no payload or is wrong type");
+                callback();
+                return;
+            }
+            var attributes = payload["attributes"];
+            if(!attributes) {
+                Logger.error("VerificationQuestion:finalize() Payload holds no attributes");
+                callback();
+                return;
+            }
+            var attributesKey = this.answerKey + "_attributes";
+            Logger.info("VerificationQuestion:finalize() Successfully stored attributes with answer key: " + attributesKey);
+            answers.add(attributesKey, Answers.fromObject(attributes));
+            callback();
+        });
     }
 }
 

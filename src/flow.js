@@ -18,6 +18,7 @@ const PolarQuestion = require('./questions/polar-question.js');
 const Question = require('./questions/question.js');
 const SetAnswerAction = require('./actions/set-answer-action.js');
 const StopConditionAction = require('./actions/stop-condition-action.js');
+const SummaryAction = require('./actions/summary-action.js');
 const TextQuestion = require('./questions/text-question.js');
 const VerificationQuestion = require('./questions/verification-question.js');
 
@@ -449,9 +450,10 @@ class Flow {
     }
 
     // Add new VerificationQuestion
-    verification(answerKey, provider) {
+    verification(answerKey, provider, retrieveAttributes) {
         var verificationQuestion = new VerificationQuestion(answerKey, "", "");
         verificationQuestion.setProvider(provider);
+        verificationQuestion.setRetrieveAttributes(retrieveAttributes);
         return this.add(verificationQuestion);
     }
 
@@ -593,16 +595,6 @@ class Flow {
         return this;
     }
 
-    // Set a callback to summarize the given answers after last added question
-    summary(summaryFunction) {
-        if(this.lastAddedQuestion == null) {
-            Logger.error("Flow::summary() No Question added to flow");
-            return this;
-        }
-        this.lastAddedQuestion.setSummaryFunction(summaryFunction);
-        return this;
-    }
-
     // Add a delay to the last added question
     delay(ms) {
         if(this.lastAddedQuestion == null) {
@@ -620,6 +612,12 @@ class Flow {
             return this;
         }
         this.lastAddedQuestion.setTimeout(ms, text, callback);
+        return this;
+    }
+
+    // Set an action using a callback to summarize the given answers
+    summary(summaryFunction, waitMs) {
+        this.add(new SummaryAction(summaryFunction, waitMs));
         return this;
     }
 
@@ -1025,13 +1023,17 @@ class Flow {
         if(!this.isRunning) {
             return;
         }
-        Logger.info("Flow::questionDone() answerKey: \"" + question.answerKey + "\"");
-        // Call summary function if set
-        if(question.summaryFunction != null) {
-            var summary = question.summaryFunction(this.answers);
-            if(summary && summary !== "") {
-                this.msg.send(summary);
-            }
+        Logger.info("Flow::questionDone() answerKey: \"" + question.answerKey + "\" useFinalize: " + question.useFinalize);
+        if(question.useFinalize) {
+            question.finalize(this.answers, () => {
+                // Trigger sub flow if set in question, otherwise continue
+                if(question.subFlow != null) {
+                    this.startSubFlow(question.subFlow, true);
+                } else {
+                    this.next();
+                }
+            })
+            return;
         }
 
         // Trigger sub flow if set in question, otherwise continue
@@ -1143,10 +1145,14 @@ class Flow {
         if(!this.isRunning) {
             return;
         }
-        Logger.info("Flow::next() Step " + this.currentStep);
         // Check if has more steps or flow is finished
         if(this.currentStep < this.steps.length) {
             var step = this.steps[this.currentStep++];
+            var className = "";
+            if(step && step.constructor) {
+                className = step.constructor.name;
+            }
+            Logger.info("Flow::next() Step " + this.currentStep + " \"" + className + "\"");
             if(step instanceof Question) {
                 var question = step;
                 var answerValue = this.answers.get(question.answerKey);
@@ -1306,6 +1312,9 @@ class Flow {
                     this.next();
                     return true;
                 }
+            } else if(step instanceof Action) {
+                let action = step;
+                action.subFlow = null;
             }
             if(step && step.addedAfterStart) {
                 Logger.info("Flow::previous() Step added after start, removing \"" + className + "\" from flow");

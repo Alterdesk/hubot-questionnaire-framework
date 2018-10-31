@@ -16,6 +16,7 @@ class Question {
         this.usePendingRequests = false;
         this.resendOnInvalid = true;
         this.sendMessageOnStop = true;
+        this.useFinalize = false;
     }
 
     // Set the parent flow
@@ -36,11 +37,6 @@ class Question {
     // Set a format question text callback function
     setFormatQuestionFunction(formatQuestionFunction) {
         this.formatQuestionFunction = formatQuestionFunction;
-    }
-
-    // Set a summary callback function to trigger after answer
-    setSummaryFunction(summaryFunction) {
-        this.summaryFunction = summaryFunction;
     }
 
     // Add a delay before executing this question
@@ -291,6 +287,11 @@ class Question {
     // Answer given by the user is parsed and checked here
     checkAndParseAnswer(matches, message) {
         return null;
+    }
+
+    // Asynchronously retrieve data after the question is done
+    finalize(answers, callback) {
+        callback();
     }
 }
 
