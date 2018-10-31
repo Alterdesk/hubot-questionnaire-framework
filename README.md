@@ -824,7 +824,7 @@ Detect when a user accepts or rejects a verification request(user is verified wh
 
 #### setQuestionCallback(callback)
 
-Detect when user answers a question request message
+Detect when user answers a question request message(deprecated, use setQuestionAnsweredCallback)
 * callback *(Function(userId, messageId, chatId, isGroup, options))* - Function callback when a request is answered
   * userId *(String)* - Alterdesk user id
   * messageId *(String)* - Alterdesk message id
@@ -850,11 +850,19 @@ Callback that is called when subscribed/unsubscribed to/from a groupchat
 
 #### setUserAnsweredCallback(callback)
 
-Detect that a user has answered a question during a Flow
+Detect that a user has answered a question during a Flow(deprecated, use setQuestionAnsweredCallback)
 * callback *(Function(userId, answerKey, answerValue))* - Function callback when a user answers a question during a flow
   * userId *(String)* - Alterdesk user id
   * answerKey *(String)* - Answer key that is answered
   * answerValue *(String)* - Answer value
+
+#### setQuestionAnsweredCallback(callback)
+
+Callback for when a question in a flow has been answered
+* callback *(Function(userId, answerKey, answers))* - Function callback when a question is answered during a flow
+  * userId *(String)* - Alterdesk user id
+  * answerKey *(String)* - Answer key that is answered
+  * answers *(Answers)* - Answers instance
 
 #### setRemoveListenerOnLeave(remove)  
 
@@ -1137,11 +1145,13 @@ Set the question payload style for the last added MultipleChoiceQuestion, depend
 
 returns *(Flow)* - Flow instance
 
-#### verification(answerKey, provider)
+#### verification(answerKey, provider, retrieveAttributes)
 
-Add a VerificationQuestion to the Flow, depends on messenger Api instance
+Add a VerificationQuestion to the Flow, depends on messenger Api instance. When *retrieveAttributes* is set, the 
+verification attributes are stored in the Answers object with the key "*answerKey*_attributes". 
 * answerKey *(String)* - Key to store answer in Answers instance with
 * provider *(String)* - Identity provider to use for verification
+* retrieveAttributes *(Boolean)* - Retrieve verification attributes when successful
 
 returns *(Flow)* - Flow instance
 
@@ -1228,11 +1238,12 @@ Set a callback to summarize given answers after every user answer for a multi us
 
 returns *(Flow)* - Flow instance
 
-#### summary(callback)
+#### summary(callback, waitMs)
 
-Set a callback to summarize the given answers after last added question
+Set an action using a callback to summarize the given answers
 * callback *(Function(answers))* - Callback called when a summary of the given answers is requested
   * answers *(Answers)* - Answers instance
+* waitMs *(Integer)* - Milliseconds to wait after sending summary
 
   returns *(String)* - Summary text to send
 
