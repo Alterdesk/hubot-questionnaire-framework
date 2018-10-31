@@ -527,6 +527,11 @@ class Control {
         this.userAnsweredCallback = userAnsweredCallback;
     }
 
+    // Callback that is called when a question is answered
+    setQuestionAnsweredCallback(questionAnsweredCallback) {
+        this.questionAnsweredCallback = questionAnsweredCallback;
+    }
+
     // Should a listener for a user be removed when a leave is detected
     setRemoveListenerOnLeave(remove) {
         this.removeListenerOnLeave = remove;

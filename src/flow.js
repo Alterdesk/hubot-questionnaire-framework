@@ -1004,7 +1004,7 @@ class Flow {
             return true;
         }
 
-        this.questionDone(question);
+        this.questionAnswered(question);
         return true;
     }
 
@@ -1019,21 +1019,25 @@ class Flow {
         this.stop(question.sendMessageOnStop);
     }
 
-    questionDone(question) {
+    questionAnswered(question) {
         if(!this.isRunning) {
             return;
         }
-        Logger.info("Flow::questionDone() answerKey: \"" + question.answerKey + "\" useFinalize: " + question.useFinalize);
+        Logger.info("Flow::questionAnswered() answerKey: \"" + question.answerKey + "\" useFinalize: " + question.useFinalize);
         if(question.useFinalize) {
             question.finalize(this.answers, () => {
-                // Trigger sub flow if set in question, otherwise continue
-                if(question.subFlow != null) {
-                    this.startSubFlow(question.subFlow, true);
-                } else {
-                    this.next();
-                }
-            })
-            return;
+                this.questionDone(question);
+            });
+        } else {
+            this.questionDone(question);
+        }
+    }
+
+    questionDone(question) {
+        Logger.info("Flow::questionDone() answerKey: \"" + question.answerKey + "\"");
+        if(this.control.questionAnsweredCallback) {
+            var userId = this.control.getUserId(this.msg.message.user);
+            this.control.questionAnsweredCallback(userId, question.answerKey, this.answers);
         }
 
         // Trigger sub flow if set in question, otherwise continue
@@ -1160,7 +1164,7 @@ class Flow {
                     // If question is already checked and parsed and was asked to a single user
                     if(this.parsedAnswerKeys[question.answerKey] && !question.isMultiUser) {
                         Logger.debug("Flow::next() Already have parsed answer \"" + answerValue + "\" for \"" + question.answerKey + "\", skipping question");
-                        this.questionDone(question);
+                        this.questionAnswered(question);
                         return;
                     }
 
@@ -1221,7 +1225,7 @@ class Flow {
                         }
                         if(parsedAnswers > 0 && parsedAnswers == checkUserIds.length) {
                             Logger.debug("Flow::next() Parsed all pre-filled user answers for multi-user question \"" + question.answerKey + "\", skipping question");
-                            this.questionDone(question);
+                            this.questionAnswered(question);
                             return;
                         }
                     } else {
