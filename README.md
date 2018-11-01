@@ -110,14 +110,6 @@ control.setVerificationCallback(function(userId, messageId, chatId, isGroup, acc
     });
 ```
 
-#### User answers request question
-Detect when user answers a question request message
-```javascript
-control.setQuestionCallback(function(userId, messageId, chatId, isGroup, options) {
-        console.log("Question: id: " + messageId + " user: " + userId + " chat: " + chatId + " isGroup: " + isGroup + " options: " + options);
-    });
-```
-
 #### Group member events
 Detect when users are added in or removed from a groupchat.
 ```javascript
@@ -141,11 +133,11 @@ control.setGroupSubscribedCallback(function(groupId, subscribed) {
 });
 ```
 
-#### User answered question event
-Detect that a user has answered a question during a Flow
+#### Question answered question event
+Detect that a question has been answered during a Flow
 ```javascript
-control.setUserAnsweredCallback(function(userId, answerKey, answerValue) {
-    console.log("User answered: userId: " + userId + " key: " + answerKey + " value: " + answerValue);
+control.setQuestionAnsweredCallback(function(userId, answerKey, answers) {
+    console.log("Question answered: " + userId + " key: " + answerKey + " value: " + answers.get(answerKey));
 });
 ```
 
