@@ -4,6 +4,7 @@ const Action = require('./actions/action.js');
 const Answers = require('./answers.js');
 const AttachmentQuestion = require('./questions/attachment-question.js');
 const BackAction = require('./actions/back-action.js');
+const CloseGroupAction = require('./actions/close-group-action.js');
 const EmailQuestion = require('./questions/email-question.js');
 const FuzzyAction = require('./actions/fuzzy-action.js');
 const Information = require('./information.js');
@@ -11,6 +12,7 @@ const Listener = require('./listener.js');
 const MentionQuestion = require('./questions/mention-question.js');
 const MultipleChoiceQuestion = require('./questions/multiple-choice-question.js');
 const NumberQuestion = require('./questions/number-question.js');
+const LeaveGroupAction = require('./actions/leave-group-action.js');
 const Logger = require('./logger.js');
 const PhoneNumberQuestion = require('./questions/phone-number-question.js');
 const PendingRequest = require('./pending-request.js');
@@ -755,6 +757,16 @@ class Flow {
 
     back(checkpoint) {
         this.add(new BackAction(checkpoint));
+        return this;
+    }
+
+    leaveGroup() {
+        this.add(new LeaveGroupAction());
+        return this;
+    }
+
+    closeGroup() {
+        this.add(new CloseGroupAction());
         return this;
     }
 
