@@ -26,6 +26,7 @@ module.exports = {
     NumberQuestion : require('./questions/number-question.js'),
     LeaveGroupAction : require('./actions/leave-group-action.js'),
     Listener : require('./listener.js'),
+    Logger : require('./logger.js'),
     PendingRequest : require('./pending-request.js'),
     PhoneNumberQuestion : require('./questions/phone-number-question.js'),
     PolarQuestion : require('./questions/polar-question.js'),
