@@ -253,7 +253,7 @@ class Flow {
             Logger.error("Flow::completeMentions() Last added Question is not an instance of MentionQuestion");
             return this;
         }
-        var answerKey = this.lastAddedQuestion.answerKey;
+        var answerKey = this.lastAddedQuestion.answerKey;   // TODO Move to own complete mentions Action
         this.action((response, answers, flowCallback) => {
             if(!this.msg) {
                 flowCallback();
@@ -1053,7 +1053,7 @@ class Flow {
         }
 
         // Trigger sub flow if set in question, otherwise continue
-        if(question.subFlow != null) {
+        if(question.subFlow instanceof Flow) {
             this.startSubFlow(question.subFlow, true);
         } else {
             this.next();
@@ -1066,7 +1066,7 @@ class Flow {
         }
         Logger.info("Flow::actionDone()");
         // Trigger sub flow if set in question, otherwise continue
-        if(action.subFlow != null) {
+        if(action.subFlow instanceof Flow) {
             this.startSubFlow(action.subFlow, true);
         } else {
             this.next();
