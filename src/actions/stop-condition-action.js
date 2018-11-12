@@ -3,11 +3,10 @@ const Answers = require('./../answers.js');
 const Logger = require('./../logger.js');
 
 class StopConditionAction extends Action {
-    constructor(flow, sendMessage, waitMs) {
+    constructor(sendMessage, waitMs) {
         super((response, answers, flowCallback) => {
             this.start(response, answers, flowCallback);
         }, waitMs);
-        this.flow = flow;
         this.sendMessage = sendMessage;
         this.conditions = [];
     }

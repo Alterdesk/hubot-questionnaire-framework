@@ -5,6 +5,7 @@ const Answers = require('./answers.js');
 const AttachmentQuestion = require('./questions/attachment-question.js');
 const BackAction = require('./actions/back-action.js');
 const CloseGroupAction = require('./actions/close-group-action.js');
+const CompleteMentionsAction = require('./actions/complete-mentions-action.js');
 const EmailQuestion = require('./questions/email-question.js');
 const FuzzyAction = require('./actions/fuzzy-action.js');
 const Information = require('./information.js');
@@ -253,33 +254,8 @@ class Flow {
             Logger.error("Flow::completeMentions() Last added Question is not an instance of MentionQuestion");
             return this;
         }
-        var answerKey = this.lastAddedQuestion.answerKey;   // TODO Move to own complete mentions Action
-        this.action((response, answers, flowCallback) => {
-            if(!this.msg) {
-                flowCallback();
-                return;
-            }
-            var mentions = answers.get(answerKey);
-            if(onlyCompleteAll && (mentions.length > 1 || mentions[0]["id"] !== "@all")) {
-                flowCallback();
-                return;
-            }
-            var chatId = this.msg.message.room;
-            var isGroup = this.control.isUserInGroup(this.msg.message.user);
-            var excludeIds;
-
-            if(!this.lastAddedQuestion.robotAllowed) {
-                excludeIds = [];
-                excludeIds.push(this.control.robotUserId);
-            }
-            this.control.messengerApi.completeMentions(mentions, excludeIds, chatId, isGroup, false, (mentionedMembers) => {
-                if(mentionedMembers) {
-                    answers.add(answerKey, mentionedMembers);
-                }
-                flowCallback();
-            });
-        });
-        return this;
+        var answerKey = this.lastAddedQuestion.answerKey;
+        return this.add(new CompleteMentionsAction(answerKey, onlyCompleteAll));
     }
 
     // Add new AttachmentQuestion
@@ -720,7 +696,7 @@ class Flow {
     }
 
     stopCondition(sendMessageOnStop, waitMs) {
-        this.add(new StopConditionAction(this, sendMessageOnStop, waitMs));
+        this.add(new StopConditionAction(sendMessageOnStop, waitMs));
         return this;
     }
 
@@ -1022,6 +998,7 @@ class Flow {
 
     questionStop(question) {
         if(!this.isRunning) {
+            Logger.debug("Flow::questionStop() Flow not running");
             return;
         }
         Logger.info("Flow::questionStop()");
@@ -1033,6 +1010,7 @@ class Flow {
 
     questionAnswered(question) {
         if(!this.isRunning) {
+            Logger.debug("Flow::questionAnswered() Flow not running");
             return;
         }
         Logger.info("Flow::questionAnswered() answerKey: \"" + question.answerKey + "\" useFinalize: " + question.useFinalize);
@@ -1062,6 +1040,7 @@ class Flow {
 
     actionDone(action) {
         if(!this.isRunning) {
+            Logger.debug("Flow::actionDone() Flow not running");
             return;
         }
         Logger.info("Flow::actionDone()");
@@ -1135,6 +1114,7 @@ class Flow {
     // Stop the flow
     stop(sendMessage) {
         if(!this.isRunning) {
+            Logger.debug("Flow::stop() Flow not running");
             // Already stopped
             return;
         }
@@ -1159,6 +1139,7 @@ class Flow {
     // Execute next question
     next() {
         if(!this.isRunning) {
+            Logger.debug("Flow::next() Flow not running");
             return;
         }
         // Check if has more steps or flow is finished
@@ -1272,11 +1253,9 @@ class Flow {
                 }
             } else if(step instanceof Information) {
                 var information = step;
-                Logger.info("Flow::next() Information: \"" + information.text + "\"");
                 information.execute(this, this.msg);
             } else if(step instanceof Action) {
                 var action = step;
-                Logger.info("Flow::next() Action");
                 action.execute(this, this.msg, this.answers);
             } else {
                 Logger.error("Flow::next() Invalid step: ", step);
@@ -1293,6 +1272,7 @@ class Flow {
     // Find and remove last given answer and ask question again
     previous(checkpoint, ignoreSuperFlow) {
         if(!this.isRunning) {
+            Logger.debug("Flow::previous() Flow not running");
             return;
         }
         while(this.currentStep >= 0) {
@@ -1330,7 +1310,13 @@ class Flow {
                 }
             } else if(step instanceof Action) {
                 let action = step;
-                action.subFlow = null;
+                if(action.subFlow) {
+                    Logger.info("Flow::previous() Action: has sub flow");
+                    if(action.subFlow.previous(checkpoint, true)) {
+                        return true;
+                    }
+                    action.subFlow = null;
+                }
             }
             if(step && step.addedAfterStart) {
                 Logger.info("Flow::previous() Step added after start, removing \"" + className + "\" from flow");
@@ -1348,6 +1334,19 @@ class Flow {
         }
 
         return false;
+    }
+
+    getQuestion(answerKey) {
+        for(let index in this.steps) {
+            var step = this.steps[index];
+            if(!step instanceof Question) {
+                continue;
+            }
+            if(step.answerKey === answerKey) {
+                return step;
+            }
+        }
+        return null;
     }
 
     createInstance() {
