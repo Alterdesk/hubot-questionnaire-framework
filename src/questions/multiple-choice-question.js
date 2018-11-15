@@ -75,7 +75,7 @@ class MultipleChoiceQuestion extends Question {
                 if(remainingUserIds && remainingUserIds.length > 0) {
                     questionPayload.addUserIds(remainingUserIds);
                 } else {
-                    Logger.error("MultipleChoiceQuestion:send() Got no remaining user ids for multi-user question: " + this.answerKey);
+                    Logger.error("MultipleChoiceQuestion::send() Got no remaining user ids for multi-user question: " + this.answerKey);
                     questionPayload.addUserId(control.getUserId(msg.message.user));
                 }
             } else {
@@ -92,10 +92,10 @@ class MultipleChoiceQuestion extends Question {
 
             // Send the message and parse result in callback
             control.messengerApi.sendMessage(messageData, function(success, json) {
-                Logger.debug("MultipleChoiceQuestion:send() Successful: " + success);
+                Logger.debug("MultipleChoiceQuestion::send() Successful: " + success);
                 if(json != null) {
                     var messageId = json["id"];
-                    Logger.debug("MultipleChoiceQuestion:send() Question message id: " + messageId);
+                    Logger.debug("MultipleChoiceQuestion::send() Question message id: " + messageId);
                     question.requestMessageId = messageId;
                 } else {
                     var fallbackText = question.questionText;
@@ -108,7 +108,7 @@ class MultipleChoiceQuestion extends Question {
             });
         } else {
             if(this.useButtons) {
-                Logger.error("MultipleChoiceQuestion:send() Messenger API instance not set");
+                Logger.error("MultipleChoiceQuestion::send() Messenger API instance not set");
             }
             this.setListenersAndPendingRequests(control, msg, callback);
             msg.send(this.questionText);
@@ -140,7 +140,7 @@ class MultipleChoiceQuestion extends Question {
         }
     }
 
-    checkAndParseChoice(choice) {
+    checkAndParseChoice(choice) {   // TODO Should be case insensitive regex check
         var optionMatch = null;
         var longestMatch = null;
         for(let index in this.options) {

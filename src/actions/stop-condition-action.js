@@ -1,5 +1,6 @@
 const Action = require('./action.js');
 const Answers = require('./../answers.js');
+const AnswerCondition = require('./../answer_condition.js');
 const Logger = require('./../logger.js');
 
 class StopConditionAction extends Action {
@@ -43,7 +44,9 @@ class StopConditionAction extends Action {
     }
 
     addAnswerCondition(answerKey, answerValue) {
-        this.conditions.push(new AnswerCondition(answerKey, answerValue));
+        var condition = new AnswerCondition(answerKey);
+        condition.setValue(answerValue);
+        this.conditions.push(condition);
     }
 
     setAnswerOnStop(answerKey, answerValue) {
@@ -51,18 +54,6 @@ class StopConditionAction extends Action {
             this.setAnswers = new Answers();
         }
         this.setAnswers.add(answerKey, answerValue);
-    }
-}
-
-class AnswerCondition {
-    constructor(answerKey, answerValue) {
-        this.answerKey = answerKey;
-        this.answerValue = answerValue;
-    }
-
-    check(answers) {
-        var value = answers.get(this.answerKey);
-        return value === this.answerValue;
     }
 }
 
