@@ -120,7 +120,7 @@ class MultipleChoiceQuestion extends Question {
         if(matches == null || message.text == null) {
             return null;
         }
-        if(this.multiAnswer && message.text.indexOf("|") !== -1) {
+        if(this.multiAnswer) {
             var choices = message.text.split("|");
             var options = [];
             for(let index in choices) {
