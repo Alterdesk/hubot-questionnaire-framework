@@ -17,7 +17,6 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         this.candidates = [];
         this.minWordLength = 3;
         this.maxLevenshteinDistance = 2;
-        this.attempts = 0;
         this.maxAttempts = 0;
         this.alwaysConfirm = true;
         this.combineMatches = true;
@@ -29,15 +28,18 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         this.answers = answers;
         this.flowCallback = flowCallback;
 
+        this.setAttempts(0);
+
         this.askText(this.questionText);
     }
 
     askText(text) {
         Logger.debug("FuzzyAction::askText()", text);
+        var textAnswerKey = this.answerKey + "_text_" + this.getAttempts();
         var askTextFlow = this.flow.createInstance()
-        .text(this.answerKey, text, this.invalidText)
+        .text(textAnswerKey, text, this.invalidText)
         .action((response, answers, subFlowCallback) => {
-            this.checkText();
+            this.checkText(textAnswerKey);
             subFlowCallback();
         });
         this.flow.startSubFlow(askTextFlow, false);
@@ -45,8 +47,9 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
 
     showCandidates(candidates, text, askAgainOnDidNot) {
         Logger.debug("FuzzyAction::showCandidates() Candidates: " + candidates.length);
+        var candidateAnswerKey = this.answerKey + "_candidate_" + this.getAttempts();
         var askDidMeanFlow = this.flow.createInstance()
-        .multiple(this.answerKey, text, this.invalidText);
+        .multiple(candidateAnswerKey, text, this.invalidText);
         for(let index in candidates) {
             var candidate = candidates[index];
             var name = candidate.name;
@@ -59,9 +62,8 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         askDidMeanFlow.option(this.didNotRegex)
         .button(this.didNotButtonName, this.didNotButtonLabel)
         .action((response, answers, subFlowCallback) => {
-            var answerValue = answers.get(this.answerKey);
+            var answerValue = answers.get(candidateAnswerKey);
             if(!answerValue || !answerValue.match || answerValue.match(this.didNotRegex)) {
-                answers.remove(this.answerKey);
                 if(askAgainOnDidNot) {
                     this.askText(this.reformulateText || this.questionText);
                 } else {
@@ -71,6 +73,14 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
                 return;
             }
             subFlowCallback();
+            for(let index in candidates) {
+                var candidate = candidates[index];
+                if(candidate.name === answerValue) {
+                    this.done(candidate);
+                    return;
+                }
+            }
+            Logger.error("FuzzyAction::showCandidates() Unable to find matching candidate: ", answerValue)
             this.done();
         });
         this.flow.startSubFlow(askDidMeanFlow, false);
@@ -111,8 +121,9 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
             return;
         }
 
+        var indexAnswerKey = this.answerKey + "_index_" + this.getAttempts();
         var indexFlow = this.flow.createInstance()
-        indexFlow.multiple(this.answerKey, this.indexText, this.invalidText)
+        indexFlow.multiple(indexAnswerKey, this.indexText, this.invalidText)
         for(let index in availableOptions) {
             var option = availableOptions[index];
             var label = option.toUpperCase();
@@ -121,8 +132,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
             .button(option, label, style);
         }
         indexFlow.action((response, answers, subFlowCallback) => {
-            var answerValue = answers.get(this.answerKey);
-            answers.remove(this.answerKey);
+            var answerValue = answers.get(indexAnswerKey);
             this.showIndexOption(answerValue);
             subFlowCallback();
         });
@@ -146,10 +156,11 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         this.showCandidates(availableCandidates, this.indexOptionText, false);
     }
 
-    checkText() {
-        this.attempts++;
-        var answerValue = this.answers.get(this.answerKey);
-        Logger.debug("FuzzyAction::checkText() Checking: attempt: " + this.attempts + " key: " + this.answerKey + " value: " + answerValue);
+    checkText(textAnswerKey) {
+        var attempts = this.getAttempts();
+        this.setAttempts(attempts + 1);
+        var answerValue = this.answers.get(textAnswerKey);
+        Logger.debug("FuzzyAction::checkText() Checking: attempt: " + attempts + " key: " + this.answerKey + " value: " + answerValue);
 
         // Copy candidates
         var checkCandidates = this.candidates.slice();
@@ -210,8 +221,6 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
             return;
         }
 
-        this.answers.remove(this.answerKey);
-
         // TODO Check if "index" was set
         // TODO Check if "did you mean" was set
         if(this.combineMatches && matchedCandidates.length > 0 && possibleCandidates.length > 0) {
@@ -233,7 +242,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
             this.showCandidates(matchedCandidates, this.didYouMeanText, true);
         } else if(possibleCandidates.length > 0) {
             this.showCandidates(possibleCandidates, this.didYouMeanText, true);
-        } else if(this.maxAttempts > 0 && this.attempts >= this.maxAttempts) {
+        } else if(this.maxAttempts > 0 && attempts >= this.maxAttempts) {
             this.showIndex();
         } else {
             this.askText(this.reformulateText || this.questionText);
@@ -242,11 +251,24 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
 
     done(candidate) {
         Logger.debug("FuzzyAction::done()", this.answerKey);
+        if(candidate && candidate.name) {
+            this.answers.add(this.answerKey, candidate.name);
+        }
         if(candidate && candidate.subFlow) {
             this.setSubFlow(candidate.subFlow);
         }
-        // TODO Log failed attempts with chosen answer
+        var attempts = this.getAttempts();
+        this.setAttempts(0);
+        // TODO Log failed attempts with chosen answer and reset values
         this.flowCallback();
+    }
+
+    getAttempts() {
+        return this.answers.get(this.answerKey + "_attempts");
+    }
+
+    setAttempts(attempts) {
+        this.answers.add(this.answerKey + "_attempts", attempts);
     }
 
     addCandidate(name, label, style, aliases, subFlow) {

@@ -151,6 +151,14 @@ class Question {
         msg.send(this.questionText);
     }
 
+    getLabelForValue(value) {
+        return null;
+    }
+
+    getRequestMessageId(userId) {
+        return null;
+    }
+
     getRemainingUserIds() {
         if(!this.userIds || this.userIds.length == 0) {
             Logger.error("Question::getRemainingUserIds() userIds is null or empty");
@@ -290,8 +298,14 @@ class Question {
     }
 
     // Asynchronously retrieve data after the question is done
-    finalize(answers, callback) {
+    async finalize(answers, callback) {
         callback();
+    }
+
+    // Reset the question to be asked again
+    reset(answers) {
+        this.subFlow = null;
+        answers.remove(this.answerKey + "_label");
     }
 }
 

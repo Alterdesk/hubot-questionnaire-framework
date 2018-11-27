@@ -8,6 +8,7 @@ class VerificationQuestion extends Question {
         super(answerKey, questionText, invalidText);
         this.usePendingRequests = true;
         this.resendOnInvalid = false;
+        this.requests = {};
     }
 
     // Set the identity provider for the verification
@@ -27,6 +28,10 @@ class VerificationQuestion extends Question {
     // Set a sub flow for when a user declines verification
     setUnverifiedSubFlow(subFlow) {
         this.unverifiedSubFlow = subFlow;
+    }
+
+    getRequestMessageId(userId) {
+        return this.requests[userId];
     }
 
     send(control, msg, callback) {
@@ -62,6 +67,7 @@ class VerificationQuestion extends Question {
         // Try to retrieve provider for user
         control.messengerApi.getUserProviders(userId, (providerSuccess, providerJson) => {
             if(!providerSuccess) {
+                Logger.error("VerificationQuestion:sendForUserId() Unable to retrieve providers for user: " + userId);
                 this.flow.sendRestartMessage(this.flow.errorText);
                 if(this.flow.stoppedCallback) {
                     this.flow.stoppedCallback(this.flow.msg, this.flow.answers);
@@ -85,6 +91,7 @@ class VerificationQuestion extends Question {
                 control.messengerApi.askUserVerification(userId, providerId, this.chatId, this.isGroup, false, (askSuccess, askJson) => {
                     Logger.debug("VerificationQuestion:sendForUserId() Successful: " + askSuccess);
                     if(!askSuccess) {
+                        Logger.error("VerificationQuestion:sendForUserId() Unable to send verification request for user: " + userId);
                         this.flow.sendRestartMessage(this.flow.errorText);
                         if(this.flow.stoppedCallback) {
                             this.flow.stoppedCallback(this.flow.msg, this.flow.answers);
@@ -93,12 +100,14 @@ class VerificationQuestion extends Question {
                     }
                     var messageId = askJson["id"];
                     Logger.debug("VerificationQuestion:sendForUserId() Verification message id: " + messageId);
-                    this.requestMessageId = messageId;
+
+                    this.requests[userId] = messageId;
                 });
             } else {
                 // Unable to get provider for this user, check if user already verified via provider
                 control.messengerApi.getUserVerifications(userId, (verificationsSuccess, verificationsJson) => {
                     if(!verificationsSuccess) {
+                        Logger.error("VerificationQuestion:sendForUserId() Unable to retrieve verifications for user: " + userId);
                         this.flow.sendRestartMessage(this.flow.errorText);
                         if(this.flow.stoppedCallback) {
                             this.flow.stoppedCallback(this.flow.msg, this.flow.answers);
@@ -118,6 +127,7 @@ class VerificationQuestion extends Question {
                         this.setSubFlow(this.verifiedSubFlow);
                         this.flow.onAnswer(msg, this, true);
                     } else {
+                        Logger.error("VerificationQuestion:sendForUserId() Provider not available for user and not verified: provider: " + this.provider + " user: " + userId);
                         this.flow.sendRestartMessage(this.flow.errorText);
                         if(this.flow.stoppedCallback) {
                             this.flow.stoppedCallback(this.flow.msg, this.flow.answers);
@@ -144,41 +154,74 @@ class VerificationQuestion extends Question {
         return null;
     }
 
+    retrieveAttributes(requestMessageId) {
+        return new Promise(async (resolve) => {
+            this.control.messengerApi.getMessage(requestMessageId, this.chatId, this.isGroup, false, (success, json) => {
+                if(!success) {
+                    Logger.error("VerificationQuestion:retrieveAttributes() Unable to retrieve message");
+                    resolve(null);
+                    return;
+                }
+                var payload = json["payload"];
+                if(!payload || payload["type"] !== "verification_request") {
+                    Logger.error("VerificationQuestion:retrieveAttributes() Message has no payload or is wrong type");
+                    resolve(null);
+                    return;
+                }
+                var attributes = payload["attributes"];
+                if(!attributes) {
+                    Logger.error("VerificationQuestion:retrieveAttributes() Payload holds no attributes");
+                    resolve(null);
+                    return;
+                }
+                resolve(Answers.fromObject(attributes));
+            });
+        });
+    }
+
     // Asynchronously retrieve verification attributes
-    finalize(answers, callback) {
-        if(!answers.get(this.answerKey)) {
-            Logger.error("VerificationQuestion:finalize() Not verified");
-            callback();
-            return;
-        }
-        if(!this.control || !this.control.messengerApi || !this.requestMessageId) {
+    async finalize(answers, callback) {
+        if(!this.control || !this.control.messengerApi || this.requests.length === 0) {
             Logger.error("VerificationQuestion:finalize() Messenger API instance not set or data incomplete");
             callback();
             return;
         }
-        this.control.messengerApi.getMessage(this.requestMessageId, this.chatId, this.isGroup, false, (success, json) => {
-            if(!success) {
-                Logger.error("VerificationQuestion:finalize() Unable to retrieve message");
-                callback();
-                return;
+
+        for(let userId in this.requests) {
+            var requestMessageId = this.requests[userId];
+            if(this.isMultiUser) {
+                var multiAnswers = answers.get(this.answerKey);
+                if(multiAnswers.get(userId)) {
+                    var attributes = await this.retrieveAttributes(requestMessageId);
+                    if(attributes) {
+                        var attributesKey = userId + "_attributes";
+                        multiAnswers.add(attributesKey, attributes);
+                        Logger.info("VerificationQuestion:retrieveAttributes() Successfully stored attributes with answer key: " + attributesKey);
+                    }
+                } else {
+                    Logger.debug("VerificationQuestion:finalize() User not verified: " + userId);
+                }
+            } else {
+                if(answers.get(this.answerKey)) {
+                    var attributes = await this.retrieveAttributes(requestMessageId);
+                    if(attributes) {
+                        var attributesKey = this.answerKey + "_attributes";
+                        answers.add(attributesKey, attributes);
+                        Logger.info("VerificationQuestion:retrieveAttributes() Successfully stored attributes with answer key: " + attributesKey);
+                    }
+                } else {
+                    Logger.debug("VerificationQuestion:finalize() User not verified: " + userId);
+                }
             }
-            var payload = json["payload"];
-            if(!payload || payload["type"] !== "verification_request") {
-                Logger.error("VerificationQuestion:finalize() Message has no payload or is wrong type");
-                callback();
-                return;
-            }
-            var attributes = payload["attributes"];
-            if(!attributes) {
-                Logger.error("VerificationQuestion:finalize() Payload holds no attributes");
-                callback();
-                return;
-            }
-            var attributesKey = this.answerKey + "_attributes";
-            Logger.info("VerificationQuestion:finalize() Successfully stored attributes with answer key: " + attributesKey);
-            answers.add(attributesKey, Answers.fromObject(attributes));
-            callback();
-        });
+        }
+
+        callback();
+    }
+
+    reset(answers) {
+        super.reset(answers);
+        this.requests = {};
+        answers.remove(this.answerKey + "_attributes");
     }
 }
 

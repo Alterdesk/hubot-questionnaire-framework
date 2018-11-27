@@ -431,7 +431,9 @@ class Flow {
     verification(answerKey, provider, retrieveAttributes) {
         var verificationQuestion = new VerificationQuestion(answerKey, "", "");
         verificationQuestion.setProvider(provider);
-        verificationQuestion.setRetrieveAttributes(retrieveAttributes);
+        if(retrieveAttributes != null) {
+            verificationQuestion.setRetrieveAttributes(retrieveAttributes);
+        }
         return this.add(verificationQuestion);
     }
 
@@ -911,6 +913,8 @@ class Flow {
             }
         }
 
+        var labelValue = question.getLabelForValue(answerValue);
+
         // Is the question asked to multiple users and not all users answered yet
         if(question.isMultiUser) {
             var multiAnswers = this.answers.get(question.answerKey);
@@ -921,6 +925,13 @@ class Flow {
             var userId = this.control.getUserId(response.message.user);
             multiAnswers.add(userId, answerValue);
             Logger.debug("Flow::onAnswer() Added multi-user answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
+
+            if(labelValue && labelValue !== "") {
+                var labelKey = userId + "_label";
+                multiAnswers.add(labelKey, labelValue);
+                Logger.debug("Flow::onAnswer() Added multi-user answer: key: \"" + labelKey + "\" value: \"" + labelValue + "\"");
+            }
+
             var answerCount = 0;
             for(let index in question.userIds) {
                 if(multiAnswers.get(question.userIds[index])) {
@@ -973,6 +984,12 @@ class Flow {
             // Valid answer, store in the answers object
             this.answers.add(question.answerKey, answerValue);
             Logger.debug("Flow::onAnswer() Added answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
+
+            if(labelValue && labelValue !== "") {
+                var labelKey = question.answerKey + "_label";
+                this.answers.add(labelKey, labelValue);
+                Logger.debug("Flow::onAnswer() Added answer: key: \"" + labelKey + "\" value: \"" + labelValue + "\"");
+            }
         }
 
         this.parsedAnswerKeys[question.answerKey] = true;
@@ -1300,7 +1317,7 @@ class Flow {
                         delete this.parsedMultiUserAnswers[question.answerKey];
                     }
                     this.parsedAnswerKeys[question.answerKey] = false;
-                    question.subFlow = null;
+                    question.reset(this.answers);
                     if(checkpoint && !question.isCheckpoint) {
                         Logger.info("Flow::previous() Question is not a checkpoint, continuing");
                         continue;

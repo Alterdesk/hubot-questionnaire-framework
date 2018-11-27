@@ -41,6 +41,34 @@ class MultipleChoiceQuestion extends Question {
         this.questionStyle = style;
     }
 
+    getLabelForValue(value) {
+        if(!value || value === "") {
+            return;
+        }
+        var optionMatch = null;
+        var longestMatch = null;
+        for(let index in this.options) {
+            var option = this.options[index];
+            var match = value.match(option.regex);
+            if(match) {
+                var matchString = match[0];
+                if(longestMatch && longestMatch.length > matchString.length) {
+                    continue;
+                }
+                longestMatch = matchString;
+                optionMatch = option;
+            }
+        }
+        if(optionMatch) {
+            return optionMatch.label;
+        }
+        return null;
+    }
+
+    getRequestMessageId(userId) {
+        return this.requestMessageId;
+    }
+
     send(control, msg, callback) {
         if(control.messengerApi && this.useButtons) {
             var messageData = control.createSendMessageData();
@@ -155,20 +183,20 @@ class MultipleChoiceQuestion extends Question {
                 optionMatch = option;
             }
         }
-        if(optionMatch) {
-            // Set the sub flow if available
-            var subFlow = optionMatch.subFlow;
-            if(subFlow) {
-                this.setSubFlow(subFlow);
-            }
-            // Return value if set
-            var value = optionMatch.value;
-            if(typeof value !== typeof undefined) {
-                return value;
-            }
+        if(!optionMatch) {
+            Logger.error("MultipleChoiceQuestion::checkAndParseChoice() No option match found: " + choice);
+            return null;
         }
-
-        // Return text match
+        // Set the sub flow if available
+        var subFlow = optionMatch.subFlow;
+        if(subFlow) {
+            this.setSubFlow(subFlow);
+        }
+        // Return value if set
+        var value = optionMatch.value;
+        if(typeof value !== typeof undefined) {
+            return value;
+        }
         return longestMatch;
     }
 }

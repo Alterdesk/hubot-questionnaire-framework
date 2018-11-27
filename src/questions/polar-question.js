@@ -44,6 +44,18 @@ class PolarQuestion extends Question {
         this.questionStyle = style;
     }
 
+    getLabelForValue(value) {
+        if(value) {
+            return this.positiveLabel;
+        } else {
+            return this.negativeLabel;
+        }
+    }
+
+    getRequestMessageId(userId) {
+        return this.requestMessageId;
+    }
+
     send(control, msg, callback) {
         if(control.messengerApi && this.useButtons) {
             var messageData = control.createSendMessageData();

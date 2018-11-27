@@ -14,8 +14,17 @@ class PendingRequest {
     // Called when an event was received for the request
     call(responseMessage) {
         Logger.debug("PendingRequest::call() \"" + responseMessage + "\"");
+        var userId;
+        if(responseMessage.id && responseMessage.id["user_id"]) {
+            userId = responseMessage.id["user_id"];
+        } else if(responseMessage.user.user_id) {
+            userId = responseMessage.user.user_id;
+        } else {
+            userId = responseMessage.user.id;
+        }
+        var questionId = this.question.getRequestMessageId(userId)
 
-        if(!this.question.requestMessageId) {
+        if(!questionId) {
             Logger.error("PendingRequest::call() Request message id not set, retry count: " + this.retryCount);
             if(this.retryCount++ < 9) {
                 setTimeout(() => {
@@ -30,13 +39,12 @@ class PendingRequest {
         if(responseMessage.id && responseMessage.id["message_id"]) {
             requestMessageId = responseMessage.id["message_id"];
         } else {
-            requestMessageId = responseMessage.id
+            requestMessageId = responseMessage.id;
         }
-        var idMatch = requestMessageId === this.question.requestMessageId;
 
         var text;
 
-        if(idMatch) {
+        if(requestMessageId === questionId) {
             var event = responseMessage.text;
             if(event === "conversation_question_answer" || event === "groupchat_question_answer") {
                 if(responseMessage.id && responseMessage.id["options"]) {
