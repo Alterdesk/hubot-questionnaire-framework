@@ -162,6 +162,8 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         var answerValue = this.answers.get(textAnswerKey);
         Logger.debug("FuzzyAction::checkText() Checking: attempt: " + attempts + " key: " + this.answerKey + " value: " + answerValue);
 
+        this.answers.add(this.answerKey + "_text", answerValue);
+
         // Copy candidates
         var checkCandidates = this.candidates.slice();
         var possibleCandidates = [];
