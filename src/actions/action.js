@@ -29,6 +29,10 @@ class Action {
             }, this.waitMs);
         });
     }
+
+    reset(answers) {
+        this.subFlow = null;
+    }
 }
 
 module.exports = Action;

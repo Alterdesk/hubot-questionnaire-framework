@@ -35,6 +35,18 @@ class Answers {
         return this.keys().length;
     }
 
+    getKeysWithPrefix(prefix) {
+        var result = [];
+        var keys = this.keys();
+        for(let i in keys) {
+            var key = keys[i];
+            if(key.startsWith(prefix)) {
+                result.push(key);
+            }
+        }
+        return result;
+    }
+
     toJson() {
         return JSON.stringify(this.toObject());
     }

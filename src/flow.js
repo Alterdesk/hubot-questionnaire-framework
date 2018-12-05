@@ -1332,7 +1332,7 @@ class Flow {
                     if(action.subFlow.previous(checkpoint, true)) {
                         return true;
                     }
-                    action.subFlow = null;
+                    action.reset(this.answers);
                 }
             }
             if(step && step.addedAfterStart) {
