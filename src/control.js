@@ -44,6 +44,8 @@ class Control {
         this.catchAllCommands = process.env.HUBOT_QUESTIONNAIRE_CATCH_ALL || false;
         // Catch all text to send on unaccepted command
         this.catchAllText = process.env.HUBOT_QUESTIONNAIRE_CATCH_ALL_TEXT || "COMMAND_NOT_FOUND_TEXT";
+        // Start command when unknown command is catched and only one command is available
+        this.catchAllStartCommand = process.env.HUBOT_QUESTIONNAIRE_CATCH_ALL_START_COMMAND || false;
 
         // Catch all button name to use on unaccepted command
         this.catchAllButtonName = process.env.HUBOT_QUESTIONNAIRE_CATCH_ALL_BUTTON_NAME;
@@ -115,7 +117,7 @@ class Control {
 
             if(className === "TopicMessage" || message instanceof TopicMessage) {
                 var event = message.text;
-                Logger.debug("Control::receive() TopicMessage: " + event);
+                Logger.debug("Control::receive() TopicMessage: \"" + event + "\"");
                 if(event === "authenticated") {
                     if(control.authenticatedCallback) {
                         control.authenticatedCallback(message.id);
@@ -196,7 +198,7 @@ class Control {
                     return;
                 }
             } else if(className === "TextMessage" || message instanceof TextMessage) {
-                Logger.debug("Control::receive() TextMessage: " + message.text);
+                Logger.debug("Control::receive() TextMessage: \"" + message.text + "\"");
                 // Check for listeners waiting for a message
                 if (control.hasListener(message)) {
                     var listener = control.removeListener(message);
@@ -240,20 +242,26 @@ class Control {
                     var match = commandString.match(control.acceptedRegex[index]);
                     if(match != null) {
                         unknownCommand = false;
-                        Logger.debug("Control::receive() Command detected: " + match);
+                        Logger.debug("Control::receive() Command detected: \"" + match + "\"");
                         break;
                     }
                 }
 
                 // Stop if catch all is enabled and an unknown command was sent
                 if(control.catchAllCommands && unknownCommand) {
-                    if(!isGroup || isMentioned) {
-                        Logger.debug("Control::receive() Catched unknown command");
-                        control.sendCatchAllMessage(message);
+                    if(control.catchAllStartCommand && !isGroup && control.acceptedCommands.length === 1) {
+                        var accepted = control.acceptedCommands[0];
+                        Logger.debug("Control::receive() Catched unknown command, changed to \"" + accepted + "\"");
+                        message.text = accepted;
                     } else {
-                        Logger.debug("Control::receive() Ignoring unknown command in group");
+                        if(!isGroup || isMentioned) {
+                            Logger.debug("Control::receive() Catched unknown command");
+                            control.sendCatchAllMessage(message);
+                        } else {
+                            Logger.debug("Control::receive() Ignoring unknown command in group");
+                        }
+                        return;
                     }
-                    return;
                 }
 
             } else if(className === "LeaveMessage" || message instanceof LeaveMessage) {
@@ -448,6 +456,9 @@ class Control {
     }
     setCatchAllText(text) {
         this.catchAllText = text;
+    }
+    setCatchAllStartCommand(start) {
+        this.catchAllStartCommand = start;
     }
     setCatchAllButton(name, label, style) {
         this.catchAllButtonName = name;
