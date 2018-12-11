@@ -42,7 +42,7 @@ class MultipleChoiceQuestion extends Question {
     }
 
     getLabelForValue(value) {
-        if(!value || value === "") {
+        if(!value || value === "" || this.multiAnswer) {
             return;
         }
         var optionMatch = null;
