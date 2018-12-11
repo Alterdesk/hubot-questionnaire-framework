@@ -117,8 +117,7 @@ class Question {
             var formatted = this.formatQuestionFunction(answers);
             if(formatted && formatted !== "") {
                 // Set formatted question as question text
-                this.questionText = formatted;
-
+                this.formattedQuestionText = formatted;
             }
         }
 
@@ -148,7 +147,11 @@ class Question {
     // Send the message text
     send(control, msg, callback) {
         this.setListenersAndPendingRequests(control, msg, callback);
-        msg.send(this.questionText);
+        msg.send(this.getQuestionText());
+    }
+
+    getQuestionText() {
+        return this.formattedQuestionText || this.questionText;
     }
 
     getLabelForValue(value) {

@@ -1257,7 +1257,7 @@ class Flow {
                         }
                     }
                 }
-                Logger.info("Flow::next() Question: answerKey: \"" + question.answerKey + "\" questionText: \"" + question.questionText + "\"");
+                Logger.info("Flow::next() Question: \"" + question.answerKey + "\": \"" + question.getQuestionText() + "\"");
 
                 // Delay executing this message if a delay was set
                 if(question.delayMs && question.delayMs > 0) {
@@ -1307,7 +1307,7 @@ class Flow {
                         return true;
                     }
                 }
-                Logger.info("Flow::previous() Question: \"" + question.answerKey + "\": " + question.questionText);
+                Logger.info("Flow::previous() Question: \"" + question.answerKey + "\": " + question.getQuestionText());
 
                 let removedAnswer = this.answers.remove(question.answerKey);
 

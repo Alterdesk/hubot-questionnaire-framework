@@ -72,7 +72,7 @@ class MultipleChoiceQuestion extends Question {
     send(control, msg, callback) {
         if(control.messengerApi && this.useButtons) {
             var messageData = control.createSendMessageData();
-            messageData.message = this.questionText;
+            messageData.message = this.getQuestionText();
             messageData.chatId = msg.message.room;
             messageData.isGroup = control.isUserInGroup(msg.message.user);
             messageData.isAux = false;
@@ -126,7 +126,7 @@ class MultipleChoiceQuestion extends Question {
                     Logger.debug("MultipleChoiceQuestion::send() Question message id: " + messageId);
                     question.requestMessageId = messageId;
                 } else {
-                    var fallbackText = question.questionText;
+                    var fallbackText = question.getQuestionText();
                     for(let i in questionPayload.questionOptions) {
                         var option = questionPayload.questionOptions[i];
                         fallbackText += "\n • \"" + option.name + "\" - " + option.label;
@@ -139,7 +139,7 @@ class MultipleChoiceQuestion extends Question {
                 Logger.error("MultipleChoiceQuestion::send() Messenger API instance not set");
             }
             this.setListenersAndPendingRequests(control, msg, callback);
-            msg.send(this.questionText);
+            msg.send(this.getQuestionText());
         }
     }
 
