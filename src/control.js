@@ -66,7 +66,7 @@ class Control {
         this.removeListenerOnLeave = process.env.HUBOT_QUESTIONNAIRE_REMOVE_ON_LEAVE || false;
 
         // Milliseconds to show hubot as "Typing..."
-        this.typingDelay = parseInt(process.env.HUBOT_ALTERDESK_TYPING_DELAY || 2500);
+        this.typingDelayMs = parseInt(process.env.HUBOT_ALTERDESK_TYPING_DELAY || 2500);
     }
 
     // Set the messenger api instance to use
@@ -450,6 +450,10 @@ class Control {
         this.responseTimeoutMs = ms;
     }
 
+    setTypingDelayMs(ms) {
+        this.typingDelayMs = ms;
+    }
+
     // Catch all given commands and send default message when command is unknown
     setCatchAll(catchAll) {
         this.catchAllCommands = catchAll;
@@ -472,6 +476,11 @@ class Control {
     }
     setCatchHelpText(text) {
         this.catchHelpText = text;
+    }
+
+    // Need to mention robot in group to trigger command
+    setNeedMentionInGroup(need) {
+        this.needMentionInGroup = need;
     }
 
     // Callback that is called when the robot instance is authenticated
@@ -706,11 +715,11 @@ class Control {
     }
 
     sendComposing(msg) {
-        if(this.typingDelay) {
+        if(this.typingDelayMs) {
             msg.topic("typing");
             setTimeout(() => {
                 msg.topic("stop_typing");
-            }, this.typingDelay);
+            }, this.typingDelayMs);
         }
     }
 
