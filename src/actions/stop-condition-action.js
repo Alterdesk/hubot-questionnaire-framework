@@ -1,6 +1,6 @@
 const Action = require('./action.js');
 const Answers = require('./../answers.js');
-const AnswerCondition = require('./../answer_condition.js');
+const AnswerCondition = require('./../conditions/answer-condition.js');
 const Logger = require('./../logger.js');
 
 class StopConditionAction extends Action {

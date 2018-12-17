@@ -1,28 +1,25 @@
-const Action = require('./action.js');
 const AnswerCondition = require('./../conditions/answer-condition.js');
+const Formatter = require('./formatter.js');
 const Logger = require('./../logger.js');
 
-class FlowAction extends Action {
-    constructor(flow) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
-        }, 0);
-        this.startFlow = flow;
+class AlternateTextFormatter extends Formatter {
+
+    constructor(alternateText) {
+        super();
+        this.alternateText = alternateText;
         this.conditions = [];
     }
 
-    start(response, answers, flowCallback) {
+    execute(text, answers) {
+        Logger.debug("AlternateTextFormatter::execute() Alternate text:\"" + this.alternateText + "\"");
         for(let i in this.conditions) {
             var condition = this.conditions[i];
             if(!condition.check(answers)) {
-                Logger.debug("FlowAction::start() Condition not met: ", condition);
-                flowCallback();
-                return;
+                Logger.debug("AlternateTextFormatter::execute() Condition not met: ", condition);
+                return text;
             }
         }
-
-        this.setSubFlow(this.startFlow);
-        flowCallback();
+        return this.alternateText;
     }
 
     addCondition(condition) {
@@ -34,6 +31,7 @@ class FlowAction extends Action {
         condition.setValue(answerValue);
         this.addCondition(condition);
     }
+
 }
 
-module.exports = FlowAction;
+module.exports = AlternateTextFormatter;

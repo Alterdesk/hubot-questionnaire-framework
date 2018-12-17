@@ -12,6 +12,8 @@
 module.exports = {
 
     Action : require('./actions/action.js'),
+    AlternateTextFormatter : require('./formatters/alternate-text-formatter.js'),
+    AnswerCondition : require('./conditions/answer-condition.js'),
     Answers : require('./answers.js'),
     AttachmentQuestion : require('./questions/attachment-question.js'),
     BackAction : require('./actions/back-action.js'),
@@ -33,6 +35,8 @@ module.exports = {
     PhoneNumberQuestion : require('./questions/phone-number-question.js'),
     PolarQuestion : require('./questions/polar-question.js'),
     Question : require('./questions/question.js'),
+    ReplaceAnswerFormatter : require('./formatters/replace-answer-formatter.js'),
+    ReplaceTextFormatter : require('./formatters/replace-text-formatter.js'),
     SetAnswerAction : require('./actions/set-answer-action.js'),
     StopConditionAction : require('./actions/stop-condition-action.js'),
     SummaryAction : require('./actions/summary-action.js'),

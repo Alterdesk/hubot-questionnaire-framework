@@ -17,6 +17,7 @@ class Question {
         this.resendOnInvalid = true;
         this.sendMessageOnStop = true;
         this.useFinalize = false;
+        this.questionFormatters = [];
     }
 
     // Set the parent flow
@@ -37,6 +38,10 @@ class Question {
     // Set a format question text callback function
     setFormatQuestionFunction(formatQuestionFunction) {
         this.formatQuestionFunction = formatQuestionFunction;
+    }
+
+    addQuestionFormatter(formatter) {
+        this.questionFormatters.push(formatter);
     }
 
     // Add a delay before executing this question
@@ -113,12 +118,21 @@ class Question {
 
     // Execute this question
     execute(control, msg, callback, answers) {
+        var formatted;
         if(this.formatQuestionFunction != null) {
-            var formatted = this.formatQuestionFunction(answers);
-            if(formatted && formatted !== "") {
-                // Set formatted question as question text
-                this.formattedQuestionText = formatted;
+            Logger.debug("Question::execute() Formatting question with function");
+            formatted = this.formatQuestionFunction(answers);
+        } else if(this.questionFormatters.length > 0) {
+            Logger.debug("Question::execute() Formatting question with " + this.questionFormatters.length + " formatter(s)");
+            formatted = this.questionText;
+            for(let i in this.questionFormatters) {
+                var formatter = this.questionFormatters[i];
+                formatted = formatter.execute(formatted, answers);
             }
+        }
+        if(formatted && formatted !== "") {
+            // Set formatted question as question text
+            this.formattedQuestionText = formatted;
         }
 
         // Generate user id list by mentioned users
