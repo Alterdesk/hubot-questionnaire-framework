@@ -36,6 +36,7 @@ module.exports = {
     PolarQuestion : require('./questions/polar-question.js'),
     Question : require('./questions/question.js'),
     ReplaceAnswerFormatter : require('./formatters/replace-answer-formatter.js'),
+    ReplaceDateFormatter : require('./formatters/replace-date-formatter.js'),
     ReplaceTextFormatter : require('./formatters/replace-text-formatter.js'),
     SetAnswerAction : require('./actions/set-answer-action.js'),
     StopConditionAction : require('./actions/stop-condition-action.js'),
