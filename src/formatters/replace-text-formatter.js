@@ -14,7 +14,7 @@ class ReplaceTextFormatter extends Formatter {
         if(!this.from) {
             return text;
         }
-        if(!this.to) {
+        if(typeof this.to !== "string") {
             return text;
         }
         return text.replace(this.from, this.to);
