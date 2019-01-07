@@ -27,7 +27,9 @@ class AnswerCondition {
     checkValue(value) {
         if(this.answerValue != null) {
             return value === this.answerValue;
-        } else if(!value || !value.match || !this.regex) {
+        } if(!this.regex) {
+            return value != null;
+        } else if(!value || !value.match) {
             return false;
         }
         return value.match(this.regex) !== null;
