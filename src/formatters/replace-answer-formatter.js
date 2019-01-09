@@ -16,11 +16,11 @@ class ReplaceAnswerFormatter extends Formatter {
             return text;
         }
         if(!answers.has(this.answerKey)) {
+            Logger.debug("ReplaceAnswerFormatter::execute() Answer not found: \"" + this.answerKey + "\"");
             if(this.fallbackText != null) {
                 Logger.debug("ReplaceAnswerFormatter::execute() Using fallback: \"" + this.fallbackText + "\" answerKey: \"" + this.answerKey + "\"");
                 return text.replace(this.from, this.fallbackText);
             }
-            Logger.debug("ReplaceAnswerFormatter::execute() Answer not found: \"" + this.answerKey + "\"");
             return text;
         }
         var answerValue = answers.get(this.answerKey);
@@ -28,11 +28,36 @@ class ReplaceAnswerFormatter extends Formatter {
             Logger.error("ReplaceAnswerFormatter::execute() Invalid answer: \"" + this.answerKey + "\"");
             return text;
         }
-        var textForAnswer = this.textForAnswers[answerValue];
-        if(textForAnswer) {
-            return text.replace(this.from, textForAnswer);
+        if(typeof answerValue === "object") {
+            if(answerValue.length === 0) {
+                Logger.debug("ReplaceAnswerFormatter::execute() Answer is empty: \"" + this.answerKey + "\"");
+                if(this.fallbackText != null) {
+                    Logger.debug("ReplaceAnswerFormatter::execute() Using fallback: \"" + this.fallbackText + "\" answerKey: \"" + this.answerKey + "\"");
+                    return text.replace(this.from, this.fallbackText);
+                }
+                return text;
+            }
+            var result = "";
+            for(let i in answerValue) {
+                var textForAnswer = this.getTextForAnswer(answerValue[i]);
+                if(result.length === 0) {
+                    result += textForAnswer;
+                } else {
+                    result += ", " + textForAnswer;
+                }
+            }
+            return text.replace(this.from, result);
         }
-        return text.replace(this.from, answerValue);
+        var result = this.getTextForAnswer(answerValue);
+        return text.replace(this.from, result);
+    }
+
+    getTextForAnswer(value) {
+        var textForAnswer = this.textForAnswers[value];
+        if(textForAnswer) {
+            return textForAnswer;
+        }
+        return value;
     }
 
     addTextForAnswer(value, text) {
