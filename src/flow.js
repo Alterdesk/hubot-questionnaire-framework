@@ -926,7 +926,7 @@ class Flow {
             multiAnswers.add(userId, answerValue);
             Logger.debug("Flow::onAnswer() Added multi-user answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
 
-            if(labelValue && labelValue !== "") {
+            if(labelValue && labelValue.length > 0) {
                 var labelKey = userId + "_label";
                 multiAnswers.add(labelKey, labelValue);
                 Logger.debug("Flow::onAnswer() Added multi-user answer: key: \"" + labelKey + "\" value: \"" + labelValue + "\"");

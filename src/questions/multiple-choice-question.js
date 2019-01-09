@@ -42,8 +42,22 @@ class MultipleChoiceQuestion extends Question {
     }
 
     getLabelForValue(value) {
-        if(!value || value === "" || this.multiAnswer) {
-            return;
+        if(!value || value.length === 0) {
+            return null;
+        }
+        if(this.multiAnswer && typeof value === "object") {
+            var labels = [];
+            for(let i in value) {
+                var label = this.getLabelForValue(value[i]);
+                if(!label) {
+                    continue;
+                }
+                labels.push(label);
+            }
+            if(labels.length === 0) {
+                return null;
+            }
+            return labels;
         }
         var optionMatch = null;
         var longestMatch = null;
