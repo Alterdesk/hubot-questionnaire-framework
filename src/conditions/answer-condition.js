@@ -1,38 +1,42 @@
 class AnswerCondition {
     constructor(answerKey) {
-        this.answerKey = answerKey;
+        this.answerKeys = [];
+        this.answerValues = {};
+        this.answerRegex = {};
     }
 
-    setValue(answerValue) {
-        this.answerValue = answerValue;
+    addKey(answerKey) {
+        this.answerKeys.push(answerKey);
     }
 
-    setRegex(regex) {
-        this.regex = regex;
+    setValue(answerKey, answerValue) {
+        this.answerValues[answerKey] = answerValue;
+    }
+
+    setRegex(answerKey, answerRegex) {
+        this.answerRegex[answerKey] = answerRegex;
     }
 
     check(answers) {
-        var value = answers.get(this.answerKey);
-        if(value && value.constructor && value.constructor.name === "Array") {
-            for(let i in value) {
-                if(this.checkValue(value[i])) {
-                    return true;
-                }
+        for(let i in this.answerKeys) {
+            var answerKey = this.answerKeys[i];
+            if(!answers.has(answerKey)) {
+                continue;
             }
-            return false;
+            var value = answers.get(answerKey);
+            var checkValue = this.answerValues[answerKey];
+            var regex = this.answerRegex[answerKey];
+            if(checkValue == null && !regex) {
+                return true;
+            }
+            if(checkValue != null && checkValue === value) {
+                return true;
+            }
+            if(regex && value.match && value.match(regex)) {
+                return true;
+            }
         }
-        return this.checkValue(value);
-    }
-
-    checkValue(value) {
-        if(this.answerValue != null) {
-            return value === this.answerValue;
-        } if(!this.regex) {
-            return value != null;
-        } else if(!value || !value.match) {
-            return false;
-        }
-        return value.match(this.regex) !== null;
+        return false;
     }
 }
 
