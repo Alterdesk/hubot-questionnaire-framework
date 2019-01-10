@@ -29,11 +29,9 @@ class EmailQuestion extends Question {
 
     // Add a domain to limit accepted answers to
     addAllowedDomain(domain) {
-        for(let index in this.allowedDomains) {
-            if(domain === this.allowedDomains[index]) {
-                Logger.error("EmailQuestion::addAllowedDomain() Domain already configured as allowed: " + domain);
-                return;
-            }
+        if(this.allowedDomains.indexOf(domain) !== -1) {
+            Logger.error("EmailQuestion::addAllowedDomain() Domain already configured as allowed: " + domain);
+            return;
         }
         this.allowedDomains.push(domain);
     }

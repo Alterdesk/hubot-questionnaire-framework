@@ -30,11 +30,9 @@ class PhoneNumberQuestion extends Question {
 
     // Add a country code to limit accepted answers to
     addAllowedCountryCode(code) {
-        for(let index in this.allowedCountryCodes) {
-            if(code === this.allowedCountryCodes[index]) {
-                Logger.error("PhoneNumberQuestion::addAllowedCountryCode() Country code already configured as allowed: " + code);
-                return;
-            }
+        if(this.allowedCountryCodes.indexOf(code) !== -1) {
+            Logger.error("PhoneNumberQuestion::addAllowedCountryCode() Country code already configured as allowed: " + code);
+            return;
         }
         this.allowedCountryCodes.push(code);
     }

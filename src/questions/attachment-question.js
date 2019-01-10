@@ -9,6 +9,7 @@ class AttachmentQuestion extends Question {
         super(answerKey, questionText, invalidText);
         this.regex = Extra.getTextRegex();
         this.allowedExtensions = [];
+        this.allowedMimeTypes = [];
     }
 
     // Get attachments that were sent with the message
@@ -26,7 +27,7 @@ class AttachmentQuestion extends Question {
                     continue;
                 }
             }
-            if(this.allowedExtensions.length != 0) {
+            if(this.allowedExtensions.length > 0) {
                 var name = attachment["name"];
                 var allowed = false;
                 for(let i in this.allowedExtensions) {
@@ -39,10 +40,23 @@ class AttachmentQuestion extends Question {
                     continue;
                 }
             }
+            if(this.allowedMimeTypes.length > 0) {
+                var mime = attachment["mime_type"];
+                var allowed = false;
+                for(let i in this.allowedMimeTypes) {
+                    if(mime === this.allowedMimeTypes[i]) {
+                        allowed = true;
+                        break;
+                    }
+                }
+                if(!allowed) {
+                    continue;
+                }
+            }
             value.push(attachment);
         }
 
-        if(value.length != 0 && this.inCountRange(value.length)) {
+        if(value.length > 0 && this.inCountRange(value.length)) {
             return value;
         }
         return null;
@@ -86,11 +100,9 @@ class AttachmentQuestion extends Question {
 
     // Add an extension to limit accepted answers to
     addAllowedExtension(extension) {
-        for(let index in this.allowedExtensions) {
-            if(extension === this.allowedExtensions[index]) {
-                Logger.error("AttachmentQuestion::addAllowedExtension() Extension already configured as allowed: " + extension);
-                return;
-            }
+        if(this.allowedExtensions.indexOf(extension) !== -1) {
+            Logger.error("AttachmentQuestion::addAllowedExtension() Extension already configured as allowed: " + extension);
+            return;
         }
         this.allowedExtensions.push(extension);
     }
@@ -99,6 +111,22 @@ class AttachmentQuestion extends Question {
     addAllowedExtensions(extensions) {
         for(let index in extensions) {
             this.addAllowedExtension(extensions[index]);
+        }
+    }
+
+    // Add a mime type to limit accepted answers to
+    addAllowedMimeType(mimeType) {
+        if(this.allowedMimeTypes.indexOf(mimeType) !== -1) {
+            Logger.error("AttachmentQuestion::addAllowedMimeType() MIME type already configured as allowed: " + mimeType);
+            return;
+        }
+        this.allowedMimeTypes.push(mimeType);
+    }
+
+    // Add a list of accepted extensions
+    addAllowedMimeTypes(mimeTypes) {
+        for(let index in mimeTypes) {
+            this.addAllowedMimeType(mimeTypes[index]);
         }
     }
 }
