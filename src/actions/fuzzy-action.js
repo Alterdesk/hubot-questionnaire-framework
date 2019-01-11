@@ -267,7 +267,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         if(candidate && candidate.name) {
             this.answers.add(this.answerKey, candidate.name);
             if(candidate.label) {
-                this.answers.add(this.answerKey "_label", candidate.label);
+                this.answers.add(this.answerKey + "_label", candidate.label);
             }
         }
         if(candidate && candidate.subFlow) {
