@@ -27,8 +27,9 @@ class AlternateTextFormatter extends Formatter {
     }
 
     addAnswerCondition(answerKey, answerValue) {
-        var condition = new AnswerCondition(answerKey);
-        condition.setValue(answerValue);
+        var condition = new AnswerCondition();
+        condition.addKey(answerKey);
+        condition.setValue(answerKey, answerValue);
         this.addCondition(condition);
     }
 
