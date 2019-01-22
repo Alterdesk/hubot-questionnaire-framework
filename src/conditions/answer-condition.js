@@ -1,5 +1,5 @@
 class AnswerCondition {
-    constructor(answerKey) {
+    constructor() {
         this.answerKeys = [];
         this.answerValues = {};
         this.answerRegex = {};
