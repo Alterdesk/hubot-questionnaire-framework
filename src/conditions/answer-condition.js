@@ -23,18 +23,32 @@ class AnswerCondition {
             if(!answers.has(answerKey)) {
                 continue;
             }
-            var value = answers.get(answerKey);
-            var checkValue = this.answerValues[answerKey];
-            var regex = this.answerRegex[answerKey];
-            if(checkValue == null && !regex) {
-                return true;
+            var answerValue = answers.get(answerKey);
+            if(typeof answerValue === "object") {
+                if(answerValue.length === 0) {
+                    return this.checkAnswer(answerKey, null);
+                }
+                for(let i in answerValue) {
+                    if(this.checkAnswer(answerKey, answerValue[i])) {
+                        return true;
+                    }
+                }
             }
-            if(checkValue != null && checkValue === value) {
-                return true;
-            }
-            if(regex && value.match && value.match(regex)) {
-                return true;
-            }
+        }
+        return false;
+    }
+
+    checkAnswer(answerKey, answerValue) {
+        var checkValue = this.answerValues[answerKey];
+        var regex = this.answerRegex[answerKey];
+        if(checkValue == null && !regex) {
+            return true;
+        }
+        if(checkValue != null && checkValue === answerValue) {
+            return true;
+        }
+        if(regex && answerValue.match && answerValue.match(regex)) {
+            return true;
         }
         return false;
     }
