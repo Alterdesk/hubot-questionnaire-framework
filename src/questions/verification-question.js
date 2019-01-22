@@ -156,26 +156,31 @@ class VerificationQuestion extends Question {
 
     retrieveAttributes(requestMessageId) {
         return new Promise(async (resolve) => {
-            this.control.messengerApi.getMessage(requestMessageId, this.chatId, this.isGroup, false, (success, json) => {
-                if(!success) {
-                    Logger.error("VerificationQuestion:retrieveAttributes() Unable to retrieve message");
-                    resolve(null);
-                    return;
-                }
-                var payload = json["payload"];
-                if(!payload || payload["type"] !== "verification_request") {
-                    Logger.error("VerificationQuestion:retrieveAttributes() Message has no payload or is wrong type");
-                    resolve(null);
-                    return;
-                }
-                var attributes = payload["attributes"];
-                if(!attributes) {
-                    Logger.error("VerificationQuestion:retrieveAttributes() Payload holds no attributes");
-                    resolve(null);
-                    return;
-                }
-                resolve(Answers.fromObject(attributes));
-            });
+            try {
+                this.control.messengerApi.getMessage(requestMessageId, this.chatId, this.isGroup, false, (success, json) => {
+                    if(!success) {
+                        Logger.error("VerificationQuestion:retrieveAttributes() Unable to retrieve message");
+                        resolve(null);
+                        return;
+                    }
+                    var payload = json["payload"];
+                    if(!payload || payload["type"] !== "verification_request") {
+                        Logger.error("VerificationQuestion:retrieveAttributes() Message has no payload or is wrong type");
+                        resolve(null);
+                        return;
+                    }
+                    var attributes = payload["attributes"];
+                    if(!attributes) {
+                        Logger.error("VerificationQuestion:retrieveAttributes() Payload holds no attributes");
+                        resolve(null);
+                        return;
+                    }
+                    resolve(Answers.fromObject(attributes));
+                });
+            } catch(err) {
+                Logger.error(err);
+                resolve(null);
+            }
         });
     }
 
