@@ -1013,6 +1013,19 @@ class Flow {
         return true;
     }
 
+    questionExecute(question) {
+        if(!this.isRunning) {
+            Logger.debug("Flow::questionExecute() Flow not running");
+            return;
+        }
+        Logger.info("Flow::questionExecute() answerKey: \"" + question.answerKey + "\"");
+        question.execute(this.control, this.msg, this.callback, this.answers);
+        if(this.control.questionAskedCallback) {
+            var userId = this.control.getUserId(this.msg.message.user);
+            this.control.questionAskedCallback(userId, question.answerKey, this.answers);
+        }
+    }
+
     questionStop(question) {
         if(!this.isRunning) {
             Logger.debug("Flow::questionStop() Flow not running");
@@ -1263,10 +1276,10 @@ class Flow {
                 if(question.delayMs && question.delayMs > 0) {
                     Logger.debug("Flow::next() Executing question delayed by " + question.delayMs + " milliseconds");
                     setTimeout(() => {
-                        question.execute(this.control, this.msg, this.callback, this.answers);
+                        this.questionExecute(question);
                     }, question.delayMs);
                 } else {
-                    question.execute(this.control, this.msg, this.callback, this.answers);
+                    this.questionExecute(question);
                 }
             } else if(step instanceof Information) {
                 var information = step;

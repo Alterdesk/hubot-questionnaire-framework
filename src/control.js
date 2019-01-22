@@ -547,6 +547,11 @@ class Control {
         this.userAnsweredCallback = userAnsweredCallback;
     }
 
+    // Callback that is called when a question is asked
+    setQuestionAskedCallback(questionAskedCallback) {
+        this.questionAskedCallback = questionAskedCallback;
+    }
+
     // Callback that is called when a question is answered
     setQuestionAnsweredCallback(questionAnsweredCallback) {
         this.questionAnsweredCallback = questionAnsweredCallback;
