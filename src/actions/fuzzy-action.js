@@ -5,12 +5,11 @@ const Action = require('./action.js');
 const Logger = require('./../logger.js');
 
 class FuzzyAction extends Action {  // TODO This class may be subject to change
-    constructor(flow, answerKey, questionText, invalidText, waitMs) {
+    constructor(answerKey, questionText, invalidText, waitMs) {
         super((response, answers, flowCallback) => {
             this.start(response, answers, flowCallback);
         }, waitMs);
 
-        this.flow = flow;
         this.answerKey = answerKey;
         this.questionText = questionText;
         this.invalidText = invalidText;

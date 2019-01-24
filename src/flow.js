@@ -602,7 +602,7 @@ class Flow {
     }
 
     fuzzy(answerKey, questionText, invalidText, waitMs) { // TODO FuzzyAction may be subject to change
-        this.add(new FuzzyAction(this, answerKey, questionText, invalidText, waitMs));
+        this.add(new FuzzyAction(answerKey, questionText, invalidText, waitMs));
         return this;
     }
 
