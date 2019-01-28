@@ -99,6 +99,7 @@ class Control {
         robot.receive = function(message) {
 
             if(control.robotUserId == null && robot.user != null) {
+                control.robotUser = robot.user;
                 control.robotUserId = robot.user.id;
             }
 
