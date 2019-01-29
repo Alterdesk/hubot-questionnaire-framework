@@ -11,6 +11,7 @@ class InviteAction extends Action {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
+        this.inviteFormatters = [];
     }
 
     start(response, answers, flowCallback) {
@@ -38,6 +39,10 @@ class InviteAction extends Action {
         inviteData["first_name"] = firstNameValue;
         inviteData["last_name"] = lastNameValue;
         var inviteTextValue = AnswerOrFixed.get(this.inviteText, answers);
+        for(let i in this.inviteFormatters) {
+            var formatter = this.inviteFormatters[i];
+            inviteTextValue = formatter.execute(inviteTextValue, answers);
+        }
         if(inviteTextValue && inviteTextValue !== "") {
             inviteData["invite_text"] = inviteTextValue;  // Only used when creating conversation
         }
@@ -92,6 +97,10 @@ class InviteAction extends Action {
 
     setInviteText(inviteText) {
         this.inviteText;
+    }
+
+    addInviteFormatter(formatter) {
+        this.inviteFormatters.push(formatter);
     }
 
     setSendEmail(sendEmail) {
