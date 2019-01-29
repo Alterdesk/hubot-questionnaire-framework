@@ -28,7 +28,7 @@ class InviteAction extends Action {
         if(!emailValue || emailValue === ""
             || !firstNameValue || firstNameValue === ""
             || !lastNameValue || lastNameValue === "") {
-            Logger.error("InviteAction::start() Invalid invite: email " + emailValue + " fistName:" + firstNameValue + " lastName: " + lastNameValue);
+            Logger.error("InviteAction::start() Invalid invite: email:" + emailValue + " fistName:" + firstNameValue + " lastName: " + lastNameValue);
             this.done(null);
             return;
         }
@@ -45,7 +45,7 @@ class InviteAction extends Action {
         if(auxId) {
             inviteData["aux_id"] = auxId;
         }
-        inviteData["send_email"] = AnswerOrFixed.get(this.sendEmail, answers, false);
+        inviteData["send_email"] = AnswerOrFixed.get(this.sendEmail, answers, true);
         var invitePostJson = JSON.stringify(inviteData);
 
         if(this.inviteType == "COWORKER") {

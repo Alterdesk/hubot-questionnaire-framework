@@ -22,6 +22,7 @@ module.exports = {
     CheckUserAction : require('./actions/check-user-action.js'),
     CloseGroupAction : require('./actions/close-group-action.js'),
     CompleteMentionsAction : require('./actions/complete-mentions-action.js'),
+    CreateGroupAction : require('./actions/create-group-action.js'),
     Control : require('./control.js'),
     EmailQuestion : require('./questions/email-question.js'),
     Flow : require('./flow.js'),
