@@ -1,16 +1,16 @@
 const Action = require('./action.js');
+const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const Logger = require('./../logger.js');
 
 class InviteAction extends Action {
-    constructor(inviteType, firstNameKey, lastNameKey, emailKey, auxIdKey) {
+    constructor(inviteType, firstName, lastName, email, auxId) {
         super((response, answers, flowCallback) => {
             this.start(response, answers, flowCallback);
         }, 0);
         this.inviteType = inviteType;
-        this.firstNameKey = firstNameKey;
-        this.lastNameKey = lastNameKey;
-        this.emailKey = emailKey;
-        this.auxIdKey = auxIdKey;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
     }
 
     start(response, answers, flowCallback) {
@@ -22,43 +22,44 @@ class InviteAction extends Action {
             return;
         }
 
-        var email = answers.get(this.emailKey);
-        var firstName = answers.get(this.firstNameKey);
-        var lastName = answers.get(this.lastNameKey);
-        if(!email || email === "" || !firstName || firstName === "" || !lastName || lastName === "") {
-            Logger.error("InviteAction::start() Invalid invite: email " + email + " fistName:" + firstName + " lastName: " + lastName);
+        var emailValue = AnswerOrFixed.get(this.email, answers);
+        var firstNameValue = AnswerOrFixed.get(this.firstName, answers);
+        var lastNameValue = AnswerOrFixed.get(this.lastName, answers);
+        if(!emailValue || emailValue === ""
+            || !firstNameValue || firstNameValue === ""
+            || !lastNameValue || lastNameValue === "") {
+            Logger.error("InviteAction::start() Invalid invite: email " + emailValue + " fistName:" + firstNameValue + " lastName: " + lastNameValue);
             this.done(null);
             return;
         }
 
         var inviteData = {};
-        inviteData["email"] = email;
-        inviteData["first_name"] = firstName;
-        inviteData["last_name"] = lastName;
-        if(this.inviteTextKey) {
-            var inviteText = answers.get(this.inviteTextKey);
-            if(inviteText && inviteText !== "") {
-                inviteData["invite_text"] = inviteText;  // Only used when creating conversation
-            }
+        inviteData["email"] = emailValue;
+        inviteData["first_name"] = firstNameValue;
+        inviteData["last_name"] = lastNameValue;
+        var inviteTextValue = AnswerOrFixed.get(this.inviteText, answers);
+        if(inviteTextValue && inviteTextValue !== "") {
+            inviteData["invite_text"] = inviteTextValue;  // Only used when creating conversation
         }
-        if(this.sendEmailKey != null) {
-            inviteData["send_email"] = answers.get(this.sendEmailKey);
+        var auxId = AnswerOrFixed.get(this.auxId, answers);
+        if(auxId) {
+            inviteData["aux_id"] = auxId;
         }
-        if(this.auxIdKey) {
-            var auxId = answers.get(this.auxIdKey);
-            if(auxId) {
-                inviteData["aux_id"] = auxId;
-            }
-        }
+        inviteData["send_email"] = AnswerOrFixed.get(this.sendEmail, answers, false);
         var invitePostJson = JSON.stringify(inviteData);
 
-        // TODO Override token
         if(this.inviteType == "COWORKER") {
-            this.flow.control.messengerApi.post("users/invite/coworker", invitePostJson, (success, json) => { this.done(json); });
+            this.flow.control.messengerApi.post("users/invite/coworker", invitePostJson, (success, json) => {
+                this.done(json);
+            }, this.overrideToken);
         } else if(this.inviteType == "CONTACT") {
-            this.flow.control.messengerApi.post("users/invite/contact", invitePostJson, (success, json) => { this.done(json); });
+            this.flow.control.messengerApi.post("users/invite/contact", invitePostJson, (success, json) => {
+                this.done(json);
+            }, this.overrideToken);
         } else if(this.inviteType == "PRIVATE") {
-            this.flow.control.messengerApi.post("users/invite/private", invitePostJson, (success, json) => { this.done(json); });
+            this.flow.control.messengerApi.post("users/invite/private", invitePostJson, (success, json) => {
+                this.done(json);
+            }, this.overrideToken);
         } else {
             logger.error("InviteAction::start() Unknown invite type on invite: \"" + this.inviteType + "\"")
             this.done(null);
@@ -85,12 +86,28 @@ class InviteAction extends Action {
         this.answerKey = answerKey;
     }
 
+    setAuxId(auxId) {
+        this.auxId = auxId;
+    }
+
+    setInviteText(inviteText) {
+        this.inviteText;
+    }
+
+    setSendEmail(sendEmail) {
+        this.sendEmail;
+    }
+
     setPositiveSubFlow(positiveSubFlow) {
         this.positiveSubFlow = positiveSubFlow;
     }
 
     setNegativeSubFlow(negativeSubFlow) {
         this.negativeSubFlow = negativeSubFlow;
+    }
+
+    setOverrideToken(overrideToken) {
+        this.overrideToken = overrideToken;
     }
 
     reset(answers) {

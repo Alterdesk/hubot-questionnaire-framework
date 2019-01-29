@@ -14,6 +14,7 @@ module.exports = {
     Action : require('./actions/action.js'),
     AlternateTextFormatter : require('./formatters/alternate-text-formatter.js'),
     AnswerCondition : require('./conditions/answer-condition.js'),
+    AnswerOrFixed : require('./utils/answer-or-fixed.js'),
     Answers : require('./answers.js'),
     AttachmentQuestion : require('./questions/attachment-question.js'),
     BackAction : require('./actions/back-action.js'),

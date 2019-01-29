@@ -1,4 +1,5 @@
 const Action = require('./action.js');
+const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const Logger = require('./../logger.js');
 
 class RetrieveAction extends Action {
@@ -16,25 +17,22 @@ class RetrieveAction extends Action {
             this.done(null);
             return;
         }
-        // TODO Override token
+
         if(this.chatId) {
-            this.flow.control.messengerApi.getChat(this.chatId, this.isGroup, this.isAux, (success, json) => {
-                if(!success || !json) {
-                    this.done(null);
-                    return;
-                }
+            var chatIdValue = AnswerOrFixed.get(this.chatId, answers);
+            var isGroupValue = AnswerOrFixed.get(this.isGroup, answers);
+            var isAuxValue = AnswerOrFixed.get(this.isAux, answers);
+            this.flow.control.messengerApi.getChat(chatIdValue, isGroupValue, isAuxValue, (success, json) => {
                 this.done(json);
                 return;
-            });
+            }, this.overrideToken);
         } else if(this.userId) {
-            this.flow.control.messengerApi.getUser(this.userId, this.isAux, (success, json) => {
-                if(!success || !json) {
-                    this.done(null);
-                    return;
-                }
+            var userIdValue = AnswerOrFixed.get(this.userId, answers);
+            var isAuxValue = AnswerOrFixed.get(this.isAux, answers);
+            this.flow.control.messengerApi.getUser(userIdValue, isAuxValue, (success, json) => {
                 this.done(json);
                 return;
-            });
+            }, this.overrideToken);
         } else {
             Logger.error("RetrieveAction::start() Invalid retrieve data");
             this.done(null);
@@ -79,6 +77,10 @@ class RetrieveAction extends Action {
 
     setNegativeSubFlow(negativeSubFlow) {
         this.negativeSubFlow = negativeSubFlow;
+    }
+
+    setOverrideToken(overrideToken) {
+        this.overrideToken = overrideToken;
     }
 
     reset(answers) {

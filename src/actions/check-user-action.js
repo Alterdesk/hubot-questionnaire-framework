@@ -24,7 +24,6 @@ class CheckUserAction extends Action {
             return;
         }
 
-        // TODO Override token
         if(this.check === "BUSINESS") {
             this.flow.control.messengerApi.getUser(userId, false, (success, json) => {
                 if(!success || !json) {
@@ -34,7 +33,7 @@ class CheckUserAction extends Action {
                 var business = json["private_user"] === false;
                 this.done(business);
 
-            });
+            }, this.overrideToken);
         } else if(this.check === "COWORKER") {
             var robotUser = this.flow.control.robotUser;
             if(!robotUser) {
@@ -55,7 +54,7 @@ class CheckUserAction extends Action {
                 }
                 var coworker = json["company_id"] === robotCompany;
                 this.done(coworker);
-            });
+            }, this.overrideToken);
         } else if(this.check === "VERIFIED") {
             this.flow.control.messengerApi.getUserVerifications(userId, (success, json) => {
                 if(!success || !json) {
@@ -80,7 +79,7 @@ class CheckUserAction extends Action {
                 }
                 this.done(null);
                 return;
-            });
+            }, this.overrideToken);
         } else {
             Logger.error("CheckUserAction::start() Unknown check:", this.check);
             this.done(null);
@@ -117,6 +116,10 @@ class CheckUserAction extends Action {
 
     setNegativeSubFlow(negativeSubFlow) {
         this.negativeSubFlow = negativeSubFlow;
+    }
+
+    setOverrideToken(overrideToken) {
+        this.overrideToken = overrideToken;
     }
 
     reset(answers) {
