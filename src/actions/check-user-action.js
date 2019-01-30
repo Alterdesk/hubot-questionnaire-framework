@@ -1,4 +1,5 @@
 const Action = require('./action.js');
+const Logger = require('./../logger.js');
 
 class CheckUserAction extends Action {
     constructor(check) {
