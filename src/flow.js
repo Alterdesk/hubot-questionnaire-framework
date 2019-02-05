@@ -1283,7 +1283,7 @@ class Flow {
                 }
             } else if(step instanceof Information) {
                 var information = step;
-                information.execute(this, this.msg);
+                information.execute(this, this.msg, this.answers);
             } else if(step instanceof Action) {
                 var action = step;
                 action.execute(this, this.msg, this.answers);

@@ -9,7 +9,7 @@ class Information {
     }
 
     // Execute this information message
-    execute(flow, msg) {
+    execute(flow, msg, answers) {
         var result = this.text;
 
         // Format text with formatters if set
