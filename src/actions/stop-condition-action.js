@@ -14,21 +14,18 @@ class StopConditionAction extends Action {
 
     start(response, answers, flowCallback) {
         if(this.conditions.length === 0) {
-            Logger.error("StopConditionAction::start() No conditions are set");
-            flowCallback();
-            return;
-        }
-
-        for(let i in this.conditions) {
-            var condition = this.conditions[i];
-            if(!condition.check(answers)) {
-                Logger.debug("StopConditionAction::start() Condition not met: ", condition);
-                flowCallback();
-                return;
+            Logger.debug("StopConditionAction::start() No conditions are set, stopping flow");
+        } else {
+            for(let i in this.conditions) {
+                var condition = this.conditions[i];
+                if(!condition.check(answers)) {
+                    Logger.debug("StopConditionAction::start() Condition not met: ", condition);
+                    flowCallback();
+                    return;
+                }
             }
+            Logger.debug("StopConditionAction::start() All conditions were met, stopping flow");
         }
-
-        Logger.debug("StopConditionAction::start() All conditions were met, stopping flow");
 
         if(this.setAnswers) {
             var keys = this.setAnswers.keys();
