@@ -32,7 +32,7 @@ class FlowAction extends Action {
     addAnswerCondition(answerKey, answerValue) {
         var condition = new AnswerCondition();
         condition.addKey(answerKey);
-        condition.setValue(answerKey, answerValue);
+        condition.addValue(answerKey, answerValue);
         this.addCondition(condition);
     }
 }

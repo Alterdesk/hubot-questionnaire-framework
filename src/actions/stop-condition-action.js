@@ -43,11 +43,15 @@ class StopConditionAction extends Action {
         flowCallback();
     }
 
+    addCondition(condition) {
+        this.conditions.push(condition);
+    }
+
     addAnswerCondition(answerKey, answerValue) {
         var condition = new AnswerCondition();
         condition.addKey(answerKey)
-        condition.setValue(answerKey, answerValue);
-        this.conditions.push(condition);
+        condition.addValue(answerKey, answerValue);
+        this.addCondition(condition);
     }
 
     setAnswerOnStop(answerKey, answerValue) {
