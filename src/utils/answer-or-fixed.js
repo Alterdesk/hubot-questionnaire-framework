@@ -7,7 +7,7 @@ class AnswerOrFixed {
         if(this.answerKey) {
             return answers.get(this.answerKey);
         } else {
-            return value;
+            return this.value;
         }
     }
 
