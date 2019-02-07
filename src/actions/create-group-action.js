@@ -118,6 +118,7 @@ class CreateGroupAction extends Action {
     done(value) {
         if(this.answerKey && value != null) {
             this.answers.add(this.answerKey, value);
+            this.answers.addObject(this.answerKey, value);
         }
         if(value) {
             if(this.positiveSubFlow) {

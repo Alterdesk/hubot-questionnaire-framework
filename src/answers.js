@@ -9,6 +9,26 @@ class Answers {
         this.data[key] = value;
     }
 
+    addObject(keyPrefix, object) {
+        if(!object) {
+            return;
+        }
+        var keys = Object.keys(object);
+        if(!keys) {
+            return;
+        }
+        for(var index in keys) {
+            var key = keys[index];
+            var value = object[key];
+            var useKey = keyPrefix + "_" + key;
+            if(typeof value === 'object') {
+                this.addObject(useKey, value);
+            } else {
+                this.add(useKey, value);
+            }
+        }
+    }
+
     remove(key) {
         var value = this.data[key];
         delete this.data[key];
