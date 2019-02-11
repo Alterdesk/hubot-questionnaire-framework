@@ -671,6 +671,19 @@ class Flow {
         return this;
     }
 
+    excludeWord(word) {
+        if(this.lastAddedAction == null) {
+            Logger.error("Flow::excludeWord() No Action added to flow");
+            return this;
+        }
+        if(!(this.lastAddedAction instanceof FuzzyAction)) {
+            Logger.error("Flow::excludeWord() Last added Action is not an instance of FuzzyAction");
+            return this;
+        }
+        this.lastAddedAction.addExcludeWord(word);
+        return this;
+    }
+
     alwaysConfirmFuzzy(alwaysConfirm) {
         if(this.lastAddedAction == null) {
             Logger.error("Flow::alwaysConfirmFuzzy() No Action added to flow");
