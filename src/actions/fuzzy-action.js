@@ -14,6 +14,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         this.questionText = questionText;
         this.invalidText = invalidText;
         this.candidates = [];
+        this.excludeWords = [];
         this.minWordLength = 3;
         this.maxLevenshteinDistance = 2;
         this.maxAttempts = 0;
@@ -183,6 +184,10 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
                 continue;
             }
             word = word.toLowerCase();
+            if(this.excludeWords.indexOf(word) !== -1) {
+                Logger.debug("FuzzyAction::checkText() Word in exclude list: " + word);
+                continue;
+            }
             if(checkWords.indexOf(word) !== -1) {
 //                Logger.debug("FuzzyAction::checkText() Word already in check list: " + word);
                 continue;
@@ -295,6 +300,10 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
 
     addCandidate(name, label, style, aliases, subFlow) {
         this.candidates.push(new FuzzyCandidate(name, label, style, aliases, subFlow));
+    }
+
+    addExcludeWord(word) {
+        this.excludeWords.push(word.toLowerCase());
     }
 
     setReformulateText(reformulateText) {
