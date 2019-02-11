@@ -64,7 +64,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
             .button(name, label, style);
         }
         askDidMeanFlow.option(this.didNotRegex)
-        .button(this.didNotButtonName, this.didNotButtonLabel)
+        .button(this.didNotButtonName, this.didNotButtonLabel, this.didNotButtonStyle)
         .action((response, answers, subFlowCallback) => {
             var answerValue = answers.get(candidateAnswerKey);
             if(!answerValue || !answerValue.match || answerValue.match(this.didNotRegex)) {
