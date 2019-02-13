@@ -55,12 +55,21 @@ class CreateGroupAction extends Action {
         if(membersCanInviteValue != null) {
             settingsPostData["members_can_invite"] = membersCanInviteValue;
         }
+
+        var memberData = [];
+        for(let index in this.memberIds) {
+            var member = this.memberIds[index];
+            var id = AnswerOrFixed.get(member, answers);
+            if(id && id.length > 0) {
+                memberData.push(id);
+            }
+        }
 //
 //        var hasAuxMembers = false;
 //
 //        // Invite user data
         var inviteUsersData = [];
-        for(var index in this.invites) {
+        for(let index in this.invites) {
             var invite = this.invites[index];
             var inviteData = {};
             inviteData["create_conversation"] = AnswerOrFixed.get(invite.createConversation, answers, false);
@@ -90,7 +99,7 @@ class CreateGroupAction extends Action {
         // Group data
         var groupPostData = {};
         groupPostData["invite_users"] = inviteUsersData;
-        groupPostData["members"] = this.memberIds;
+        groupPostData["members"] = memberData;
         groupPostData["settings"] = settingsPostData;
         groupPostData["subject"] = subjectValue;
         groupPostData["send_email"] = AnswerOrFixed.get(this.sendEmail, answers, true);;
