@@ -89,6 +89,15 @@ class Answers {
         return answersObject;
     }
 
+    merge(answers) {
+        var keys = answers.keys();
+        for(let index in keys) {
+            var key = keys[index];
+            var value = answers.get(key);
+            this.add(key, value);
+        }
+    }
+
     static fromObject(object) {
         if(!object) {
             return null;
