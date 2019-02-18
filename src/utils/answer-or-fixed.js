@@ -23,7 +23,12 @@ class AnswerOrFixed {
         var result;
         if(data instanceof AnswerOrFixed) {
             result = data.getValue(answers);
-        } else if(data != null) {
+        } else if(typeof data === "object") {
+             result = "";
+             for(let index in data) {
+                 result += AnswerOrFixed.get(data[index], answers);
+             }
+         } else if(data != null) {
             result = data;
         }
         if(result == null) {
