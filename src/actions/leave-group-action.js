@@ -5,6 +5,7 @@ class LeaveGroupAction extends Action {
         super((response, answers, flowCallback) => {
             this.start(response, answers, flowCallback);
         }, 0);
+        this.isAux = false;
     }
 
     start(response, answers, flowCallback) {
@@ -17,12 +18,25 @@ class LeaveGroupAction extends Action {
             flowCallback();
             return;
         }
-        var chatId = this.flow.msg.message.room;
+        var chatId;
+        if(this.chatId) {
+            chatId = this.chatId;
+        } else {
+            chatId = this.flow.msg.message.room;
+        }
         var robotUserId = this.flow.control.robotUserId;
 
-        this.flow.control.messengerApi.removeGroupMembers(chatId, false, [robotUserId], (success, json) => {
+        this.flow.control.messengerApi.removeGroupMembers(chatId, this.isAux, [robotUserId], (success, json) => {
             flowCallback();
         });
+    }
+
+    setChatId(chatId) {
+        this.chatId = chatId;
+    }
+
+    setIsAux(isAux) {
+        this.isAux = isAux;
     }
 }
 

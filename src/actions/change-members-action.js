@@ -1,10 +1,12 @@
 const Action = require('./action.js');
 
-class CloseGroupAction extends Action {
-    constructor() {
+class ChangeMembersAction extends Action {
+    constructor(add, memberIds) {
         super((response, answers, flowCallback) => {
             this.start(response, answers, flowCallback);
         }, 0);
+        this.add = add;
+        this.memberIds = memberIds;
         this.isAux = false;
     }
 
@@ -25,9 +27,15 @@ class CloseGroupAction extends Action {
             chatId = this.flow.msg.message.room;
         }
 
-        this.flow.control.messengerApi.closeGroupChat(chatId, this.isAux, (success, json) => {
-            flowCallback();
-        });
+        if(this.add) {
+            this.flow.control.messengerApi.addGroupMembers(chatId, this.isAux, this.memberIds, (success, json) => {
+                flowCallback();
+            });
+        } else {
+            this.flow.control.messengerApi.removeGroupMembers(chatId, this.isAux, this.memberIds, (success, json) => {
+                flowCallback();
+            });
+        }
     }
 
     setChatId(chatId) {
@@ -39,4 +47,4 @@ class CloseGroupAction extends Action {
     }
 }
 
-module.exports = CloseGroupAction;
+module.exports = ChangeMembersAction;
