@@ -1,4 +1,5 @@
 const Action = require('./action.js');
+const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 
 class LeaveGroupAction extends Action {
     constructor() {
@@ -14,8 +15,10 @@ class LeaveGroupAction extends Action {
             return;
         }
         var chatId;
+        var isAux;
         if(this.chatId) {
-            chatId = this.chatId;
+            chatId = AnswerOrFixed.get(this.chatId, answers);
+            isAux = AnswerOrFixed.get(this.isAux, answers);
         } else {
             var isGroup = this.flow.control.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
@@ -23,10 +26,11 @@ class LeaveGroupAction extends Action {
                 return;
             }
             chatId = this.flow.msg.message.room;
+            isAux = false;
         }
         var robotUserId = this.flow.control.robotUserId;
 
-        this.flow.control.messengerApi.removeGroupMembers(chatId, this.isAux, [robotUserId], (success, json) => {
+        this.flow.control.messengerApi.removeGroupMembers(chatId, isAux, [robotUserId], (success, json) => {
             flowCallback();
         });
     }
