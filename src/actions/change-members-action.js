@@ -15,15 +15,15 @@ class ChangeMembersAction extends Action {
             flowCallback();
             return;
         }
-        var isGroup = this.flow.control.isUserInGroup(this.flow.msg.message.user);
-        if(!isGroup) {
-            flowCallback();
-            return;
-        }
         var chatId;
         if(this.chatId) {
             chatId = this.chatId;
         } else {
+            var isGroup = this.flow.control.isUserInGroup(this.flow.msg.message.user);
+            if(!isGroup) {
+                flowCallback();
+                return;
+            }
             chatId = this.flow.msg.message.room;
         }
 
