@@ -212,7 +212,7 @@ class MultipleChoiceQuestion extends Question {
         }
     }
 
-    checkAndParseChoice(choice) {   // TODO Should be case insensitive regex check
+    checkAndParseChoice(choice) {
         var optionMatch = null;
         var longestMatch = null;
         for(let index in this.options) {
