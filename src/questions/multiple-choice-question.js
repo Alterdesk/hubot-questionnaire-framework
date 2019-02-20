@@ -41,14 +41,32 @@ class MultipleChoiceQuestion extends Question {
         this.questionStyle = style;
     }
 
-    getLabelForValue(value) {
-        if(!value || value.length === 0) {
+    getOptionForAnswer(answerValue) {
+        var optionMatch = null;
+        var longestMatch = null;
+        for(let index in this.options) {
+            var option = this.options[index];
+            var match = answerValue.match(option.regex);
+            if(match) {
+                var matchString = match[0];
+                if(longestMatch && longestMatch.length > matchString.length) {
+                    continue;
+                }
+                longestMatch = matchString;
+                optionMatch = option;
+            }
+        }
+        return optionMatch;
+    }
+
+    getLabelForAnswer(answerValue) {
+        if(!answerValue || answerValue.length === 0) {
             return null;
         }
-        if(this.multiAnswer && typeof value === "object") {
+        if(this.multiAnswer && typeof answerValue === "object") {
             var labels = [];
-            for(let i in value) {
-                var label = this.getLabelForValue(value[i]);
+            for(let i in answerValue) {
+                var label = this.getLabelForAnswer(answerValue[i]);
                 if(!label) {
                     continue;
                 }
@@ -59,22 +77,34 @@ class MultipleChoiceQuestion extends Question {
             }
             return labels;
         }
-        var optionMatch = null;
-        var longestMatch = null;
-        for(let index in this.options) {
-            var option = this.options[index];
-            var match = value.match(option.regex);
-            if(match) {
-                var matchString = match[0];
-                if(longestMatch && longestMatch.length > matchString.length) {
+        var option = this.getOptionForAnswer(answerValue);
+        if(option) {
+            return option.label;
+        }
+        return null;
+    }
+
+    getValueForAnswer(answerValue) {
+        if(!answerValue || answerValue.length === 0) {
+            return null;
+        }
+        if(this.multiAnswer && typeof answerValue === "object") {
+            var values = [];
+            for(let i in answerValue) {
+                var label = this.getValueForAnswer(answerValue[i]);
+                if(!label) {
                     continue;
                 }
-                longestMatch = matchString;
-                optionMatch = option;
+                values.push(label);
             }
+            if(values.length === 0) {
+                return null;
+            }
+            return values;
         }
-        if(optionMatch) {
-            return optionMatch.label;
+        var option = this.getOptionForAnswer(answerValue);
+        if(option) {
+            return option.value;
         }
         return null;
     }
@@ -205,11 +235,6 @@ class MultipleChoiceQuestion extends Question {
         var subFlow = optionMatch.subFlow;
         if(subFlow) {
             this.setSubFlow(subFlow);
-        }
-        // Return value if set
-        var value = optionMatch.value;
-        if(typeof value !== typeof undefined) {
-            return value;
         }
         return longestMatch;
     }

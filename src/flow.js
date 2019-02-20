@@ -926,7 +926,8 @@ class Flow {
             }
         }
 
-        var labelValue = question.getLabelForValue(answerValue);
+        var choiceLabel = question.getLabelForAnswer(answerValue);
+        var choiceValue = question.getValueForAnswer(answerValue);
 
         // Is the question asked to multiple users and not all users answered yet
         if(question.isMultiUser) {
@@ -939,10 +940,16 @@ class Flow {
             multiAnswers.add(userId, answerValue);
             Logger.debug("Flow::onAnswer() Added multi-user answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
 
-            if(labelValue && labelValue.length > 0) {
+            if(choiceLabel && choiceLabel.length > 0) {
                 var labelKey = userId + "_label";
-                multiAnswers.add(labelKey, labelValue);
-                Logger.debug("Flow::onAnswer() Added multi-user answer: key: \"" + labelKey + "\" value: \"" + labelValue + "\"");
+                multiAnswers.add(labelKey, choiceLabel);
+                Logger.debug("Flow::onAnswer() Added multi-user label answer: key: \"" + labelKey + "\" value: \"" + choiceLabel + "\"");
+            }
+
+            if(choiceValue != null) {
+                var valueKey = userId + "_value";
+                multiAnswers.add(valueKey, choiceValue);
+                Logger.debug("Flow::onAnswer() Added multi-user value answer: key: \"" + valueKey + "\" value: \"" + choiceValue + "\"");
             }
 
             var answerCount = 0;
@@ -998,10 +1005,16 @@ class Flow {
             this.answers.add(question.answerKey, answerValue);
             Logger.debug("Flow::onAnswer() Added answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
 
-            if(labelValue && labelValue !== "") {
+            if(choiceLabel && choiceLabel !== "") {
                 var labelKey = question.answerKey + "_label";
-                this.answers.add(labelKey, labelValue);
-                Logger.debug("Flow::onAnswer() Added answer: key: \"" + labelKey + "\" value: \"" + labelValue + "\"");
+                this.answers.add(labelKey, choiceLabel);
+                Logger.debug("Flow::onAnswer() Added label answer: key: \"" + labelKey + "\" value: \"" + choiceLabel + "\"");
+            }
+
+            if(choiceValue != null) {
+                var valueKey = question.answerKey + "_value";
+                this.answers.add(valueKey, choiceValue);
+                Logger.debug("Flow::onAnswer() Added value answer: key: \"" + valueKey + "\" value: \"" + choiceValue + "\"");
             }
         }
 

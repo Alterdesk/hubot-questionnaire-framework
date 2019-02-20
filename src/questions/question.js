@@ -168,7 +168,11 @@ class Question {
         return this.formattedQuestionText || this.questionText;
     }
 
-    getLabelForValue(value) {
+    getLabelForAnswer(answerValue) {
+        return null;
+    }
+
+    getValueForAnswer(answerValue) {
         return null;
     }
 

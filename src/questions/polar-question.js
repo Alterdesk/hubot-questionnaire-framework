@@ -44,8 +44,8 @@ class PolarQuestion extends Question {
         this.questionStyle = style;
     }
 
-    getLabelForValue(value) {
-        if(value) {
+    getLabelForAnswer(answerValue) {
+        if(answerValue) {
             return this.positiveLabel;
         } else {
             return this.negativeLabel;
