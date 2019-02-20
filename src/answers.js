@@ -90,6 +90,9 @@ class Answers {
     }
 
     merge(answers) {
+        if(!answers) {
+            return;
+        }
         var keys = answers.keys();
         for(let index in keys) {
             var key = keys[index];
