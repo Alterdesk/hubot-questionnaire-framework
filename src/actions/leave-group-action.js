@@ -32,7 +32,7 @@ class LeaveGroupAction extends Action {
 
         this.flow.control.messengerApi.removeGroupMembers(chatId, isAux, [robotUserId], (success, json) => {
             flowCallback();
-        });
+        }, this.overrideToken);
     }
 
     setChatId(chatId) {
@@ -41,6 +41,10 @@ class LeaveGroupAction extends Action {
 
     setIsAux(isAux) {
         this.isAux = isAux;
+    }
+
+    setOverrideToken(overrideToken) {
+        this.overrideToken = overrideToken;
     }
 }
 

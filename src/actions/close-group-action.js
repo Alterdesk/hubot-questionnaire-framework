@@ -31,7 +31,7 @@ class CloseGroupAction extends Action {
 
         this.flow.control.messengerApi.closeGroupChat(chatId, isAux, (success, json) => {
             flowCallback();
-        });
+        }, this.overrideToken);
     }
 
     setChatId(chatId) {
@@ -40,6 +40,10 @@ class CloseGroupAction extends Action {
 
     setIsAux(isAux) {
         this.isAux = isAux;
+    }
+
+    setOverrideToken(overrideToken) {
+        this.overrideToken = overrideToken;
     }
 }
 

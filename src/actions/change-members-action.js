@@ -34,11 +34,11 @@ class ChangeMembersAction extends Action {
         if(this.add) {
             this.flow.control.messengerApi.addGroupMembers(chatId, isAux, this.memberIds, (success, json) => {
                 flowCallback();
-            });
+            }, this.overrideToken);
         } else {
             this.flow.control.messengerApi.removeGroupMembers(chatId, isAux, this.memberIds, (success, json) => {
                 flowCallback();
-            });
+            }, this.overrideToken);
         }
     }
 
@@ -48,6 +48,10 @@ class ChangeMembersAction extends Action {
 
     setIsAux(isAux) {
         this.isAux = isAux;
+    }
+
+    setOverrideToken(overrideToken) {
+        this.overrideToken = overrideToken;
     }
 }
 
