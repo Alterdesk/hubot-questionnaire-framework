@@ -15,6 +15,10 @@ class ReplaceDateFormatter extends Formatter {
 
     execute(text, answers) {
         var date;
+        if(!this.checkConditions(answers)) {
+            Logger.debug("ReplaceDateFormatter::execute() Condition not met");
+            return text;
+        }
         if(this.answerKey && answers.has(this.answerKey)) {
             date = answers.get(this.answerKey);
         } else {

@@ -10,6 +10,10 @@ class CaseFormatter extends Formatter {
 
     execute(text, answers) {
         Logger.debug("CaseFormatter::execute() toUppercase:", this.toUppercase);
+        if(!this.checkConditions(answers)) {
+            Logger.debug("CaseFormatter::execute() Condition not met");
+            return text;
+        }
         if(this.toUppercase) {
             return text.toUpperCase();
         } else {

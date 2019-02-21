@@ -12,6 +12,10 @@ class MultiFormatter extends Formatter {
 
     execute(text, answers) {
         Logger.debug("MultiFormatter::execute() Using from: \"" + this.from + "\" formatters: \"" + this.formatters + "\"");
+        if(!this.checkConditions(answers)) {
+            Logger.debug("MultiFormatter::execute() Condition not met");
+            return text;
+        }
         if(!this.from) {
             return text;
         }

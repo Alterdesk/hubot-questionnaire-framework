@@ -11,6 +11,10 @@ class ReplaceTextFormatter extends Formatter {
 
     execute(text, answers) {
         Logger.debug("ReplaceTextFormatter::execute() Using from: \"" + this.from + "\" to: \"" + this.to + "\"");
+        if(!this.checkConditions(answers)) {
+            Logger.debug("ReplaceTextFormatter::execute() Condition not met");
+            return text;
+        }
         if(!this.from) {
             return text;
         }

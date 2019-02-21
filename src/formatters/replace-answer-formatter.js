@@ -12,6 +12,10 @@ class ReplaceAnswerFormatter extends Formatter {
 
     execute(text, answers) {
         Logger.debug("ReplaceAnswerFormatter::execute() Using from: \"" + this.from + "\" answerKey: \"" + this.answerKey + "\"");
+        if(!this.checkConditions(answers)) {
+            Logger.debug("ReplaceAnswerFormatter::execute() Condition not met");
+            return text;
+        }
         if(!this.from || !this.answerKey) {
             return text;
         }
