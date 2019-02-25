@@ -250,7 +250,9 @@ class Question {
                         configuredTimeoutCallback();
                     } else {
                         var timeoutText = question.timeoutText || control.responseTimeoutText;
-                        question.flow.sendRestartMessage(timeoutText);
+                        if(timeoutText && timeoutText.length > 0) {
+                            question.flow.sendRestartMessage(timeoutText);
+                        }
                         if(question.flow.stoppedCallback) {
                             question.flow.stoppedCallback(flow.msg, flow.answers);
                         }
