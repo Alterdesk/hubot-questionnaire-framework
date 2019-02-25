@@ -352,7 +352,7 @@ class Control {
         var useTimeoutMs = question.timeoutMs || this.responseTimeoutMs;
         var useTimeoutText = question.timeoutText || this.responseTimeoutText;
         var useTimeoutCallback = question.timeoutCallback;
-        if(useTimeoutCallback == null) {
+        if(useTimeoutCallback == null && useTimeoutText && useTimeoutText.length > 0) {
             useTimeoutCallback = () => {
                 question.flow.sendRestartMessage(useTimeoutText);
             };
@@ -469,6 +469,13 @@ class Control {
         this.catchAllButtonName = name;
         this.catchAllButtonLabel = label;
         this.catchAllButtonStyle = style;
+    }
+
+    // Restart button
+    setRestartButton(name, label, style) {
+        this.restartButtonName = name;
+        this.restartButtonLabel = label;
+        this.restartButtonStyle = style;
     }
 
     // Configuration to override default hubot help and commands that it does accept
