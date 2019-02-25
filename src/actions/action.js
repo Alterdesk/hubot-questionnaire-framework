@@ -5,6 +5,7 @@ class Action {
     constructor(callback, waitMs) {
         this.callback = callback;
         this.waitMs = waitMs || 0;
+        this.controlsFlow = false;
     }
 
     // Set the parent flow

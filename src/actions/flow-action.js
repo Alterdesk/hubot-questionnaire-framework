@@ -28,13 +28,6 @@ class FlowAction extends Action {
     addCondition(condition) {
         this.conditions.push(condition);
     }
-
-    addAnswerCondition(answerKey, answerValue) {
-        var condition = new AnswerCondition();
-        condition.addKey(answerKey);
-        condition.addValue(answerKey, answerValue);
-        this.addCondition(condition);
-    }
 }
 
 module.exports = FlowAction;

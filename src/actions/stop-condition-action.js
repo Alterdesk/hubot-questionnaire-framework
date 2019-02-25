@@ -44,13 +44,6 @@ class StopConditionAction extends Action {
         this.conditions.push(condition);
     }
 
-    addAnswerCondition(answerKey, answerValue) {
-        var condition = new AnswerCondition();
-        condition.addKey(answerKey)
-        condition.addValue(answerKey, answerValue);
-        this.addCondition(condition);
-    }
-
     setAnswerOnStop(answerKey, answerValue) {
         if(!this.setAnswers) {
             this.setAnswers = new Answers();

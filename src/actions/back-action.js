@@ -6,10 +6,12 @@ class BackAction extends Action {
             this.start(response, answers, flowCallback);
         }, 0);
         this.checkpoint = checkpoint;
+        this.controlsFlow = true;
     }
 
     start(response, answers, flowCallback) {
         this.flow.previous(this.checkpoint);
+        flowCallback();
     }
 }
 

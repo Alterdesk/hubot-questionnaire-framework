@@ -2,6 +2,7 @@ const Extra = require('node-messenger-extra');
 
 const Action = require('./actions/action.js');
 const Answers = require('./answers.js');
+const AnswerCondition = require('./conditions/answer-condition.js');
 const AttachmentQuestion = require('./questions/attachment-question.js');
 const BackAction = require('./actions/back-action.js');
 const CloseGroupAction = require('./actions/close-group-action.js');
@@ -34,6 +35,9 @@ class Flow {
             this.errorText = errorText || control.flowErrorText;
             this.backText = backText || control.flowBackText;
             this.checkpointText = checkpointText || control.flowCheckpointText;
+            this.restartButtonName = control.restartButtonName;
+            this.restartButtonLabel = control.restartButtonLabel;
+            this.restartButtonStyle = control.restartButtonStyle;
         } else {
             this.stopText = stopText;
             this.errorText = errorText;
@@ -45,6 +49,7 @@ class Flow {
         this.parsedAnswerKeys = {};
         this.parsedMultiUserAnswers = {};
         this.isRunning = false;
+        this.name = "NO_NAME";
     }
 
     // Add a step to the flow
@@ -724,7 +729,10 @@ class Flow {
             Logger.error("Flow::stopAnswerCondition() Last added Action is not an instance of StopConditionAction");
             return this;
         }
-        this.lastAddedAction.addAnswerCondition(answerKey, answerValue);
+        var condition = new AnswerCondition();
+        condition.addKey(answerKey);
+        condition.setValue(answerKey, answerValue);
+        this.lastAddedAction.addCondition(condition);
         return this;
     }
 
@@ -861,7 +869,7 @@ class Flow {
                 }
                 // Try to go back
                 if(!flow.previous(false)) {
-                    Logger.debug("Flow::callback() Unable to go back, restarting flow");
+                    Logger.error("Flow::callback() Unable to go back, restarting flow");
                     flow.next();
                 }
                 return;
@@ -876,7 +884,7 @@ class Flow {
                 }
                 // Try to go to last checkpoint
                 if(!flow.previous(true)) {
-                    Logger.debug("Flow::callback() Unable to go back to last checkpoint, restarting flow");
+                    Logger.error("Flow::callback() Unable to go back to last checkpoint, restarting flow");
                     flow.next();
                 }
                 return;
@@ -1041,7 +1049,7 @@ class Flow {
 
     questionExecute(question) {
         if(!this.isRunning) {
-            Logger.debug("Flow::questionExecute() Flow not running");
+            Logger.debug("Flow::questionExecute() Flow not running", this.name);
             return;
         }
         Logger.info("Flow::questionExecute() answerKey: \"" + question.answerKey + "\"");
@@ -1054,7 +1062,7 @@ class Flow {
 
     questionStop(question) {
         if(!this.isRunning) {
-            Logger.debug("Flow::questionStop() Flow not running");
+            Logger.debug("Flow::questionStop() Flow not running", this.name);
             return;
         }
         Logger.info("Flow::questionStop()");
@@ -1066,7 +1074,7 @@ class Flow {
 
     questionAnswered(question) {
         if(!this.isRunning) {
-            Logger.debug("Flow::questionAnswered() Flow not running");
+            Logger.debug("Flow::questionAnswered() Flow not running", this.name);
             return;
         }
         Logger.info("Flow::questionAnswered() answerKey: \"" + question.answerKey + "\" useFinalize: " + question.useFinalize);
@@ -1088,6 +1096,7 @@ class Flow {
 
         // Trigger sub flow if set in question, otherwise continue
         if(question.subFlow instanceof Flow) {
+            Logger.debug("Flow::questionDone() Calling startSubFlow()", question.subFlow.name);
             this.startSubFlow(question.subFlow, true);
         } else {
             this.next();
@@ -1096,20 +1105,29 @@ class Flow {
 
     actionDone(action) {
         if(!this.isRunning) {
-            Logger.debug("Flow::actionDone() Flow not running");
+            Logger.debug("Flow::actionDone() Flow not running", this.name);
             return;
         }
-        Logger.info("Flow::actionDone()");
+        var className = "";
+        if(action && action.constructor) {
+            className = action.constructor.name;
+        }
+        Logger.info("Flow::actionDone() \"" + className + "\"");
+        if(action.controlsFlow) {
+            return;
+        }
         // Trigger sub flow if set in question, otherwise continue
         if(action.subFlow instanceof Flow) {
+            Logger.debug("Flow::actionDone() Calling startSubFlow()", action.subFlow.name);
             this.startSubFlow(action.subFlow, true);
         } else {
+            Logger.debug("Flow::actionDone() Calling next()");
             this.next();
         }
     }
 
     startSubFlow(subFlow, overrideFinished) {
-        Logger.info("Flow::startSubFlow()");
+        Logger.info("Flow::startSubFlow()", subFlow.name);
         // Set this instance as the super flow
         subFlow.superFlow = this;
 
@@ -1155,11 +1173,15 @@ class Flow {
 
             // Continue current flow when sub flow finishes
             subFlow.finish((response, answers) => {
+                Logger.debug("Flow::startSubFlow() Sub flow finished()", subFlow.name);
+                var superFlow = subFlow.superFlow;
                 // Call sub flow finished callback if was set
                 if(subFlowFinish) {
-                    subFlowFinish(this.msg, this.answers);
+                    Logger.debug("Flow::startSubFlow() Calling finish callback of sub flow", subFlow.name);
+                    subFlowFinish(superFlow.msg, superFlow.answers);
+                    return;
                 }
-                this.next();
+                superFlow.next();
             });
         }
 
@@ -1170,11 +1192,11 @@ class Flow {
     // Stop the flow
     stop(sendMessage) {
         if(!this.isRunning) {
-            Logger.debug("Flow::stop() Flow not running");
+            Logger.debug("Flow::stop() Flow not running", this.name);
             // Already stopped
             return;
         }
-        Logger.info("Flow::stop()");
+        Logger.info("Flow::stop()", this.name);
         this.isRunning = false;
         // TODO Add Flow.cleanup() that calls Listener/PendingRequest cleanup()
         for(let index in this.steps) {
@@ -1195,156 +1217,171 @@ class Flow {
     // Execute next question
     next() {
         if(!this.isRunning) {
-            Logger.debug("Flow::next() Flow not running");
+            Logger.debug("Flow::next() Flow not running", this.name);
             return;
         }
+        Logger.debug("Flow::next()", this.name);
         // Check if has more steps or flow is finished
-        if(this.currentStep < this.steps.length) {
-            var step = this.steps[this.currentStep++];
-            var className = "";
-            if(step && step.constructor) {
-                className = step.constructor.name;
+        if(this.currentStep == this.steps.length) {
+            Logger.info("Flow::next() Flow finished", this.name);
+            if(this.finishedCallback != null) {
+                this.finishedCallback(this.msg, this.answers);
             }
-            Logger.info("Flow::next() Step " + this.currentStep + " \"" + className + "\"");
-            if(step instanceof Question) {
-                var question = step;
-                var answerValue = this.answers.get(question.answerKey);
-                if(answerValue != null) {
-                    // If question is already checked and parsed and was asked to a single user
-                    if(this.parsedAnswerKeys[question.answerKey] && !question.isMultiUser) {
-                        Logger.debug("Flow::next() Already have parsed answer \"" + answerValue + "\" for \"" + question.answerKey + "\", skipping question");
-                        this.questionAnswered(question);
-                        return;
-                    }
+            return;
+        }
+        let stepIndex = this.currentStep;
+        this.currentStep++;
+        var step = this.steps[stepIndex];
+        var className = "";
+        if(step && step.constructor) {
+            className = step.constructor.name;
+        }
+        Logger.info("Flow::next() Step " + stepIndex + " \"" + className + "\"");
+        if(step instanceof Question) {
+            var question = step;
+            var answerValue = this.answers.get(question.answerKey);
+            if(answerValue != null) {
+                // If question is already checked and parsed and was asked to a single user
+                if(this.parsedAnswerKeys[question.answerKey] && !question.isMultiUser) {
+                    Logger.debug("Flow::next() Already have parsed answer \"" + answerValue + "\" for \"" + question.answerKey + "\", skipping question");
+                    this.questionAnswered(question);
+                    return;
+                }
 
-                    var chatId = this.msg.message.room;
-                    var isGroup = this.control.isUserInGroup(this.msg.message.user);
+                var chatId = this.msg.message.room;
+                var isGroup = this.control.isUserInGroup(this.msg.message.user);
 
-                    if(answerValue instanceof Answers) {
-                        var multiAnswers = answerValue;
-                        var checkUserIds = [];
-                        if(question.userIds != null) {
-                            for(let index in question.userIds) {
-                                var userId = question.userIds[index];
-                                if(!checkUserIds.includes(userId)) {
-                                    checkUserIds.push(userId);
-                                }
-                            }
-                        }
-                        var multiUserIds = multiAnswers.keys();
-                        for(let index in multiUserIds) {
-                            var userId = multiUserIds[index];
+                if(answerValue instanceof Answers) {
+                    var multiAnswers = answerValue;
+                    var checkUserIds = [];
+                    if(question.userIds != null) {
+                        for(let index in question.userIds) {
+                            var userId = question.userIds[index];
                             if(!checkUserIds.includes(userId)) {
                                 checkUserIds.push(userId);
                             }
                         }
-                        if(checkUserIds.length > 0 && !question.isMultiUser) {
-                            Control.warning("Flow::next() Got pre-filled multi-user answers for single user question \"" + question.answerKey + "\", forcing question to be multi-user");
-                            question.isMultiUser = true;
-                        }
-                        let parsedUserIds = this.parsedMultiUserAnswers[question.answerKey];
-                        let parsedAnswers = 0;
-                        for(let index in checkUserIds) {
-                            var userId = checkUserIds[index];
-                            var userAnswer = multiAnswers.get(userId);
-                            if(userAnswer == null) {
-                                continue;
-                            }
-                            if(parsedUserIds && parsedUserIds[userId]) {
-                                Logger.debug("Flow::next() Already parsed multi-user answer from \"" + userId + "\" for \"" + question.answerKey + "\"");
-                                parsedAnswers++
-                                continue;
-                            }
-                            var matches;
-                            if(userAnswer && userAnswer.match) {
-                                matches = userAnswer.match(question.regex);
-                            }
-                            var message = this.control.createHubotResponse(userId, chatId, isGroup);
-                            message.text = userAnswer;
-                            var parsedValue = question.checkAndParseAnswer(matches, message);
-                            if(parsedValue != null) {
-                                Logger.debug("Flow::next() Got pre-filled multi-user answer \"" + parsedValue + "\" for \"" + question.answerKey + "\"");
-                                if(this.onAnswer(message, question, parsedValue)) {
-                                    Logger.debug("Flow::next() Got all pre-filled user answers for multi-user question \"" + question.answerKey + "\", skipping question");
-                                    return;
-                                }
-                            } else {
-                                Logger.error("Flow::next() Rejected pre-filled multi-user answer \"" + userAnswer + "\" for \"" + question.answerKey + "\" matches: ", matches);
-                            }
-                        }
-                        if(parsedAnswers > 0 && parsedAnswers == checkUserIds.length) {
-                            Logger.debug("Flow::next() Parsed all pre-filled user answers for multi-user question \"" + question.answerKey + "\", skipping question");
-                            this.questionAnswered(question);
-                            return;
-                        }
-                    } else {
-                        // Check and parse pre-filled answer
-                        var userId = this.control.getUserId(this.msg.message.user);
-                        var matches;
-                        if(answerValue && answerValue.match) {
-                            matches = answerValue.match(question.regex);
-                        }
-                        var message = this.control.createHubotResponse(userId, chatId, isGroup);
-                        message.text = answerValue;
-                        var parsedValue = question.checkAndParseAnswer(matches, message);
-                        if(parsedValue != null) {
-                            Logger.debug("Flow::next() Got pre-filled answer \"" + parsedValue + "\" for \"" + question.answerKey + "\", skipping question");
-                            this.onAnswer(this.msg, question, parsedValue);
-                            return;
-                        } else {
-                            Logger.error("Flow::next() Rejected pre-filled answer \"" + answerValue + "\" for \"" + question.answerKey + "\" matches: ", matches);
+                    }
+                    var multiUserIds = multiAnswers.keys();
+                    for(let index in multiUserIds) {
+                        var userId = multiUserIds[index];
+                        if(!checkUserIds.includes(userId)) {
+                            checkUserIds.push(userId);
                         }
                     }
-                }
-                Logger.info("Flow::next() Question: \"" + question.answerKey + "\": \"" + question.getQuestionText() + "\"");
-
-                // Delay executing this message if a delay was set
-                if(question.delayMs && question.delayMs > 0) {
-                    Logger.debug("Flow::next() Executing question delayed by " + question.delayMs + " milliseconds");
-                    setTimeout(() => {
-                        this.questionExecute(question);
-                    }, question.delayMs);
+                    if(checkUserIds.length > 0 && !question.isMultiUser) {
+                        Control.warning("Flow::next() Got pre-filled multi-user answers for single user question \"" + question.answerKey + "\", forcing question to be multi-user");
+                        question.isMultiUser = true;
+                    }
+                    let parsedUserIds = this.parsedMultiUserAnswers[question.answerKey];
+                    let parsedAnswers = 0;
+                    for(let index in checkUserIds) {
+                        var userId = checkUserIds[index];
+                        var userAnswer = multiAnswers.get(userId);
+                        if(userAnswer == null) {
+                            continue;
+                        }
+                        if(parsedUserIds && parsedUserIds[userId]) {
+                            Logger.debug("Flow::next() Already parsed multi-user answer from \"" + userId + "\" for \"" + question.answerKey + "\"");
+                            parsedAnswers++
+                            continue;
+                        }
+                        var matches;
+                        if(userAnswer && userAnswer.match) {
+                            matches = userAnswer.match(question.regex);
+                        }
+                        var message = this.control.createHubotResponse(userId, chatId, isGroup);
+                        message.text = userAnswer;
+                        var parsedValue = question.checkAndParseAnswer(matches, message);
+                        if(parsedValue != null) {
+                            Logger.debug("Flow::next() Got pre-filled multi-user answer \"" + parsedValue + "\" for \"" + question.answerKey + "\"");
+                            if(this.onAnswer(message, question, parsedValue)) {
+                                Logger.debug("Flow::next() Got all pre-filled user answers for multi-user question \"" + question.answerKey + "\", skipping question");
+                                return;
+                            }
+                        } else {
+                            Logger.error("Flow::next() Rejected pre-filled multi-user answer \"" + userAnswer + "\" for \"" + question.answerKey + "\" matches: ", matches);
+                        }
+                    }
+                    if(parsedAnswers > 0 && parsedAnswers == checkUserIds.length) {
+                        Logger.debug("Flow::next() Parsed all pre-filled user answers for multi-user question \"" + question.answerKey + "\", skipping question");
+                        this.questionAnswered(question);
+                        return;
+                    }
                 } else {
-                    this.questionExecute(question);
+                    // Check and parse pre-filled answer
+                    var userId = this.control.getUserId(this.msg.message.user);
+                    var matches;
+                    if(answerValue && answerValue.match) {
+                        matches = answerValue.match(question.regex);
+                    }
+                    var message = this.control.createHubotResponse(userId, chatId, isGroup);
+                    message.text = answerValue;
+                    var parsedValue = question.checkAndParseAnswer(matches, message);
+                    if(parsedValue != null) {
+                        Logger.debug("Flow::next() Got pre-filled answer \"" + parsedValue + "\" for \"" + question.answerKey + "\", skipping question");
+                        this.onAnswer(this.msg, question, parsedValue);
+                        return;
+                    } else {
+                        Logger.error("Flow::next() Rejected pre-filled answer \"" + answerValue + "\" for \"" + question.answerKey + "\" matches: ", matches);
+                    }
                 }
-            } else if(step instanceof Information) {
-                var information = step;
-                information.execute(this, this.msg, this.answers);
-            } else if(step instanceof Action) {
-                var action = step;
-                action.execute(this, this.msg, this.answers);
+            }
+            Logger.info("Flow::next() Question: \"" + question.answerKey + "\": \"" + question.getQuestionText() + "\"");
+
+            // Delay executing this message if a delay was set
+            if(question.delayMs && question.delayMs > 0) {
+                Logger.debug("Flow::next() Executing question delayed by " + question.delayMs + " milliseconds");
+                setTimeout(() => {
+                    this.questionExecute(question);
+                }, question.delayMs);
             } else {
-                Logger.error("Flow::next() Invalid step: ", step);
-                this.next();
+                this.questionExecute(question);
+            }
+        } else if(step instanceof Information) {
+            var information = step;
+            information.execute(this, this.msg, this.answers);
+        } else if(step instanceof Action) {
+            var action = step;
+            action.execute(this, this.msg, this.answers);
+            if(action.controlsFlow) {
+                return;
             }
         } else {
-            Logger.info("Flow::next() Flow finished");
-            if(this.finishedCallback != null) {
-                this.finishedCallback(this.msg, this.answers);
-            }
+            Logger.error("Flow::next() Invalid step: ", stepIndex, step, this.steps);
+            this.next();
         }
     }
 
     // Find and remove last given answer and ask question again
     previous(checkpoint, ignoreSuperFlow) {
         if(!this.isRunning) {
-            Logger.debug("Flow::previous() Flow not running");
-            return;
+            Logger.debug("Flow::previous() Flow not running", this.name);
+            return false;
         }
-        while(this.currentStep >= 0) {
-            var step = this.steps[this.currentStep];
+        Logger.debug("Flow::previous()", this.name);
+        while(this.currentStep > 0) {
+            this.currentStep--;
+            let stepIndex = this.currentStep;
+            var step = this.steps[stepIndex];
+            if(!step) {
+                Logger.error("Flow::previous() Invalid step: ", stepIndex, step, this.steps);
+                continue;
+            }
             var className = "";
             if(step && step.constructor) {
                 className = step.constructor.name;
             }
-            Logger.info("Flow::previous() Step " + this.currentStep + " \"" + className + "\"");
+            Logger.info("Flow::previous() Step " + stepIndex + " \"" + className + "\"");
             if(step instanceof Question) {
                 let question = step;
                 if(question.subFlow) {
                     Logger.info("Flow::previous() Question: \"" + question.answerKey + "\" has sub flow");
                     if(question.subFlow.previous(checkpoint, true)) {
+                        Logger.info("Flow::previous() Handled in sub flow of Question: \"" + question.answerKey + "\"");
                         return true;
                     }
+                    Logger.info("Flow::previous() Not handled in sub flow of Question: \"" + question.answerKey + "\"");
                 }
                 Logger.info("Flow::previous() Question: \"" + question.answerKey + "\": " + question.getQuestionText());
 
@@ -1361,6 +1398,7 @@ class Flow {
                         Logger.info("Flow::previous() Question is not a checkpoint, continuing");
                         continue;
                     }
+                    Logger.debug("Flow::previous() Calling next()");
                     this.next();
                     return true;
                 }
@@ -1369,23 +1407,22 @@ class Flow {
                 if(action.subFlow) {
                     Logger.info("Flow::previous() Action: has sub flow");
                     if(action.subFlow.previous(checkpoint, true)) {
+                        Logger.info("Flow::previous() Handled in sub flow of Action: \"" + className + "\"");
                         return true;
                     }
-                    action.reset(this.answers);
+                    Logger.info("Flow::previous() Not handled in sub flow of Action: \"" + className + "\"");
                 }
+                action.reset(this.answers);
             }
             if(step && step.addedAfterStart) {
                 Logger.info("Flow::previous() Step added after start, removing \"" + className + "\" from flow");
                 this.steps.pop();
             }
-            if(this.currentStep == 0) {
-                Logger.info("Flow::previous() Beginning of flow reached");
-                break;
-            }
-            this.currentStep--;
         }
+        Logger.info("Flow::previous() Beginning of flow reached");
 
         if(this.superFlow && !ignoreSuperFlow) {
+            Logger.info("Flow::previous() Checking super flow");
             return this.superFlow.previous(checkpoint);
         }
 
