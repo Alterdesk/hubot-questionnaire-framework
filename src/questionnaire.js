@@ -19,6 +19,7 @@ module.exports = {
     AttachmentQuestion : require('./questions/attachment-question.js'),
     BackAction : require('./actions/back-action.js'),
     CaseFormatter : require('./formatters/case-formatter.js'),
+    ChatPdfAction : require('./actions/chat-pdf-action.js'),
     ChangeMembersAction : require('./actions/change-members-action.js'),
     CheckUserAction : require('./actions/check-user-action.js'),
     CloseGroupAction : require('./actions/close-group-action.js'),
