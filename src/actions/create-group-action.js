@@ -22,7 +22,7 @@ class CreateGroupAction extends Action {
             return;
         }
 
-        var subjectValue = AnswerOrFixed.get(this.subject, answers);
+        var subjectValue = AnswerOrFixed.get(this.subject, answers, "");
         for(let i in this.subjectFormatters) {
             var formatter = this.subjectFormatters[i];
             subjectValue = formatter.execute(subjectValue, answers);
