@@ -7,7 +7,7 @@ class FlowAction extends Action {
         super((response, answers, flowCallback) => {
             this.start(response, answers, flowCallback);
         }, 0);
-        this.startFlow = flow;
+        this.passFlow = flow;
         this.conditions = [];
     }
 
@@ -16,13 +16,20 @@ class FlowAction extends Action {
             var condition = this.conditions[i];
             if(!condition.check(answers)) {
                 Logger.debug("FlowAction::start() Condition not met: ", condition);
+                if(this.failFlow) {
+                    this.setSubFlow(this.failFlow);
+                }
                 flowCallback();
                 return;
             }
         }
 
-        this.setSubFlow(this.startFlow);
+        this.setSubFlow(this.passFlow);
         flowCallback();
+    }
+
+    setFailFlow(failFlow) {
+        this.failFlow = failFlow;
     }
 
     addCondition(condition) {
