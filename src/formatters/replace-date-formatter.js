@@ -1,9 +1,6 @@
-const Moment = require('moment-timezone');
-
 const Formatter = require('./formatter.js');
+const DateTools = require('./../utils/date-tools.js');
 const Logger = require('./../logger.js');
-
-const USE_TIMEZONE = process.env.HUBOT_QUESTIONNAIRE_USE_TIMEZONE || process.env.USE_TIMEZONE || "UTC";
 
 class ReplaceDateFormatter extends Formatter {
 
@@ -34,7 +31,7 @@ class ReplaceDateFormatter extends Formatter {
         if(!date) {
             return text;
         }
-        var formatted = Moment(date).tz(USE_TIMEZONE).format(this.format);
+        var formatted = DateTools.format(date, this.format);
         return text.replace(this.from, formatted);
     }
 

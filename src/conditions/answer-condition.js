@@ -1,7 +1,9 @@
+const Condition = require('./condition.js');
 const Logger = require('./../logger.js');
 
-class AnswerCondition {
+class AnswerCondition extends Condition {
     constructor() {
+        super();
         this.answerKeys = [];
         this.answerValues = {};
         this.answerRegex = {};
@@ -86,6 +88,10 @@ class AnswerCondition {
             }
         }
         return false;
+    }
+
+    hasKeys() {
+        return this.answerKeys.length > 0;
     }
 }
 
