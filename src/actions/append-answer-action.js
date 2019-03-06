@@ -14,12 +14,12 @@ class AppendAnswerAction extends Action {
         var value = AnswerOrFixed.get(this.answerValue, answers);
         if(value != null) {
             var list = answers.get(this.answerKey);
-            if(list == null) {
-                list = [];
-            } else if(!(list instanceof Object)) {
+            if(!(list instanceof Object)) {
                 var previousValue = list;
                 list = [];
-                list.push(previousValue);
+                if(previousValue != null) {
+                    list.push(previousValue);
+                }
             }
             list.push(value);
             answers.add(this.answerKey, list);
