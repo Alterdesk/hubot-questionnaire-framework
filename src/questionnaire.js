@@ -16,6 +16,7 @@ module.exports = {
     AnswerCondition : require('./conditions/answer-condition.js'),
     AnswerOrFixed : require('./utils/answer-or-fixed.js'),
     Answers : require('./answers.js'),
+    AppendAnswerAction : require('./actions/append-answer-action.js'),
     AttachmentQuestion : require('./questions/attachment-question.js'),
     BackAction : require('./actions/back-action.js'),
     CaseFormatter : require('./formatters/case-formatter.js'),
