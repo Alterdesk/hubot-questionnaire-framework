@@ -1,4 +1,5 @@
 const Action = require('./action.js');
+const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 
 class SetAnswerAction extends Action {
     constructor(answerKey, answerValue) {
@@ -10,7 +11,10 @@ class SetAnswerAction extends Action {
     }
 
     start(response, answers, flowCallback) {
-        answers.add(this.answerKey, this.answerValue);
+        var value = AnswerOrFixed.get(this.answerValue, answers);
+        if(value != null) {
+            answers.add(this.answerKey, value);
+        }
         flowCallback();
     }
 }
