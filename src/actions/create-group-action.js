@@ -64,10 +64,8 @@ class CreateGroupAction extends Action {
                 memberData.push(id);
             }
         }
-//
-//        var hasAuxMembers = false;
-//
-//        // Invite user data
+
+        // Invite user data
         var inviteUsersData = [];
         for(let index in this.invites) {
             var invite = this.invites[index];
@@ -80,10 +78,10 @@ class CreateGroupAction extends Action {
             if(inviteText != null) {
                 inviteData["invite_text"] = inviteText;  // Only used when creating conversation
             }
-//            if(invite.auxId != null) {
-//                inviteData["aux_id"] = invite.auxId;
-//                hasAuxMembers = true;
-//            }
+            var inviteAuxId = AnswerOrFixed.get(invite.auxId, answers);
+            if(inviteAuxId != null) {
+                inviteData["aux_id"] = inviteAuxId;
+            }
             if(invite.inviteType === "COWORKER") {
                 inviteData["invite_type"] = "coworker";
             } else if(invite.inviteType === "CONTACT") {
@@ -149,8 +147,8 @@ class CreateGroupAction extends Action {
         this.memberIds.push(memberId);
     }
 
-    addInvite(email, firstName, lastName, inviteType, inviteText, createConversation) {
-        var invite = new MemberInvite(email, firstName, lastName, inviteType, inviteText, createConversation);
+    addInvite(email, firstName, lastName, inviteType, inviteText, createConversation, auxId) {
+        var invite = new MemberInvite(email, firstName, lastName, inviteType, inviteText, createConversation, auxId);
         this.invites.push(invite);
     }
 
@@ -207,13 +205,14 @@ class CreateGroupAction extends Action {
 }
 
 class MemberInvite {
-    constructor(email, firstName, lastName, inviteType, inviteText, createConversation) {
+    constructor(email, firstName, lastName, inviteType, inviteText, createConversation, auxId) {
         this.email = email;
         this.firstName = firstName;
         this.lastName = lastName;
         this.inviteType = inviteType;
         this.inviteText = inviteText;
         this.createConversation = createConversation;
+        this.auxId = auxId;
     }
 }
 
