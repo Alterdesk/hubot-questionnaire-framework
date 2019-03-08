@@ -8,7 +8,7 @@ class ReplaceAnswerFormatter extends Formatter {
         this.from = from;
         this.answerKey = answerKey;
         this.textForAnswers = {};
-        this.arrayMode = "ENUMERATE";
+        this.listMode = "ENUMERATE";
         this.bulletStyle = "POINT";
         this.bulletPoint = " • ";
     }
@@ -58,7 +58,7 @@ class ReplaceAnswerFormatter extends Formatter {
         var result = "";
         for(let i in value) {
             var text = this.getTextForAnswer(value[i]);
-            if(this.arrayMode === "LIST") {
+            if(this.listMode === "LIST") {
                 var addText = text;
                 if(this.bulletStyle === "POINT") {
                     addText = this.bulletPoint + text;
@@ -71,7 +71,7 @@ class ReplaceAnswerFormatter extends Formatter {
                 } else {
                     result += "\n" + addText;
                 }
-            } else if(this.arrayMode === "ENUMERATE") {
+            } else if(this.listMode === "ENUMERATE") {
                 if(result.length === 0) {
                     result += text;
                 } else if(result.length === (i - 1) && this.conjunctionWord && this.conjunctionWord.length ) {
@@ -100,8 +100,8 @@ class ReplaceAnswerFormatter extends Formatter {
         this.fallbackText = fallbackText;
     }
 
-    setArrayMode(arrayMode) {
-        this.arrayMode = arrayMode;
+    setListMode(listMode) {
+        this.listMode = listMode;
     }
 
     setBulletStyle(bulletStyle) {
