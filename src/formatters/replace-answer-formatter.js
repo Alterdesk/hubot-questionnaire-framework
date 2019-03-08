@@ -8,6 +8,9 @@ class ReplaceAnswerFormatter extends Formatter {
         this.from = from;
         this.answerKey = answerKey;
         this.textForAnswers = {};
+        this.arrayMode = "ENUMERATE";
+        this.bulletStyle = "POINT";
+        this.bulletPoint = " • ";
     }
 
     execute(text, answers) {
@@ -33,22 +36,14 @@ class ReplaceAnswerFormatter extends Formatter {
             return text;
         }
         if(typeof answerValue === "object") {
-            if(answerValue.length === 0) {
-                Logger.debug("ReplaceAnswerFormatter::execute() Answer is empty: \"" + this.answerKey + "\"");
+            var result = this.getTextForArray(answerValue);
+            if(!result || result.length === 0) {
+                Logger.debug("ReplaceAnswerFormatter::execute() Answer is empty or invalid: key:\"" + this.answerKey + "\" value:", this.answerValue);
                 if(this.fallbackText != null) {
                     Logger.debug("ReplaceAnswerFormatter::execute() Using fallback: \"" + this.fallbackText + "\" answerKey: \"" + this.answerKey + "\"");
                     return text.replace(this.from, this.fallbackText);
                 }
                 return text;
-            }
-            var result = "";
-            for(let i in answerValue) {
-                var textForAnswer = this.getTextForAnswer(answerValue[i]);
-                if(result.length === 0) {
-                    result += textForAnswer;
-                } else {
-                    result += ", " + textForAnswer;
-                }
             }
             return text.replace(this.from, result);
         }
@@ -56,10 +51,43 @@ class ReplaceAnswerFormatter extends Formatter {
         return text.replace(this.from, result);
     }
 
+    getTextForArray(value) {
+        if(!value || value.length === 0) {
+            return null;
+        }
+        var result = "";
+        for(let i in value) {
+            var text = this.getTextForAnswer(value[i]);
+            if(this.arrayMode === "LIST") {
+                var addText = text;
+                if(this.bulletStyle === "POINT") {
+                    addText = this.bulletPoint + text;
+                } else if(this.bulletStyle === "NUMBER") {
+                    var number = (i + 1);
+                    addText = number + ": " + text;
+                }
+                if(result.length === 0) {
+                    result += addText;
+                } else {
+                    result += "\n" + addText;
+                }
+            } else if(this.arrayMode === "ENUMERATE") {
+                if(result.length === 0) {
+                    result += text;
+                } else if(result.length === (i - 1) && this.conjunctionWord && this.conjunctionWord.length ) {
+                    result += this.conjunctionWord + " " + text;
+                } else {
+                    result += ", " + text;
+                }
+            }
+        }
+        return result;
+    }
+
     getTextForAnswer(value) {
-        var textForAnswer = this.textForAnswers[value];
-        if(textForAnswer) {
-            return textForAnswer;
+        var text = this.textForAnswers[value];
+        if(text) {
+            return text;
         }
         return value;
     }
@@ -70,6 +98,22 @@ class ReplaceAnswerFormatter extends Formatter {
 
     setFallbackText(fallbackText) {
         this.fallbackText = fallbackText;
+    }
+
+    setArrayMode(arrayMode) {
+        this.arrayMode = arrayMode;
+    }
+
+    setBulletStyle(bulletStyle) {
+        this.bulletStyle = bulletStyle;
+    }
+
+    setBulletPoint(bulletPoint) {
+        this.bulletPoint = bulletPoint;
+    }
+
+    setConjunctionWord(conjunctionWord) {
+        this.conjunctionWord = conjunctionWord;
     }
 
 }
