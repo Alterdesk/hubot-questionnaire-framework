@@ -100,14 +100,12 @@ class CreateGroupAction extends Action {
         groupPostData["members"] = memberData;
         groupPostData["settings"] = settingsPostData;
         groupPostData["subject"] = subjectValue;
-        groupPostData["send_email"] = AnswerOrFixed.get(this.sendEmail, answers, true);;
+        groupPostData["send_email"] = AnswerOrFixed.get(this.sendEmail, answers, true);
 
         var auxId = AnswerOrFixed.get(this.auxId, answers);
         if(auxId) {
             groupPostData["aux_id"] = auxId;
-//            if(hasAuxMembers) {
-                groupPostData["aux_members"] = false;   // TODO All member ids should be aux or not aux
-//            }
+            groupPostData["aux_members"] = false;   // TODO All member ids should be aux or not aux
         }
 
         var groupPostJson = JSON.stringify(groupPostData);
@@ -177,7 +175,7 @@ class CreateGroupAction extends Action {
     }
 
     setSendEmail(sendEmail) {
-        this.sendEmail;
+        this.sendEmail = sendEmail;
     }
 
     setPositiveSubFlow(positiveSubFlow) {
