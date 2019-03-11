@@ -9,13 +9,15 @@ class MultipleChoiceQuestion extends Question {
         super(answerKey, questionText, invalidText);
         this.regex = Extra.getNonEmptyRegex();
         this.options = [];
+        this.availableOptions = [];
         this.useButtons = false;
         this.multiAnswer = false;
     }
 
     // Add an option answer regex and optional sub flow
-    addOption(regex, subFlow, value) {
-        this.options.push(new MultipleChoiceOption(regex, subFlow, value));
+    addOption(regex, subFlow, value, conditions) {
+        var option = new MultipleChoiceOption(regex, subFlow, value, conditions);
+        this.options.push(option);
     }
 
     // Add a button to the last added MultipleChoiceOption
@@ -121,11 +123,33 @@ class MultipleChoiceQuestion extends Question {
             messageData.isGroup = control.isUserInGroup(msg.message.user);
             messageData.isAux = false;
 
+            var answers;
+            if(this.flow) {
+                answers = this.flow.answers;
+            }
+
             var questionPayload = control.createQuestionPayload();
             questionPayload.multiAnswer = this.multiAnswer;
             questionPayload.style = this.questionStyle || "horizontal";
             for(let i in this.options) {
                 var option = this.options[i];
+
+                var addOption = true;
+                var conditions = option.conditions;
+                if(conditions && conditions.length > 0 && answers) {
+                    for(let i in conditions) {
+                        var condition = conditions[i];
+                        if(!condition.check(answers)) {
+                            Logger.debug("MultipleChoiceQuestion::send() Condition not met: ", condition);
+                            addOption = false;
+                            break;
+                        }
+                    }
+                }
+
+                if(!addOption) {
+                    continue;
+                }
 
                 var label = option.label || option.regex;
                 if(!label) {
@@ -141,6 +165,7 @@ class MultipleChoiceQuestion extends Question {
 
                 var style = option.style || "theme";
                 questionPayload.addOption(name, label, style);
+                this.availableOptions.push(option);
             }
             if(this.isMultiUser && this.userIds && this.userIds.length > 0) {
                 let remainingUserIds = this.getRemainingUserIds();
@@ -215,8 +240,8 @@ class MultipleChoiceQuestion extends Question {
     checkAndParseChoice(choice) {
         var optionMatch = null;
         var longestMatch = null;
-        for(let index in this.options) {
-            var option = this.options[index];
+        for(let index in this.availableOptions) {
+            var option = this.availableOptions[index];
             var match = choice.match(option.regex);
             if(match) {
                 var matchString = match[0];
@@ -242,10 +267,11 @@ class MultipleChoiceQuestion extends Question {
 
 // Class to contain a option of a multiple choice question
 class MultipleChoiceOption {
-    constructor(regex, subFlow, value) {
+    constructor(regex, subFlow, value, conditions) {
         this.regex = regex;
         this.subFlow = subFlow;
         this.value = value;
+        this.conditions = conditions;
     }
 }
 
