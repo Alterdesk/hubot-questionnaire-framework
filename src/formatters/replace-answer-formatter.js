@@ -75,7 +75,7 @@ class ReplaceAnswerFormatter extends Formatter {
             } else if(this.listMode === "ENUMERATE") {
                 if(result.length === 0) {
                     result += text;
-                } else if(value.length === index - 1 && this.conjunctionWord && this.conjunctionWord.length) {
+                } else if(value.length === index + 1 && this.conjunctionWord && this.conjunctionWord.length) {
                     result += this.conjunctionWord + " " + text;
                 } else {
                     result += ", " + text;
