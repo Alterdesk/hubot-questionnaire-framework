@@ -9,8 +9,8 @@ class ReplaceAnswerFormatter extends Formatter {
         this.answerKey = answerKey;
         this.textForAnswers = {};
         this.listMode = "ENUMERATE";
-        this.bulletStyle = "POINT";
-        this.bulletPoint = " • ";
+        this.bulletMode = "POINT";
+        this.bulletStyle = " • ";
     }
 
     execute(text, answers) {
@@ -60,9 +60,9 @@ class ReplaceAnswerFormatter extends Formatter {
             var text = this.getTextForAnswer(value[i]);
             if(this.listMode === "LIST") {
                 var addText = text;
-                if(this.bulletStyle === "POINT") {
-                    addText = this.bulletPoint + text;
-                } else if(this.bulletStyle === "NUMBER") {
+                if(this.bulletMode === "POINT") {
+                    addText = this.bulletStyle + text;
+                } else if(this.bulletMode === "NUMBER") {
                     var number = (i + 1);
                     addText = number + ": " + text;
                 }
@@ -104,12 +104,12 @@ class ReplaceAnswerFormatter extends Formatter {
         this.listMode = listMode;
     }
 
-    setBulletStyle(bulletStyle) {
-        this.bulletStyle = bulletStyle;
+    setBulletMode(bulletMode) {
+        this.bulletMode = bulletMode;
     }
 
-    setBulletPoint(bulletPoint) {
-        this.bulletPoint = bulletPoint;
+    setBulletStyle(bulletStyle) {
+        this.bulletStyle = bulletStyle;
     }
 
     setConjunctionWord(conjunctionWord) {
