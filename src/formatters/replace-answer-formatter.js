@@ -57,13 +57,14 @@ class ReplaceAnswerFormatter extends Formatter {
         }
         var result = "";
         for(let i in value) {
+            var index = parseInt(i, 10);
             var text = this.getTextForAnswer(value[i]);
             if(this.listMode === "LIST") {
                 var addText = text;
                 if(this.bulletMode === "POINT") {
                     addText = this.bulletStyle + text;
                 } else if(this.bulletMode === "NUMBER") {
-                    var number = (i + 1);
+                    var number = index + 1;
                     addText = number + ": " + text;
                 }
                 if(result.length === 0) {
@@ -74,7 +75,7 @@ class ReplaceAnswerFormatter extends Formatter {
             } else if(this.listMode === "ENUMERATE") {
                 if(result.length === 0) {
                     result += text;
-                } else if(result.length === (i - 1) && this.conjunctionWord && this.conjunctionWord.length ) {
+                } else if(result.length === index - 1 && this.conjunctionWord && this.conjunctionWord.length) {
                     result += this.conjunctionWord + " " + text;
                 } else {
                     result += ", " + text;
