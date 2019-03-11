@@ -76,7 +76,7 @@ class ReplaceAnswerFormatter extends Formatter {
                 if(result.length === 0) {
                     result += text;
                 } else if(value.length === index + 1 && this.conjunctionWord && this.conjunctionWord.length) {
-                    result += this.conjunctionWord + " " + text;
+                    result += " " + this.conjunctionWord + " " + text;
                 } else {
                     result += ", " + text;
                 }
