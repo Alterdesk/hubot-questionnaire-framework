@@ -116,6 +116,10 @@ class Question {
         this.isMultiUser = true;
     }
 
+    setResendOnInvalid(resendOnInvalid) {
+        this.resendOnInvalid = resendOnInvalid;
+    }
+
     // Execute this question
     execute(control, msg, callback, answers) {
         var formatted;
