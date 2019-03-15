@@ -928,9 +928,11 @@ class Flow {
     onAnswer(response, question, answerValue) {
         // Format the given answer if a function was set
         if(question.formatAnswerFunction) {
+            Logger.debug("Flow::onAnswer() Formatting answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
             var formatted = question.formatAnswerFunction(answerValue);
             if(formatted && formatted !== "") {
                 answerValue = formatted;
+                Logger.debug("Flow::onAnswer() Formatted answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
             }
         }
 
