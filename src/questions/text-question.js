@@ -7,6 +7,8 @@ class TextQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
         this.regex = Extra.getTextRegex();
+        this.min = -1;
+        this.max = -1;
     }
 
     // Use an alternative regular expression
@@ -33,11 +35,11 @@ class TextQuestion extends Question {
 
     // Check the text length
     acceptedLength(text) {
-        if(this.min != null && this.max != null) {
+        if(this.min > 0 && this.max > 0) {
             return text.length >= this.min && text.length <= this.max;
-        } else if(this.min != null) {
+        } else if(this.min > 0) {
             return text.length >= this.min;
-        } else if(this.max != null) {
+        } else if(this.max > 0) {
             return text.length <= this.max;
         }
         return true;
