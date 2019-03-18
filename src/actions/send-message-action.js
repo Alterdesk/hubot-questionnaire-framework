@@ -3,10 +3,11 @@ const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const Logger = require('./../logger.js');
 
 class SendMessageAction extends Action {
-    constructor(filename) {
+    constructor(messageText) {
         super((response, answers, flowCallback) => {
             this.start(response, answers, flowCallback);
         }, 0);
+        this.messageText = messageText;
         this.messageFormatters = [];
         this.isAux = false;
     }
@@ -59,11 +60,6 @@ class SendMessageAction extends Action {
             }
             flowCallback();
         });
-    }
-
-
-    setMessageText(messageText) {
-        this.messageText = messageText;
     }
 
     addMessageFormatter(formatter) {
