@@ -38,6 +38,11 @@ class SendMessageAction extends Action {
             var formatter = this.messageFormatters[i];
             messageText = formatter.execute(messageText, answers);
         }
+        if(!messageText || messageText === "") {
+            Logger.error("SendMessageAction::start() Invalid message text:", messageText);
+            flowCallback();
+            return;
+        }
 
         var messageData = control.createSendMessageData();
         messageData.chatId = chatId;
