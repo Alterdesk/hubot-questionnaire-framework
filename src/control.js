@@ -97,7 +97,8 @@ class Control {
         robot.defaultRobotReceiver = robot.receive;
 
         // Override receive function
-        robot.receive = function(message) {
+        robot.receive = (message) => {
+            Logger.debug("Control::receive() Message:", message);
 
             if(control.robotUserId == null && robot.user != null) {
                 control.robotUser = robot.user;
@@ -733,7 +734,7 @@ class Control {
             this.sendComposing(response);
 
             // Send the message and parse result in callback
-            this.messengerApi.sendMessage(messageData, function(success, json) {
+            this.messengerApi.sendMessage(messageData, (success, json) => {
                 Logger.debug("Control::sendRequestMessage() Successful: " + success);
                 if(json == null) {
                     // Fallback
