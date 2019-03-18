@@ -621,6 +621,7 @@ class Control {
     // Check if the received answer was a command and trigger it if so
     checkCommandButton(message) {
         if(!this.messengerApi) {
+            Logger.error("Control:checkCommandButton() Messenger API instance not set");
             return;
         }
         var acceptedCommand = false;
@@ -641,6 +642,7 @@ class Control {
                 }
             }
             if(!acceptedCommand) {
+                Logger.error("Control:checkCommandButton() Not an accepted command: \"" + optionText + "\"");
                 return;
             }
         }

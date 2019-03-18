@@ -16,7 +16,6 @@ class SendMessageAction extends Action {
             flowCallback();
             return;
         }
-        var msg = this.flow.msg;
         var control = this.flow.control;
         var messengerApi = control.messengerApi;
 
@@ -28,6 +27,7 @@ class SendMessageAction extends Action {
             isGroup = AnswerOrFixed.get(this.isGroup, answers);
             isAux = AnswerOrFixed.get(this.isAux, answers);
         } else {
+            var msg = this.flow.msg;
             chatId = msg.message.room;
             isGroup = control.isUserInGroup(msg.message.user);
             isAux = false;
