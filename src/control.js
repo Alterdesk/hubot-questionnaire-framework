@@ -679,13 +679,9 @@ class Control {
                 var textMessage = new TextMessage(messageUser);
                 textMessage.room = roomId;
                 textMessage.text = optionText;
-                if(this.robot.defaultRobotReceiver) {
-                    this.robot.defaultRobotReceiver(textMessage);
-                } else {
-                    this.robot.receive(textMessage);
-                }
+                this.robot.receive(textMessage);
             }
-    });
+        });
     }
 
     // Send the help message
