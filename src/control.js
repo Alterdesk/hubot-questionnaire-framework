@@ -81,6 +81,7 @@ class Control {
 
     // Override the default receiver
     overrideReceiver(robot) {
+        this.robot = robot;
         // Check if robot receiver is already overridden
         if(robot.defaultRobotReceiver != null) {
             Logger.error("Control::overrideReceiver() Robot receiver already overridden!")
