@@ -681,10 +681,8 @@ class Control {
                 user.room = roomId;
                 user.name = roomId;
                 user.is_groupchat = isGroup;
-                var textMessage = new TextMessage(messageUser);
+                var textMessage = new TextMessage(messageUser, optionText, "dummy_id");
                 textMessage.room = roomId;
-                textMessage.text = optionText;
-                textMessage.id = "dummy_id";
                 this.robot.receive(textMessage);
             }
         });
