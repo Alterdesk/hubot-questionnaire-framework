@@ -51,6 +51,7 @@ module.exports = {
     ReplaceDateFormatter : require('./formatters/replace-date-formatter.js'),
     ReplaceTextFormatter : require('./formatters/replace-text-formatter.js'),
     RetrieveAction : require('./actions/retrieve-action.js'),
+    SendMessageAction : require('./actions/send-message-action.js'),
     SetAnswerAction : require('./actions/set-answer-action.js'),
     StopConditionAction : require('./actions/stop-condition-action.js'),
     SummaryAction : require('./actions/summary-action.js'),
