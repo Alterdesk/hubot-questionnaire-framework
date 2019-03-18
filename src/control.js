@@ -655,17 +655,33 @@ class Control {
                 Logger.error("Control::checkCommandButton() Unable to retrieve request message on checkCommandButton");
                 return;
             }
-            if(json != null && json["user"] && json["user"]["id"] === this.robotUserId) {
-                if(helpCommand) {
-                    this.sendHelpMessage(message);
-                } else {
-                    var textMessage = new TextMessage(message.user);
-                    textMessage.room = roomId;
-                    textMessage.text = optionText;
-                    this.robot.defaultRobotReceiver(textMessage);
-                }
+            if(!json) {
+                Logger.error("Control::checkCommandButton() Retrieved invalid json on checkCommandButton:", json);
+                return;
             }
-        });
+            var user = json["user"];
+            if(!user) {
+                Logger.error("Control::checkCommandButton() Retrieved invalid user on checkCommandButton:", json);
+                return;
+            }
+            var id = user["id"];
+            if(!id) {
+                Logger.error("Control::checkCommandButton() Retrieved invalid user id on checkCommandButton:", json);
+                return;
+            }
+            if(id !== this.robotUserId) {
+                Logger.error("Control::checkCommandButton() User id is not robot id on checkCommandButton:", this.robotUserId, json);
+                return;
+            }
+            if(helpCommand) {
+                this.sendHelpMessage(message);
+            } else {
+                var textMessage = new TextMessage(message.user);
+                textMessage.room = roomId;
+                textMessage.text = optionText;
+                this.robot.defaultRobotReceiver(textMessage);
+            }
+    });
     }
 
     // Send the help message
