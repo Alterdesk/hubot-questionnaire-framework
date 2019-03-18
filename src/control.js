@@ -665,10 +665,6 @@ class Control {
                 return;
             }
             var id = user["id"];
-            if(!id) {
-                Logger.error("Control::checkCommandButton() Retrieved invalid user id on checkCommandButton:", json);
-                return;
-            }
             if(id !== this.robotUserId) {
                 Logger.error("Control::checkCommandButton() User id is not robot id on checkCommandButton:", this.robotUserId, json);
                 return;
@@ -678,10 +674,16 @@ class Control {
                 this.sendHelpMessage(message);
             } else {
                 Logger.error("Control:checkCommandButton() Accepted command: " + optionText);
-                var textMessage = new TextMessage(message.user);
+                var messageUser = new User(userId);
+                user.is_groupchat = isGroup;
+                var textMessage = new TextMessage(messageUser);
                 textMessage.room = roomId;
                 textMessage.text = optionText;
-                this.robot.defaultRobotReceiver(textMessage);
+                if(this.robot.defaultRobotReceiver) {
+                    this.robot.defaultRobotReceiver(textMessage);
+                } else {
+                    this.robot.receive(textMessage);
+                }
             }
     });
     }
