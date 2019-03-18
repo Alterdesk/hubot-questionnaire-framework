@@ -42,7 +42,7 @@ class SendMessageAction extends Action {
         var messageData = control.createSendMessageData();
         messageData.chatId = chatId;
         messageData.isGroup = isGroup;
-        messageData.isAux = destinationIsAux;
+        messageData.isAux = isAux;
         messageData.message = messageText;
 //        messageData.addAttachmentPath(filePath);
         messageData.overrideToken = this.overrideToken;
