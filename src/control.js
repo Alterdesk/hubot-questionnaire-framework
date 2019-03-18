@@ -674,8 +674,10 @@ class Control {
                 return;
             }
             if(helpCommand) {
+                Logger.error("Control:checkCommandButton() Sending help message");
                 this.sendHelpMessage(message);
             } else {
+                Logger.error("Control:checkCommandButton() Accepted command: " + optionText);
                 var textMessage = new TextMessage(message.user);
                 textMessage.room = roomId;
                 textMessage.text = optionText;
