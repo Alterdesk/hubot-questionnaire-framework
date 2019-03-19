@@ -15,6 +15,30 @@ class DateTools {
         return DateTools.getMoment(date).format(format);
     }
 
+    static timePassed(date, timeScale, timeValue) {
+        var moment = DateTools.getMoment(date);
+        if(timeScale === "MILLISECONDS") {
+            moment.add(timeValue, "ms");
+        } else if(timeScale === "SECONDS") {
+            moment.add(timeValue, "s");
+        } else if(timeScale === "MINUTES") {
+            moment.add(timeValue, "m");
+        } else if(timeScale === "HOURS") {
+            moment.add(timeValue, "h");
+        } else if(timeScale === "DAYS") {
+            moment.add(timeValue, "d");
+        } else if(timeScale === "WEEKS") {
+            moment.add(timeValue, "w");
+        } else if(timeScale === "MONTHS") {
+            moment.add(timeValue, "M");
+        } else if(timeScale === "YEARS") {
+            moment.add(timeValue, "y");
+        } else {
+            return false;
+        }
+        return moment.isBefore(DateTools.getMoment());
+    }
+
     static timeInRange(date, min, max) {
         var minTime = DateTools.parse(min, "HH:mm");
         var maxTime = DateTools.parse(max, "HH:mm");

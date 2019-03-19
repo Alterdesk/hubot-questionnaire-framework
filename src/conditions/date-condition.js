@@ -31,6 +31,10 @@ class DateCondition extends Condition {
         this.inverse = inverse;
     }
 
+    addTimePassed(timeScale, timeValue) {
+        this.checks.push(new TimePassed(timeScale, timeValue));
+    }
+
     addTimeRange(min, max) {
         this.checks.push(new TimeRange(min, max));
     }
@@ -59,6 +63,17 @@ class DateCondition extends Condition {
         return this.checks.length > 0;
     }
 
+}
+
+class TimePassed {
+    constructor(timeScale, timeValue) {
+        this.timeScale = timeScale;
+        this.timeValue = timeValue;
+    }
+
+    check(date) {
+        return DateTools.timePassed(date, this.timeScale, this.timeValue);
+    }
 }
 
 class TimeRange {
