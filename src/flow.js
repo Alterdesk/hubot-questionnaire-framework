@@ -663,7 +663,7 @@ class Flow {
         return this;
     }
 
-    showIndex(indexText, indexOptionText, maxAttempts) {
+    showIndex(indexText, indexOptionText) {
         if(this.lastAddedAction == null) {
             Logger.error("Flow::showIndex() No Action added to flow");
             return this;
@@ -672,7 +672,20 @@ class Flow {
             Logger.error("Flow::showIndex() Last added Action is not an instance of FuzzyAction");
             return this;
         }
-        this.lastAddedAction.setShowIndex(indexText, indexOptionText, maxAttempts);
+        this.lastAddedAction.setShowIndex(indexText, indexOptionText);
+        return this;
+    }
+
+    maxAttempts(max) {
+        if(this.lastAddedAction == null) {
+            Logger.error("Flow::maxAttempts() No Action added to flow");
+            return this;
+        }
+        if(!(this.lastAddedAction instanceof FuzzyAction)) {
+            Logger.error("Flow::maxAttempts() Last added Action is not an instance of FuzzyAction");
+            return this;
+        }
+        this.lastAddedAction.setMaxAttempts(max);
         return this;
     }
 

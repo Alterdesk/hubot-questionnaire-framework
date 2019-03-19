@@ -50,10 +50,11 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
     showCandidates(candidates, text, askAgainOnDidNot) {
         Logger.debug("FuzzyAction::showCandidates() Candidates: " + candidates.length);
         var candidateAnswerKey = this.answerKey + "_candidate_" + this.candidateAttempts;
+        var candidateText = text || "";
         this.steps.push(candidateAnswerKey);
         this.candidateAttempts++;
         var askDidMeanFlow = this.flow.createInstance()
-        .multiple(candidateAnswerKey, text, this.invalidText);
+        .multiple(candidateAnswerKey, candidateText, this.invalidText);
         for(let index in candidates) {
             var candidate = candidates[index];
             var name = candidate.name;
@@ -121,7 +122,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         Logger.debug("FuzzyAction::showIndex() Options ", availableOptions);
 
         if(availableOptions.length === 0) {
-            this.askText(this.reformulateText || this.questionText);    // TODO Or fail?
+            this.askText(this.reformulateText || this.questionText);
             return;
         }
         var indexAnswerKey = this.answerKey + "_index_" + this.indexAttempts;
@@ -132,7 +133,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         for(let index in availableOptions) {
             var option = availableOptions[index];
             var label = option.toUpperCase();
-            var style = "orange";   // TODO Style?
+            var style = "orange";
             indexFlow.option(option)
             .button(option, label, style);
         }
@@ -238,8 +239,6 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
             return;
         }
 
-        // TODO Check if "index" was set
-        // TODO Check if "did you mean" was set
         if(this.combineMatches && matchedCandidates.length > 0 && possibleCandidates.length > 0) {
             var optionCandidates = [];
             for(let i in matchedCandidates) {
@@ -260,7 +259,11 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         } else if(possibleCandidates.length > 0) {
             this.showCandidates(possibleCandidates, this.didYouMeanText, true);
         } else if(this.maxAttempts > 0 && this.textAttempts >= this.maxAttempts) {
-            this.showIndex();
+            if(this.failFlow || !this.indexText || !this.indexOptionText) {
+                this.done(null);
+            } else {
+                this.showIndex();
+            }
         } else {
             this.askText(this.reformulateText || this.questionText);
         }
@@ -268,14 +271,25 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
 
     done(candidate) {
         Logger.debug("FuzzyAction::done()", this.answerKey);
-        if(candidate && candidate.name) {
-            this.answers.add(this.answerKey, candidate.name);
-            if(candidate.label) {
-                this.answers.add(this.answerKey + "_label", candidate.label);
+        if(candidate) {
+            if(candidate.name) {
+                this.answers.add(this.answerKey, candidate.name);
+                if(candidate.label) {
+                    this.answers.add(this.answerKey + "_label", candidate.label);
+                }
+            }
+        } else if(this.failName) {
+            this.answers.add(this.answerKey, failName);
+            if(this.failLabel) {
+                this.answers.add(this.answerKey + "_label" + this.failLabel);
             }
         }
-        if(candidate && candidate.subFlow) {
-            this.setSubFlow(candidate.subFlow);
+        if(candidate) {
+            if(candidate.subFlow) {
+                this.setSubFlow(candidate.subFlow);
+            }
+        } else if(this.failFlow) {
+            this.setSubFlow(this.failFlow);
         }
         if(this.textAttempts && this.textAttempts > 0) {
             this.answers.add(this.answerKey + "_attempts", this.textAttempts);
@@ -286,14 +300,14 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         if(this.lastText && this.lastText !== "") {
             this.answers.add(this.answerKey + "_text", this.lastText);
         }
+        this.answers.add(this.answerKey + "_success", condition != null);
 
-        // TODO TEMP
-        var keys = this.answers.getKeysWithPrefix(this.answerKey);
-        for(let i in keys) {
-            var key = keys[i];
-            var value = this.answers.get(key);
-            Logger.debug("FuzzyAction::done() Key: \"" + key + "\" Value: \"" + value + "\"");
-        }
+//        var keys = this.answers.getKeysWithPrefix(this.answerKey);
+//        for(let i in keys) {
+//            var key = keys[i];
+//            var value = this.answers.get(key);
+//            Logger.debug("FuzzyAction::done() Key: \"" + key + "\" Value: \"" + value + "\"");
+//        }
 
         this.flowCallback();
     }
@@ -310,10 +324,30 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         this.reformulateText = reformulateText;
     }
 
-    setShowIndex(indexText, indexOptionText, maxAttempts) {
-        this.indexText = indexText;
-        this.indexOptionText =indexOptionText;
+    setFailValues(failName, failLabel) {
+        this.failName = failName;
+        this.failLabel = failLabel;
+    }
+
+    setFailFlow(failFlow) {
+        this.failFlow = failFlow;
+    }
+
+    setMaxAttempts(maxAttempts) {
         this.maxAttempts = maxAttempts;
+    }
+
+    setMaxLevenshteinDistance(maxLevenshteinDistance) {
+        this.maxLevenshteinDistance = maxLevenshteinDistance;
+    }
+
+    setMinWordLength(minWordLength) {
+        this.minWordLength = minWordLength;
+    }
+
+    setShowIndex(indexText, indexOptionText) {
+        this.indexText = indexText;
+        this.indexOptionText = indexOptionText;
     }
 
     setDidYouMean(didYouMeanText, didNotRegex) {
