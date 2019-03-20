@@ -33,6 +33,16 @@ class RepeatFlowAction extends Action {
 
     checkRepeat() {
         Logger.debug("RepeatFlowAction::checkRepeat() Iteration:", this.iteration);
+
+        for(let i in this.conditions) {
+            var condition = this.conditions[i];
+            if(!condition.check(answers)) {
+                Logger.debug("RepeatFlowAction::checkRepeat() Condition not met: ", condition);
+                this.flowCallback();
+                return;
+            }
+        }
+
         if(this.iterations < this.minIterations) {
             this.nextIteration();
             return;
@@ -51,15 +61,7 @@ class RepeatFlowAction extends Action {
                 this.flowCallback();
                 return;
             }
-        }
-
-        for(let i in this.conditions) {
-            var condition = this.conditions[i];
-            if(!condition.check(answers)) {
-                Logger.debug("RepeatFlowAction::checkRepeat() Condition not met: ", condition);
-                this.flowCallback();
-                return;
-            }
+            Logger.debug("RepeatFlowAction::checkRepeat() Repeat answer matches:", key, value, this.repeatValue);
         }
 
         this.nextIteration();
