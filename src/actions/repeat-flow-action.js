@@ -44,6 +44,7 @@ class RepeatFlowAction extends Action {
         }
 
         if(this.iterations + 1 < this.minIterations) {
+            Logger.debug("RepeatFlowAction::checkRepeat() Minimal iterations not met:", this.iteration);
             this.nextIteration();
             return;
         }
