@@ -42,14 +42,15 @@ class RepeatFlowAction extends Action {
                 return;
             }
         }
-
-        if(this.iterations + 1 < this.minIterations) {
-            Logger.debug("RepeatFlowAction::checkRepeat() Minimal iterations not met:", this.iteration);
+        var checkIteration = this.iteration;
+        checkIteration++;
+        if(checkIteration < this.minIterations) {
+            Logger.debug("RepeatFlowAction::checkRepeat() Minimal iterations not met:", this.minIterations);
             this.nextIteration();
             return;
         }
 
-        if(this.iterations > -1 && this.repeatKey && this.repeatKey !== "") {
+        if(this.iteration > -1 && this.repeatKey && this.repeatKey !== "") {
             var key = this.repeatKey + "_" + this.iteration;
             var value = this.answers.get(key);
             if(value == null) {
