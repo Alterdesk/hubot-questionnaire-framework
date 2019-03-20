@@ -78,6 +78,7 @@ class RepeatFlowAction extends Action {
             }
             step.answerKey = step.originalAnswerKey + "_" + this.iteration;
         }
+        this.repeatFlow.currentStep = 0;
         this.flow.startSubFlow(this.repeatFlow, false);
     }
 
