@@ -43,12 +43,12 @@ class RepeatFlowAction extends Action {
             }
         }
 
-        if(this.iterations < this.minIterations) {
+        if(this.iterations + 1 < this.minIterations) {
             this.nextIteration();
             return;
         }
 
-        if(this.repeatKey && this.repeatKey !== "") {
+        if(this.iterations > -1 && this.repeatKey && this.repeatKey !== "") {
             var key = this.repeatKey + "_" + this.iteration;
             var value = this.answers.get(key);
             if(value == null) {
