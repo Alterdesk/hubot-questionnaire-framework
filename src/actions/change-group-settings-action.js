@@ -68,7 +68,7 @@ class ChangeGroupSettingsAction extends Action {
         if(isAux) {
             postUrl = "aux/groupchats/" + chatId + "/settings";
         } else {
-            postUrl = "groupchats/" + chatId + "/settings;
+            postUrl = "groupchats/" + chatId + "/settings";
         }
         this.flow.control.messengerApi.put(postUrl, settingsPostJson, (success, json) => {
             flowCallback();
