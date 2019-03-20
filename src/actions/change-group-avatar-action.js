@@ -40,7 +40,7 @@ class ChangeGroupAvatarAction extends Action {
             chatId = this.flow.msg.message.room;
             isAux = false;
         }
-        changeGroupAvatar(chatId, isAux, this.avatarPath, (success, json) => {
+        this.flow.control.messengerApi.changeGroupAvatar(chatId, isAux, this.avatarPath, (success, json) => {
             flowCallback();
         }, this.overrideToken);
     }
