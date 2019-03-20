@@ -1,5 +1,4 @@
 const Action = require('./action.js');
-const AnswerCondition = require('./../conditions/answer-condition.js');
 const Logger = require('./../logger.js');
 
 class FlowAction extends Action {

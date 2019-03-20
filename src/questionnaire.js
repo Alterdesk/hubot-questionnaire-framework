@@ -47,6 +47,7 @@ module.exports = {
     PhoneNumberQuestion : require('./questions/phone-number-question.js'),
     PolarQuestion : require('./questions/polar-question.js'),
     Question : require('./questions/question.js'),
+    RepeatFlowAction : require('./actions/repeat-flow-action.js'),
     ReplaceAnswerFormatter : require('./formatters/replace-answer-formatter.js'),
     ReplaceDateFormatter : require('./formatters/replace-date-formatter.js'),
     ReplaceTextFormatter : require('./formatters/replace-text-formatter.js'),
