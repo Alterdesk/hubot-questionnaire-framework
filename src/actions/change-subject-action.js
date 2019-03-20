@@ -8,8 +8,6 @@ class ChangeSubjectAction extends Action {
             this.start(response, answers, flowCallback);
         }, 0);
         this.subject = subject;
-        this.memberIds = [];
-        this.invites = [];
         this.subjectFormatters = [];
     }
 

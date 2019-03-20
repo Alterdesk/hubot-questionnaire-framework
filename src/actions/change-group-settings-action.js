@@ -3,14 +3,10 @@ const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const Logger = require('./../logger.js');
 
 class ChangeGroupSettingsAction extends Action {
-    constructor(subject) {
+    constructor() {
         super((response, answers, flowCallback) => {
             this.start(response, answers, flowCallback);
         }, 0);
-        this.subject = subject;
-        this.memberIds = [];
-        this.invites = [];
-        this.subjectFormatters = [];
     }
 
     start(response, answers, flowCallback) {
