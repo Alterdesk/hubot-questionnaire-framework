@@ -75,6 +75,26 @@ class ChangeGroupSettingsAction extends Action {
         }, this.overrideToken);
     }
 
+    setAllowContacts(allowContacts) {
+        this.allowContacts = allowContacts;
+    }
+
+    setAutoCloseAfter(autoCloseAfter) {
+        this.autoCloseAfter = autoCloseAfter;
+    }
+
+    setAutoExpireAfter(autoExpireAfter) {
+        this.autoExpireAfter = autoExpireAfter;
+    }
+
+    setHybridMessaging(hybridMessaging) {
+        this.hybridMessaging = hybridMessaging;
+    }
+
+    setMembersCanInvite(membersCanInvite) {
+        this.membersCanInvite = membersCanInvite;
+    }
+
     setChatId(chatId) {
         this.chatId = chatId;
     }
