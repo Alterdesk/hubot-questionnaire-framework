@@ -44,7 +44,7 @@ class ChangeSubjectAction extends Action {
             chatId = this.flow.msg.message.room;
             isAux = false;
         }
-        this.flow.control.messengerApi.changeGroupSubject(chatId, isAux, subject, (success, json) => {
+        this.flow.control.messengerApi.changeGroupSubject(chatId, isAux, subjectValue, (success, json) => {
             flowCallback();
         }, this.overrideToken);
     }
