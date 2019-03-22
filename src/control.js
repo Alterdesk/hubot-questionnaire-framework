@@ -677,10 +677,10 @@ class Control {
             } else {
                 Logger.error("Control:checkCommandButton() Accepted command: " + optionText);
                 var messageUser = new User(userId);
-                user.user_id = userId;
-                user.room = roomId;
-                user.name = roomId;
-                user.is_groupchat = isGroup;
+                messageUser.user_id = userId;
+                messageUser.room = roomId;
+                messageUser.name = roomId;
+                messageUser.is_groupchat = isGroup;
                 var textMessage = new TextMessage(messageUser, optionText, "dummy_id");
                 textMessage.room = roomId;
                 this.robot.receive(textMessage);
