@@ -29,7 +29,9 @@ class CloseGroupAction extends Action {
             isAux = false;
         }
 
-        this.flow.control.messengerApi.closeGroupChat(chatId, isAux, (success, json) => {
+        var sendEmail = AnswerOrFixed.get(this.sendEmail, answers, true);
+
+        this.flow.control.messengerApi.closeGroupChat(chatId, isAux, sendEmail, (success, json) => {
             flowCallback();
         }, this.overrideToken);
     }
@@ -40,6 +42,10 @@ class CloseGroupAction extends Action {
 
     setIsAux(isAux) {
         this.isAux = isAux;
+    }
+
+    setSendEmail(sendEmail) {
+        this.sendEmail = sendEmail;
     }
 
     setOverrideToken(overrideToken) {
