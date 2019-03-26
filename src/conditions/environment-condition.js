@@ -1,32 +1,62 @@
 const Logger = require('./../logger.js');
 
 class EnvironmentCondition {
-    constructor(checkKey) {
-        this.checkKey = checkKey;
+    constructor() {
+        this.checkKeys[] = [];
+        this.checkValues = {};
     }
 
-    setCheckValue(checkValue) {
-        this.checkValue = checkValue;
+    addKey(checkKey) {
+        if(this.checkKeys.indexOf(checkKey) === -1) {
+            this.checkKeys.push(checkKey);
+        }
+    }
+
+    addValue(checkKey, checkValue) {
+        this.addKey(checkKey);
+        var values = this.checkValue[checkKey];
+        if(!values) {
+            values = [];
+            this.checkValues[checkKey] = values;
+        }
+        if(values.indexOf(checkValue) === -1) {
+            values.push(checkValue);
+        }
     }
 
     check(answers) {
-        if(!this.checkKey || this.checkKey.length === 0) {
-            Logger.error("EnvironmentCondition::check() Invalid check key:", this.checkKey);
-            return false;
+        for(let i in this.checkKeys) {
+            var checkKey = this.checkKeys[i];
+            var value = process.env[checkKey];
+            if(value == null) {
+                Logger.debug("EnvironmentCondition::check() No value for key:", checkKey);
+                continue;
+            }
+            var values = this.checkValues[checkKey]
+            if(!values || values.length === 0) {
+                Logger.debug("EnvironmentCondition::check() Condition met key: " + checkKey);
+                return true;
+            }
+            for(let i in values) {
+                var checkValue = values[i];
+                if(checkValue === value) {
+                    Logger.debug("EnvironmentCondition::check() Condition met key: " + checkKey + " value: " + value);
+                    return true;
+                } else if(typeof value === "string"
+                        && typeof checkValue === "string"
+                        && value.toUpperCase() === checkValue.toUpperCase()) {
+                    Logger.debug("EnvironmentCondition::check() Condition met key: " + checkKey + " value: " + value);
+                    return true;
+                }
+            }
         }
-        var value = process.env[this.checkKey];
-        if(value == null) {
-            Logger.debug("EnvironmentCondition::check() No value for key:", this.checkKey);
-            return false;
-        }
-        if(this.checkValue) {
-            Logger.debug("EnvironmentCondition::check() Value for key matches:", this.checkKey, value);
-            return this.checkValue === value;
-        }
-        Logger.debug("EnvironmentCondition::check() Has value for key:", this.checkKey);
-        return true;
+        Logger.debug("EnvironmentCondition::check() Condition not met:", this);
+        return false;
     }
 
+    hasKeys() {
+        return this.checkKeys.length > 0;
+    }
 
 }
 
