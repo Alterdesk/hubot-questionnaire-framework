@@ -140,14 +140,14 @@ class VerificationQuestion extends Question {
     }
 
     checkAndParseAnswer(matches, message) {
-        if(matches === null || !matches || message.text == null) {
+        let value = message.text;
+        if(value == null || (matches == null && (typeof(value) !== "boolean"))) {
             return null;
         }
-        var event = message.text;
-        if(event === "conversation_verification_accepted" || event === "groupchat_verification_accepted") {
+        if(value === true || value === "conversation_verification_accepted" || value === "groupchat_verification_accepted") {
             this.setSubFlow(this.verifiedSubFlow);
             return true;
-        } else if(event === "conversation_verification_rejected" || event === "groupchat_verification_rejected") {
+        } else if(value === false || value === "conversation_verification_rejected" || value === "groupchat_verification_rejected") {
             this.setSubFlow(this.unverifiedSubFlow);
             return false;
         }
