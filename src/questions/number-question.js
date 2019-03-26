@@ -17,7 +17,7 @@ class NumberQuestion extends Question {
 
     // Parse given number as float and only accept if in range
     checkAndParseAnswer(matches, message) {
-        if(matches == null || message.text == null) {
+        if(matches == null && typeof message.text !== "number") {
             return null;
         }
         var value = parseFloat(message.text);
