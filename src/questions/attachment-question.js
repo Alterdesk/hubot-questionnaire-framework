@@ -14,6 +14,9 @@ class AttachmentQuestion extends Question {
 
     // Get attachments that were sent with the message
     checkAndParseAnswer(matches, message) {
+        if(typeof message.text === "object" && message.text.length > 0) {
+            return message.text;
+        }
         if(message.attachments === null) {
             return null;
         }
