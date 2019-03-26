@@ -32,6 +32,7 @@ module.exports = {
     CreateGroupAction : require('./actions/create-group-action.js'),
     Control : require('./control.js'),
     DateCondition : require('./conditions/date-condition.js'),
+    DateQuestion : require('./questions/date-question.js'),
     DateTools : require('./utils/date-tools.js'),
     EmailQuestion : require('./questions/email-question.js'),
     Flow : require('./flow.js'),
