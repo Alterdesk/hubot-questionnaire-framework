@@ -11,6 +11,7 @@ class DateCondition extends Condition {
 
     check(answers) {
         var date = AnswerOrFixed.get(this.checkDate, answers, new Date());
+        Logger.debug("DateCondition::check() Checking date:", date);
         var inverse = AnswerOrFixed.get(this.inverse, answers, false);
         for(let index in this.checks) {
             var c = this.checks[index];
