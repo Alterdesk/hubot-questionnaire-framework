@@ -14,7 +14,7 @@ class EnvironmentCondition {
 
     addValue(checkKey, checkValue) {
         this.addKey(checkKey);
-        var values = this.checkValue[checkKey];
+        var values = this.checkValues[checkKey];
         if(!values) {
             values = [];
             this.checkValues[checkKey] = values;
