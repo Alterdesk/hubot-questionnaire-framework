@@ -35,6 +35,7 @@ module.exports = {
     DateQuestion : require('./questions/date-question.js'),
     DateTools : require('./utils/date-tools.js'),
     EmailQuestion : require('./questions/email-question.js'),
+    EnvironmentCondition : require('./conditions/environment-condition.js'),
     Flow : require('./flow.js'),
     FlowAction : require('./actions/flow-action.js'),
     FuzzyAction : require('./actions/fuzzy-action.js'),
