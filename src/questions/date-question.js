@@ -13,7 +13,10 @@ class DateQuestion extends Question {
 
     // Check if valid text and if length is accepted
     checkAndParseAnswer(matches, message) {
-        if(matches == null | matches.length === 0) {
+        if(message.text instanceof Date) {
+            return message.text;
+        }
+        if(matches == null || matches.length === 0) {
             return null;
         }
         var matchString = matches[0];
