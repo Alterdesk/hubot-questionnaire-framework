@@ -9,7 +9,6 @@ class MultipleChoiceQuestion extends Question {
         super(answerKey, questionText, invalidText);
         this.regex = Extra.getNonEmptyRegex();
         this.options = [];
-        this.availableOptions = [];
         this.useButtons = false;
         this.multiAnswer = false;
     }
@@ -134,20 +133,7 @@ class MultipleChoiceQuestion extends Question {
             for(let i in this.options) {
                 var option = this.options[i];
 
-                var addOption = true;
-                var conditions = option.conditions;
-                if(conditions && conditions.length > 0 && answers) {
-                    for(let i in conditions) {
-                        var condition = conditions[i];
-                        if(!condition.check(answers)) {
-                            Logger.debug("MultipleChoiceQuestion::send() Condition not met: ", condition);
-                            addOption = false;
-                            break;
-                        }
-                    }
-                }
-
-                if(!addOption) {
+                if(!option.isAvailable(answers)) {
                     continue;
                 }
 
@@ -165,7 +151,6 @@ class MultipleChoiceQuestion extends Question {
 
                 var style = option.style || "theme";
                 questionPayload.addOption(name, label, style);
-                this.availableOptions.push(option);
             }
             if(this.isMultiUser && this.userIds && this.userIds.length > 0) {
                 let remainingUserIds = this.getRemainingUserIds();
@@ -238,10 +223,17 @@ class MultipleChoiceQuestion extends Question {
     }
 
     checkAndParseChoice(choice) {
+        var answers;
+        if(this.flow) {
+            answers = this.flow.answers;
+        }
         var optionMatch = null;
         var longestMatch = null;
-        for(let index in this.availableOptions) {
-            var option = this.availableOptions[index];
+        for(let index in this.options) {
+            var option = this.options[index];
+            if(!option.isAvailable(answers)) {
+                continue;
+            }
             var match = choice.match(option.regex);
             if(match) {
                 var matchString = match[0];
@@ -272,6 +264,25 @@ class MultipleChoiceOption {
         this.subFlow = subFlow;
         this.value = value;
         this.conditions = conditions;
+    }
+
+    isAvailable(answers) {
+        if(typeof this.available === "boolean") {
+            return this.available;
+        }
+        this.available = true;
+        if(this.conditions && this.conditions.length > 0 && answers) {
+            for(let i in this.conditions) {
+                var condition = this.conditions[i];
+                if(!condition.check(answers)) {
+                    Logger.debug("MultipleChoiceOption::isAvailable() Condition not met: ", condition);
+                    this.available = false;
+                    break;
+                }
+                Logger.debug("MultipleChoiceOption::isAvailable() Condition met: ", condition);
+            }
+        }
+        return this.available;
     }
 }
 
