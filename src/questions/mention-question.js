@@ -29,6 +29,9 @@ class MentionQuestion extends Question {
 
     // Parse mentioned users or mentioned all tags
     checkAndParseAnswer(matches, message) {
+        if(typeof message.text === "object" && message.text.length > 0) {
+            return message.text;
+        }
         if(matches === null || message.text === null) {
             return null;
         }
