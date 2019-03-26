@@ -2,7 +2,7 @@ const Logger = require('./../logger.js');
 
 class EnvironmentCondition {
     constructor() {
-        this.checkKeys[] = [];
+        this.checkKeys = [];
         this.checkValues = {};
     }
 
