@@ -63,7 +63,7 @@ class RepeatFlowAction extends Action {
                 this.flowCallback();
                 return;
             }
-            Logger.debug("RepeatFlowAction::checkRepeat() Repeat answer matches:", key, value, this.repeatValue);
+            Logger.debug("RepeatFlowAction::checkRepeat() Repeat answer accepted:", key, value);
         }
 
         this.nextIteration();

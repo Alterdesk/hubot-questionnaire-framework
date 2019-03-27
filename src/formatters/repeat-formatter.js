@@ -70,10 +70,9 @@ class RepeatFormatter extends Formatter {
             }
             if(this.repeatValue !== value && this.repeatValue != null) {
                 Logger.debug("RepeatFormatter::checkRepeat() Repeat answer does not match:", key, value, this.repeatValue);
-                this.flowCallback();
-                return;
+                return false;
             }
-            Logger.debug("RepeatFormatter::checkRepeat() Repeat answer matches:", key, value, this.repeatValue);
+            Logger.debug("RepeatFormatter::checkRepeat() Repeat answer accepted:", key, value);
         }
 
         return true;
