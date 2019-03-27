@@ -112,7 +112,7 @@ class RepeatFormatter extends Formatter {
         this.startText = startText;
     }
 
-    setDivider(dividerText) {
+    setDividerText(dividerText) {
         this.dividerText = dividerText;
     }
 
