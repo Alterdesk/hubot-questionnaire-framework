@@ -38,6 +38,7 @@ module.exports = {
     EnvironmentCondition : require('./conditions/environment-condition.js'),
     Flow : require('./flow.js'),
     FlowAction : require('./actions/flow-action.js'),
+    Formatter : require('./formatters/formatter.js'),
     FuzzyAction : require('./actions/fuzzy-action.js'),
     Information : require('./information.js'),
     InviteAction : require('./actions/invite-action.js'),
