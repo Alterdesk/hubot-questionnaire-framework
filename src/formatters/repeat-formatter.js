@@ -3,12 +3,12 @@ const Logger = require('./../logger.js');
 
 class RepeatFormatter extends Formatter {
 
-    constructor(from, repeatText, repeatKey) {
+    constructor(from, to, repeatKey) {
         super();
         this.from = from;
-        this.repeatText = repeatText;
+        this.to = to;
         this.repeatKey = repeatKey;
-        this.textFormatters = [];
+        this.formatters = [];
         this.startFormatters = [];
         this.dividerFormatters = [];
         this.endFormatters = [];
@@ -19,8 +19,8 @@ class RepeatFormatter extends Formatter {
         Logger.debug("RepeatFormatter::execute()");
         this.answers = answers;
 
-        if(!this.repeatText || this.repeatText.length === 0) {
-            Logger.debug("RepeatFormatter::execute() No repeat text was set:", this.repeatText);
+        if(!this.to || this.to.length === 0) {
+            Logger.debug("RepeatFormatter::execute() No to was set:", this.to);
             return text;
         }
         if(!this.from) {
@@ -90,9 +90,9 @@ class RepeatFormatter extends Formatter {
             }
         }
 
-        result = result + this.repeatText;
-        for(let i in this.textFormatters) {
-            var formatter = this.textFormatters[i];
+        result = result + this.to;
+        for(let i in this.formatters) {
+            var formatter = this.formatters[i];
             if(formatter.answerKey) {
                 if(!formatter.originalAnswerKey) {
                     formatter.originalAnswerKey = formatter.answerKey;
@@ -120,8 +120,8 @@ class RepeatFormatter extends Formatter {
         this.endText = endText;
     }
 
-    addTextFormatter(formatter) {
-        this.textFormatters.push(formatter);
+    addFormatter(formatter) {
+        this.formatters.push(formatter);
     }
 
     addStartFormatter(formatter) {
