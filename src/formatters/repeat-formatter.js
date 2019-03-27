@@ -68,7 +68,12 @@ class RepeatFormatter extends Formatter {
                 Logger.debug("RepeatFormatter::checkRepeat() Repeat answer not given:", key, value);
                 return false;
             }
-            Logger.debug("RepeatFormatter::checkRepeat() Repeat answer given:", key, value);
+            if(this.repeatValue !== value && this.repeatValue != null) {
+                Logger.debug("RepeatFormatter::checkRepeat() Repeat answer does not match:", key, value, this.repeatValue);
+                this.flowCallback();
+                return;
+            }
+            Logger.debug("RepeatFormatter::checkRepeat() Repeat answer matches:", key, value, this.repeatValue);
         }
 
         return true;
@@ -98,6 +103,10 @@ class RepeatFormatter extends Formatter {
             result = formatter.execute(result, this.answers);
         }
         return result;
+    }
+
+    setRepeatValue(repeatValue) {
+        this.repeatValue = repeatValue;
     }
 
     setStartText(startText) {
