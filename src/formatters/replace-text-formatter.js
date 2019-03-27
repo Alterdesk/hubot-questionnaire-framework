@@ -16,6 +16,7 @@ class ReplaceTextFormatter extends Formatter {
             return text;
         }
         if(!this.from) {
+            Logger.error("ReplaceTextFormatter::execute() No from was set:", this.from);
             return text;
         }
         if(typeof this.to !== "string") {
