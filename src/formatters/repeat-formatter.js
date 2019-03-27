@@ -39,7 +39,7 @@ class RepeatFormatter extends Formatter {
         }
 
         while(this.checkRepeat()) {
-            this.nextIteration(result);
+            result = this.nextIteration(result);
         }
 
         if(this.endText && this.endText.length > 0) {
@@ -97,6 +97,7 @@ class RepeatFormatter extends Formatter {
             }
             result = formatter.execute(result, answers);
         }
+        return result;
     }
 
     setStartText(startText) {
