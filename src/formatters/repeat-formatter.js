@@ -34,7 +34,7 @@ class RepeatFormatter extends Formatter {
             result = result + this.startText;
             for(let i in this.startFormatters) {
                 var formatter = this.startFormatters[i];
-                result = formatter.execute(result, answers);
+                result = formatter.execute(result, this.answers);
             }
         }
 
@@ -46,7 +46,7 @@ class RepeatFormatter extends Formatter {
             result = result + this.endText;
             for(let i in this.endFormatters) {
                 var formatter = this.endFormatters[i];
-                result = formatter.execute(result, answers);
+                result = formatter.execute(result, this.answers);
             }
         }
 
@@ -56,7 +56,7 @@ class RepeatFormatter extends Formatter {
     checkRepeat() {
         Logger.debug("RepeatFormatter::checkRepeat() Iteration:", this.iteration);
 
-        if(!this.checkConditions(answers)) {
+        if(!this.checkConditions(this.answers)) {
             Logger.debug("RepeatFormatter::execute() Condition not met");
             return false;
         }
@@ -82,7 +82,7 @@ class RepeatFormatter extends Formatter {
             result = result + this.dividerText;
             for(let i in this.dividerFormatters) {
                 var formatter = this.dividerFormatters[i];
-                result = formatter.execute(result, answers);
+                result = formatter.execute(result, this.answers);
             }
         }
 
@@ -95,7 +95,7 @@ class RepeatFormatter extends Formatter {
                 }
                 formatter.answerKey = formatter.originalAnswerKey + "_" + this.iteration;
             }
-            result = formatter.execute(result, answers);
+            result = formatter.execute(result, this.answers);
         }
         return result;
     }
