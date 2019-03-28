@@ -31,7 +31,7 @@ class ModifyDateAction extends Action {
         }
         var timeScale = AnswerOrFixed.get(this.timeScale, answers);
         var useScale = DateTools.getTimeScale(timeScale);
-        if(!useScale) { {
+        if(!useScale) {
             Logger.error("ModifyDateAction::start() Invalid time scale:", timeScale);
             flowCallback();
             return;
