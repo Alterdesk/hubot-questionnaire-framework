@@ -20,6 +20,9 @@ class AnswerOrFixed {
     }
 
     static get(data, answers, defaultValue) {
+        if(data == null) {
+            return defaultValue;
+        }
         var result = null;
         if(data instanceof AnswerOrFixed) {
             result = AnswerOrFixed.get(data.getValue(answers), answers);
@@ -30,8 +33,6 @@ class AnswerOrFixed {
             for(let index in data) {
                 result += AnswerOrFixed.get(data[index], answers);
             }
-        } else if(data != null) {
-            result = data;
         }
         if(result == null) {
             return defaultValue;
