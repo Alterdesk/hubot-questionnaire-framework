@@ -32,11 +32,25 @@ class ReplaceDateFormatter extends Formatter {
             return text;
         }
         var formatted = DateTools.format(date, this.format);
+        if(this.prefixText && this.prefixText.length > 0) {
+            formatted = prefixText + formatted;
+        }
+        if(this.suffixText && this.suffixText.length > 0) {
+            formatted = formatted + suffixText;
+        }
         return text.replace(this.from, formatted);
     }
 
     setAnswerKey(answerKey) {
         this.answerKey = answerKey;
+    }
+
+    setPrefixText(prefixText) {
+        this.prefixText = prefixText;
+    }
+
+    setSuffixText(suffixText) {
+        this.suffixText = suffixText;
     }
 
 }

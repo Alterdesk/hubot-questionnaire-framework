@@ -22,7 +22,24 @@ class ReplaceTextFormatter extends Formatter {
         if(typeof this.to !== "string") {
             return text;
         }
-        return text.replace(this.from, this.to);
+
+        var to = this.to;
+        if(this.prefixText && this.prefixText.length > 0) {
+            to = prefixText + to;
+        }
+        if(this.suffixText && this.suffixText.length > 0) {
+            to = to + suffixText;
+        }
+
+        return text.replace(this.from, to);
+    }
+
+    setPrefixText(prefixText) {
+        this.prefixText = prefixText;
+    }
+
+    setSuffixText(suffixText) {
+        this.suffixText = suffixText;
     }
 
 }

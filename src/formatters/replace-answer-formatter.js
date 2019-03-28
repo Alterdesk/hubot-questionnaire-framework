@@ -48,6 +48,12 @@ class ReplaceAnswerFormatter extends Formatter {
             return text.replace(this.from, result);
         }
         var result = this.getTextForAnswer(answerValue);
+        if(this.prefixText && this.prefixText.length > 0) {
+            result = prefixText + result;
+        }
+        if(this.suffixText && this.suffixText.length > 0) {
+            result = result + suffixText;
+        }
         return text.replace(this.from, result);
     }
 
@@ -95,6 +101,14 @@ class ReplaceAnswerFormatter extends Formatter {
 
     addTextForAnswer(value, text) {
         this.textForAnswers[value] = text;
+    }
+
+    setPrefixText(prefixText) {
+        this.prefixText = prefixText;
+    }
+
+    setSuffixText(suffixText) {
+        this.suffixText = suffixText;
     }
 
     setFallbackText(fallbackText) {
