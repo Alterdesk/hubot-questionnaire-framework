@@ -17,14 +17,13 @@ class ModifyDateAction extends Action {
     }
 
     start(response, answers, flowCallback) {
-        var date = AnswerOrFixed.get(this.useDate, answers, new Date());
-        if(!(date instanceof Date)) {
-            Logger.error("ModifyDateAction::start() Invalid date:", date);
-            flowCallback();
-            return;
+        this.answers = answers;
+        var date = AnswerOrFixed.get(this.useDate, answers);
+        if(!date) {
+            date = new Date();
         }
         var timeValue = AnswerOrFixed.get(this.timeValue, answers);
-        if(timeValue > 0) {
+        if(timeValue < 1) {
             Logger.error("ModifyDateAction::start() Invalid time value:", timeValue);
             flowCallback();
             return;
@@ -44,11 +43,9 @@ class ModifyDateAction extends Action {
             return;
         }
 
-        answers.add(this.answerKey, moment.toDate());
-
         if(this.checkDateConditions.length > 0) {
             var failTimeValue = AnswerOrFixed.get(this.failTimeValue, answers);
-            if(failTimeValue > 0) {
+            if(failTimeValue < 1) {
                 Logger.error("ModifyDateAction::start() Invalid fail time value:", failTimeValue);
                 flowCallback();
                 return;
@@ -66,7 +63,6 @@ class ModifyDateAction extends Action {
                     flowCallback();
                     return;
                 }
-                answers.add(this.answerKey, moment.toDate());
             }
         }
 
@@ -75,10 +71,16 @@ class ModifyDateAction extends Action {
 
     doOperation(operation, moment, timeScale, timeValue) {
         if(operation === "ADD") {
-            moment.add(timeValue, useScale);
+            moment.add(timeValue, timeScale);
         } else if(operation === "SUBTRACT") {
-            moment.subtract(timeValue, useScale);
+            moment.subtract(timeValue, timeScale);
+        } else {
+            return false;
         }
+        var date = moment.toDate();
+        Logger.debug("ModifyDateAction::doOperation() Saving modified date:", this.answerKey, date);
+        this.answers.add(this.answerKey, date);
+        return true;
     }
 
     checkDateConditions(answers) {
