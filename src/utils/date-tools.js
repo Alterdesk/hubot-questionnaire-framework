@@ -55,21 +55,21 @@ class DateTools {
     }
 
     static getTimeScale(timeScale) {
-        if(this.timeScale === "MILLISECONDS") {
+        if(timeScale === "MILLISECONDS") {
             return "ms";
-        } else if(this.timeScale === "SECONDS") {
+        } else if(timeScale === "SECONDS") {
             return "s";
-        } else if(this.timeScale === "MINUTES") {
+        } else if(timeScale === "MINUTES") {
             return "m";
-        } else if(this.timeScale === "HOURS") {
+        } else if(timeScale === "HOURS") {
             return "h";
-        } else if(this.timeScale === "DAYS") {
+        } else if(timeScale === "DAYS") {
             return "d";
-        } else if(this.timeScale === "WEEKS") {
+        } else if(timeScale === "WEEKS") {
             return "w";
-        } else if(this.timeScale === "MONTHS") {
+        } else if(timeScale === "MONTHS") {
             return "M";
-        } else if(this.timeScale === "YEARS") {
+        } else if(timeScale === "YEARS") {
             return "y";
         }
         return null;
