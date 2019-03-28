@@ -10,10 +10,9 @@ class DateCondition extends Condition {
     }
 
     check(answers) {
-        var date = AnswerOrFixed.get(this.checkDate, answers, new Date());
-        if(!(date instanceof Date)) {
-            Logger.error("DateCondition::check() Invalid date:", date);
-            return inverse;
+        var date = AnswerOrFixed.get(this.checkDate, answers);
+        if(!date) {
+            date = new Date();
         }
         Logger.debug("DateCondition::check() Checking date:", date);
         var inverse = AnswerOrFixed.get(this.inverse, answers, false);
