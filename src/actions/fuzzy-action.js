@@ -279,7 +279,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
                 }
             }
         } else if(this.failName) {
-            this.answers.add(this.answerKey, failName);
+            this.answers.add(this.answerKey, this.failName);
             if(this.failLabel) {
                 this.answers.add(this.answerKey + "_label" + this.failLabel);
             }
