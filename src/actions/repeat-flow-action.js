@@ -36,7 +36,7 @@ class RepeatFlowAction extends Action {
 
         for(let i in this.conditions) {
             var condition = this.conditions[i];
-            if(!condition.check(answers)) {
+            if(!condition.check(this.answers)) {
                 Logger.debug("RepeatFlowAction::checkRepeat() Condition not met: ", condition);
                 this.flowCallback();
                 return;
