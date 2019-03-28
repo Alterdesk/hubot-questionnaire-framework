@@ -72,16 +72,7 @@ class RepeatFlowAction extends Action {
     nextIteration() {
         this.iteration++;
         Logger.debug("RepeatFlowAction::nextIteration() Iteration:", this.iteration);
-        for(let i in this.repeatFlow.steps) {
-            var step = this.repeatFlow.steps[i];
-            if(!step.answerKey) {
-                continue;
-            }
-            if(!step.originalAnswerKey) {
-                step.originalAnswerKey = step.answerKey;
-            }
-            step.answerKey = step.originalAnswerKey + "_" + this.iteration;
-        }
+        this.repeatFlow.setRepeatIteration(this.iteration);
         this.repeatFlow.currentStep = 0;
         this.flow.startSubFlow(this.repeatFlow, false);
     }

@@ -45,6 +45,7 @@ class Flow {
             this.checkpointText = checkpointText;
         }
         this.currentStep = 0;
+        this.repeatIteration = -1;
         this.steps = [];
         this.parsedAnswerKeys = {};
         this.parsedMultiUserAnswers = {};
@@ -782,6 +783,10 @@ class Flow {
         return this;
     }
 
+    setRepeatIteration(repeatIteration) {
+        this.repeatIteration = repeatIteration;
+    }
+
     // Set a restart button for error, stop and timeout messages
     restartButton(name, label, style) {
         this.restartButtonName = name;
@@ -850,6 +855,18 @@ class Flow {
                 answers = msg.message.answers;
             }
             Logger.debug("Flow::start() got pre-filled answers", answers);
+        }
+        if(this.repeatIteration > -1) {
+            for(let i in this.steps) {
+                var step = this.steps[i];
+                if(!step.answerKey) {
+                    continue;
+                }
+                if(!step.originalAnswerKey) {
+                    step.originalAnswerKey = step.answerKey;
+                }
+                step.answerKey = step.originalAnswerKey + "_" + this.repeatIteration;
+            }
         }
         this.msg = msg;
         this.answers = answers || new Answers();
@@ -1176,10 +1193,13 @@ class Flow {
         if(subFlow.restartButtonStyle == null) {
             subFlow.restartButtonStyle = this.restartButtonStyle;
         }
-
         // Set stopped callback when null
         if(subFlow.stoppedCallback == null) {
             subFlow.stoppedCallback = this.stoppedCallback;
+        }
+        // Set the repeat iteration value if this was set
+        if(this.repeatIteration > -1) {
+            subFlow.setRepeatIteration(this.repeatIteration);
         }
 
         if(overrideFinished) {
