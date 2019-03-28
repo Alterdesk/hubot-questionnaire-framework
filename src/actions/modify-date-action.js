@@ -55,7 +55,7 @@ class ModifyDateAction extends Action {
             }
             var failTimeScale = AnswerOrFixed.get(this.failTimeScale, answers);
             var useFailScale = DateTools.getTimeScale(failTimeScale);
-            if(!useFailScale) { {
+            if(!useFailScale) {
                 Logger.error("ModifyDateAction::start() Invalid fail time scale:", failTimeScale);
                 flowCallback();
                 return;
@@ -92,10 +92,10 @@ class ModifyDateAction extends Action {
         return true;
     }
 
-    setFailOperation(operation, timeScale, timeValue) {
-        this.failOperation = operation;
-        this.failTimeScale = timeScale;
-        this.failTimeValue = timeValue;
+    setFailOperation(failOperation, failTimeScale, failTimeValue) {
+        this.failOperation = failOperation;
+        this.failTimeScale = failTimeScale;
+        this.failTimeValue = failTimeValue;
     }
 
     addDateCondition(condition) {
