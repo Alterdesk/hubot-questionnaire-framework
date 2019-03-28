@@ -785,6 +785,7 @@ class Flow {
 
     setRepeatIteration(repeatIteration) {
         this.repeatIteration = repeatIteration;
+        this.currentStep = 0;
     }
 
     // Set a restart button for error, stop and timeout messages
