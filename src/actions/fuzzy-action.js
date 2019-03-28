@@ -300,7 +300,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         if(this.lastText && this.lastText !== "") {
             this.answers.add(this.answerKey + "_text", this.lastText);
         }
-        this.answers.add(this.answerKey + "_success", condition != null);
+        this.answers.add(this.answerKey + "_success", candidate != null);
 
 //        var keys = this.answers.getKeysWithPrefix(this.answerKey);
 //        for(let i in keys) {
