@@ -14,7 +14,7 @@ class Formatter {
         for(let i in this.conditions) {
             var condition = this.conditions[i];
             if(!condition.check(answers)) {
-                Logger.debug("Formatter::execute() Condition not met: ", condition);
+                Logger.debug("Formatter::checkConditions() Condition not met: ", condition);
                 return false;
             }
         }
