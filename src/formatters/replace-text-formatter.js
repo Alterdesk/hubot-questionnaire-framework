@@ -25,10 +25,10 @@ class ReplaceTextFormatter extends Formatter {
 
         var to = this.to;
         if(this.prefixText && this.prefixText.length > 0) {
-            to = prefixText + to;
+            to = this.prefixText + to;
         }
         if(this.suffixText && this.suffixText.length > 0) {
-            to = to + suffixText;
+            to = to + this.suffixText;
         }
 
         return text.replace(this.from, to);

@@ -49,10 +49,10 @@ class ReplaceAnswerFormatter extends Formatter {
         }
         var result = this.getTextForAnswer(answerValue);
         if(this.prefixText && this.prefixText.length > 0) {
-            result = prefixText + result;
+            result = this.prefixText + result;
         }
         if(this.suffixText && this.suffixText.length > 0) {
-            result = result + suffixText;
+            result = result + this.suffixText;
         }
         return text.replace(this.from, result);
     }

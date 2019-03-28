@@ -33,10 +33,10 @@ class ReplaceDateFormatter extends Formatter {
         }
         var formatted = DateTools.format(date, this.format);
         if(this.prefixText && this.prefixText.length > 0) {
-            formatted = prefixText + formatted;
+            formatted = this.prefixText + formatted;
         }
         if(this.suffixText && this.suffixText.length > 0) {
-            formatted = formatted + suffixText;
+            formatted = formatted + this.suffixText;
         }
         return text.replace(this.from, formatted);
     }
