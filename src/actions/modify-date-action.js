@@ -24,7 +24,7 @@ class ModifyDateAction extends Action {
             return;
         }
         var timeValue = AnswerOrFixed.get(this.timeValue, answers);
-        if(!timeValue) {
+        if(timeValue > 0) {
             Logger.error("ModifyDateAction::start() Invalid time value:", timeValue);
             flowCallback();
             return;
@@ -48,7 +48,7 @@ class ModifyDateAction extends Action {
 
         if(this.checkDateConditions.length > 0) {
             var failTimeValue = AnswerOrFixed.get(this.failTimeValue, answers);
-            if(!failTimeValue) {
+            if(failTimeValue > 0) {
                 Logger.error("ModifyDateAction::start() Invalid fail time value:", failTimeValue);
                 flowCallback();
                 return;
