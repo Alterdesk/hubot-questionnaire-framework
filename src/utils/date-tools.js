@@ -17,25 +17,11 @@ class DateTools {
 
     static timePassed(date, timeScale, timeValue) {
         var moment = DateTools.getMoment(date);
-        if(timeScale === "MILLISECONDS") {
-            moment.add(timeValue, "ms");
-        } else if(timeScale === "SECONDS") {
-            moment.add(timeValue, "s");
-        } else if(timeScale === "MINUTES") {
-            moment.add(timeValue, "m");
-        } else if(timeScale === "HOURS") {
-            moment.add(timeValue, "h");
-        } else if(timeScale === "DAYS") {
-            moment.add(timeValue, "d");
-        } else if(timeScale === "WEEKS") {
-            moment.add(timeValue, "w");
-        } else if(timeScale === "MONTHS") {
-            moment.add(timeValue, "M");
-        } else if(timeScale === "YEARS") {
-            moment.add(timeValue, "y");
-        } else {
+        var useScale = DateTools.getTimeScale(timeScale);
+        if(!useScale) {
             return false;
         }
+        moment.add(timeValue, useScale);
         return moment.isBefore(DateTools.getMoment());
     }
 
@@ -66,6 +52,27 @@ class DateTools {
     static monthInRange(date, min, max) {
         var month = DateTools.getMoment(date).month();
         return month >= min && month <= max;
+    }
+
+    static getTimeScale(timeScale) {
+        if(this.timeScale === "MILLISECONDS") {
+            return "ms";
+        } else if(this.timeScale === "SECONDS") {
+            return "s";
+        } else if(this.timeScale === "MINUTES") {
+            return "m";
+        } else if(this.timeScale === "HOURS") {
+            return "h";
+        } else if(this.timeScale === "DAYS") {
+            return "d";
+        } else if(this.timeScale === "WEEKS") {
+            return "w";
+        } else if(this.timeScale === "MONTHS") {
+            return "M";
+        } else if(this.timeScale === "YEARS") {
+            return "y";
+        }
+        return null;
     }
 }
 

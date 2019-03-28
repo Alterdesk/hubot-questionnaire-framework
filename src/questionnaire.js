@@ -43,6 +43,7 @@ module.exports = {
     Information : require('./information.js'),
     InviteAction : require('./actions/invite-action.js'),
     MentionQuestion : require('./questions/mention-question.js'),
+    ModifyDateAction : require('./actions/modify-date-action.js'),
     MultiFormatter : require('./formatters/multi-formatter.js'),
     MultipleChoiceQuestion : require('./questions/multiple-choice-question.js'),
     NumberQuestion : require('./questions/number-question.js'),
