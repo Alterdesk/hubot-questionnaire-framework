@@ -1,14 +1,15 @@
 const Moment = require('moment-timezone');
 
 const USE_TIMEZONE = process.env.HUBOT_QUESTIONNAIRE_USE_TIMEZONE || process.env.USE_TIMEZONE || "UTC";
+const USE_LOCALE = process.env.HUBOT_QUESTIONNAIRE_USE_LOCALE || process.env.USE_LOCALE || "en-US";
 
 class DateTools {
     static getMoment(data) {
-        return Moment(data).tz(USE_TIMEZONE);
+        return Moment(data).locale(USE_LOCALE).tz(USE_TIMEZONE);
     }
 
     static parse(string, format) {
-        return Moment(string, format).tz(USE_TIMEZONE);
+        return Moment(string, format).locale(USE_LOCALE).tz(USE_TIMEZONE);
     }
 
     static format(date, format) {
