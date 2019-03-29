@@ -69,7 +69,9 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         .action((response, answers, subFlowCallback) => {
             var answerValue = answers.get(candidateAnswerKey);
             if(!answerValue || !answerValue.match || answerValue.match(this.didNotRegex)) {
-                if(askAgainOnDidNot) {
+                if(this.failFlow || !this.indexText || !this.indexOptionText) {
+                    this.done(null);
+                } else if(askAgainOnDidNot) {
                     this.askText(this.reformulateText || this.questionText);
                 } else {
                     this.showIndex();
@@ -281,7 +283,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         } else if(this.failName) {
             this.answers.add(this.answerKey, this.failName);
             if(this.failLabel) {
-                this.answers.add(this.answerKey + "_label" + this.failLabel);
+                this.answers.add(this.answerKey + "_label", this.failLabel);
             }
         }
         if(candidate) {
