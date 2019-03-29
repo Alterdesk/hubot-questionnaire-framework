@@ -32,6 +32,10 @@ class AttachmentQuestion extends Question {
             }
             if(this.allowedExtensions.length > 0) {
                 var name = attachment["name"];
+                if(typeof name !== "string") {
+                    continue;
+                }
+                name = name.toUpperCase();
                 var allowed = false;
                 for(let i in this.allowedExtensions) {
                     if(name.endsWith(this.allowedExtensions[i])) {
@@ -45,6 +49,10 @@ class AttachmentQuestion extends Question {
             }
             if(this.allowedMimeTypes.length > 0) {
                 var mime = attachment["mime_type"];
+                if(typeof mime !== "string") {
+                    continue;
+                }
+                mime = mime.toUpperCase();
                 var allowed = false;
                 for(let i in this.allowedMimeTypes) {
                     if(mime === this.allowedMimeTypes[i]) {
@@ -107,7 +115,7 @@ class AttachmentQuestion extends Question {
             Logger.error("AttachmentQuestion::addAllowedExtension() Extension already configured as allowed: " + extension);
             return;
         }
-        this.allowedExtensions.push(extension);
+        this.allowedExtensions.push(extension.toUpperCase());
     }
 
     // Add a list of accepted extensions
@@ -123,7 +131,7 @@ class AttachmentQuestion extends Question {
             Logger.error("AttachmentQuestion::addAllowedMimeType() MIME type already configured as allowed: " + mimeType);
             return;
         }
-        this.allowedMimeTypes.push(mimeType);
+        this.allowedMimeTypes.push(mimeType.toUpperCase());
     }
 
     // Add a list of accepted extensions
