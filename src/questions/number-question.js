@@ -20,7 +20,15 @@ class NumberQuestion extends Question {
         if(matches == null && typeof message.text !== "number") {
             return null;
         }
-        var value = parseFloat(message.text);
+        var value;
+        if(matches) {
+            value = parseFloat(matches[0]);
+        } else {
+            value = parseFloat(message.text);
+        }
+        if(typeof value !== "number") {
+            return null;
+        }
         if(this.inRange(value)) {
             return value;
         }
