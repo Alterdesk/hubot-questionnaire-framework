@@ -69,7 +69,8 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         .action((response, answers, subFlowCallback) => {
             var answerValue = answers.get(candidateAnswerKey);
             if(!answerValue || !answerValue.match || answerValue.match(this.didNotRegex)) {
-                if(this.failFlow || !this.indexText || !this.indexOptionText) {
+                if(this.maxAttempts > 0 && this.textAttempts >= this.maxAttempts
+                        && (this.failFlow || !this.indexText || !this.indexOptionText)) {
                     this.done(null);
                 } else if(askAgainOnDidNot) {
                     this.askText(this.reformulateText || this.questionText);
