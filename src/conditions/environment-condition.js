@@ -32,6 +32,7 @@ class EnvironmentCondition {
                 Logger.debug("EnvironmentCondition::check() No value for key:", checkKey);
                 continue;
             }
+            Logger.debug("EnvironmentCondition::check() Got value for key: ", checkKey, value);
             var values = this.checkValues[checkKey]
             if(!values || values.length === 0) {
                 Logger.debug("EnvironmentCondition::check() Condition met key: " + checkKey);
