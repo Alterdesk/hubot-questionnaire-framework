@@ -35,6 +35,10 @@ class DateCondition extends Condition {
         this.checks.push(new TimePassed(timeScale, timeValue));
     }
 
+    addIsDate(year, month, day) {
+        this.checks.push(new IsDate(year, month, day));
+    }
+
     addTimeRange(min, max) {
         this.checks.push(new TimeRange(min, max));
     }
@@ -73,6 +77,18 @@ class TimePassed {
 
     check(date) {
         return DateTools.timePassed(date, this.timeScale, this.timeValue);
+    }
+}
+
+class IsDate {
+    constructor(year, month, day){
+        this.year = year;
+        this.month = month;
+        this.day = day;
+    }
+
+    check(date) {
+        return DateTools.isDate(date, this.year, this.month, this.day);
     }
 }
 

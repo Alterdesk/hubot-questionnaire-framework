@@ -26,6 +26,29 @@ class DateTools {
         return moment.isBefore(DateTools.getMoment());
     }
 
+    static isDate(date, year, month, day) {
+        var moment = DateTools.getMoment(date);
+        if(year > 0) {
+            var currentYear = moment.year();
+            if(year !== currentYear) {
+                return false;
+            }
+        }
+        if(month > 0) {
+            var currentMonth = moment.month();
+            if(month !== currentMonth) {
+                return false;
+            }
+        }
+        if(day > 0) {
+            var currentDay = moment.date();
+            if(day !== currentDay) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     static timeInRange(date, min, max) {
         var minTime = DateTools.parse(min, "HH:mm");
         var maxTime = DateTools.parse(max, "HH:mm");
