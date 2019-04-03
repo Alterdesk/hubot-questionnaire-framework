@@ -4,6 +4,7 @@ const Logger = require('./../logger.js');
 
 class AndCondition extends Condition {
     constructor() {
+        super();
         this.conditions = [];
     }
 

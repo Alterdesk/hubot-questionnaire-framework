@@ -4,6 +4,7 @@ const Logger = require('./../logger.js');
 
 class OrCondition extends Condition {
     constructor() {
+        super();
         this.conditions = [];
     }
 
