@@ -926,9 +926,9 @@ class Flow {
             if(answerValue == null) {
                 Logger.debug("Flow::callback() No valid answer value from listener, resetting listener");
                 if(question.resendOnInvalid) {
-                    if(this.control.questionAnswerRejectedCallback) {
-                        var userId = this.control.getUserId(this.msg.message.user); // TODO Multi user questions
-                        this.control.questionAnswerRejectedCallback(userId, question.answerKey, response.message, this.answers);
+                    if(flow.control.questionAnswerRejectedCallback) {
+                        var userId = flow.control.getUserId(flow.msg.message.user); // TODO Multi user questions
+                        flow.control.questionAnswerRejectedCallback(userId, question.answerKey, response.message, flow.answers);
                     }
                     response.send(question.invalidText);
                     question.send(flow.control, flow.msg, this.callback);
