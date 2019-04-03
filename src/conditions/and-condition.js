@@ -27,6 +27,10 @@ class AndCondition extends Condition {
         this.conditions.push(condition);
     }
 
+    hasConditions() {
+        return this.conditions.length > 0;
+    }
+
 }
 
 module.exports = AndCondition;
