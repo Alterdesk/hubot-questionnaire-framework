@@ -1011,6 +1011,11 @@ class Flow {
             }
             parsedUserIds[userId] = true;
 
+            // Call question answered callback if set
+            if(this.control.questionAnsweredCallback) {
+                this.control.questionAnsweredCallback(userId, question.answerKey, answerValue, this.answers);
+            }
+
             // Check if a value was set to break multi user question on and use it
             var breaking = false;
             var stopping = false;
@@ -1061,15 +1066,15 @@ class Flow {
                 this.answers.add(valueKey, choiceValue);
                 Logger.debug("Flow::onAnswer() Added value answer: key: \"" + valueKey + "\" value: \"" + choiceValue + "\"");
             }
+
+            // Call question answered callback if set
+            if(this.control.questionAnsweredCallback) {
+                var userId = this.control.getUserId(this.msg.message.user);
+                this.control.questionAnsweredCallback(userId, question.answerKey, answerValue, this.answers);
+            }
         }
 
         this.parsedAnswerKeys[question.answerKey] = true;
-
-        // Call user answered callback if set
-        if(this.control.userAnsweredCallback) {
-            var userId = this.control.getUserId(this.msg.message.user);
-            this.control.userAnsweredCallback(userId, question.answerKey, answerValue);
-        }
 
         if(question.stopOnValue && question.stopOnValue === answerValue) {
             this.questionStop(question);
@@ -1122,25 +1127,6 @@ class Flow {
 
     questionDone(question) {
         Logger.info("Flow::questionDone() answerKey: \"" + question.answerKey + "\"");
-        if(this.control.questionAnsweredCallback) {
-            if(question.isMultiUser) {
-                var multiAnswers = this.answers.get(question.answerKey);
-                if(multiAnswers) {
-                    var keys = multiAnswers.keys();
-                    for(let index in keys) {
-                        var key = keys[index];
-                        if(key.indexOf("_") !== -1) {
-                            continue;
-                        }
-                        this.control.questionAnsweredCallback(key, question.answerKey, this.answers);
-                    }
-                }
-            } else {
-                var userId = this.control.getUserId(this.msg.message.user);
-                this.control.questionAnsweredCallback(userId, question.answerKey, this.answers);
-            }
-        }
-
         // Trigger sub flow if set in question, otherwise continue
         if(question.subFlow instanceof Flow) {
             Logger.debug("Flow::questionDone() Calling startSubFlow()", question.subFlow.name);
