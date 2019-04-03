@@ -13,6 +13,7 @@ module.exports = {
 
     Action : require('./actions/action.js'),
     AlternateTextFormatter : require('./formatters/alternate-text-formatter.js'),
+    AndCondition : require('./conditions/and-condition.js'),
     AnswerCondition : require('./conditions/answer-condition.js'),
     AnswerOrFixed : require('./utils/answer-or-fixed.js'),
     Answers : require('./answers.js'),
@@ -47,6 +48,7 @@ module.exports = {
     MultiFormatter : require('./formatters/multi-formatter.js'),
     MultipleChoiceQuestion : require('./questions/multiple-choice-question.js'),
     NumberQuestion : require('./questions/number-question.js'),
+    OrCondition : require('./conditions/or-condition.js'),
     LeaveGroupAction : require('./actions/leave-group-action.js'),
     Listener : require('./listener.js'),
     Logger : require('./logger.js'),
