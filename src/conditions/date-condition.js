@@ -31,10 +31,6 @@ class DateCondition extends Condition {
         this.checkDate = checkDate;
     }
 
-    setInverse(inverse) {
-        this.inverse = inverse;
-    }
-
     addTimePassed(timeScale, timeValue) {
         this.checks.push(new TimePassed(timeScale, timeValue));
     }

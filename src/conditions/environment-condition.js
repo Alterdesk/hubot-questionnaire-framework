@@ -27,6 +27,7 @@ class EnvironmentCondition extends Condition {
     }
 
     check(answers) {
+        var inverse = AnswerOrFixed.get(this.inverse, answers, false);
         for(let i in this.checkKeys) {
             var checkKey = this.checkKeys[i];
             var value = process.env[checkKey];
@@ -37,24 +38,24 @@ class EnvironmentCondition extends Condition {
             Logger.debug("EnvironmentCondition::check() Got value for key: ", checkKey, value);
             var values = this.checkValues[checkKey]
             if(!values || values.length === 0) {
-                Logger.debug("EnvironmentCondition::check() Condition met key: " + checkKey);
-                return true;
+                Logger.debug("EnvironmentCondition::check() Condition met: inverse: " + inverse + " key: " + checkKey);
+                return !inverse;
             }
             for(let i in values) {
                 var checkValue = values[i];
                 if(checkValue === value) {
-                    Logger.debug("EnvironmentCondition::check() Condition met key: " + checkKey + " value: " + value);
-                    return true;
+                    Logger.debug("EnvironmentCondition::check() Condition met: inverse: " + inverse + " key: " + checkKey + " value: " + value);
+                    return !inverse;
                 } else if(typeof value === "string"
                         && typeof checkValue === "string"
                         && value.toUpperCase() === checkValue.toUpperCase()) {
-                    Logger.debug("EnvironmentCondition::check() Condition met key: " + checkKey + " value: " + value);
-                    return true;
+                    Logger.debug("EnvironmentCondition::check() Condition met: inverse: " + inverse + " key: " + checkKey + " value: " + value);
+                    return !inverse;
                 }
             }
         }
-        Logger.debug("EnvironmentCondition::check() Condition not met:", this);
-        return false;
+        Logger.debug("EnvironmentCondition::check() Condition not met: inverse: " + inverse + " condition:", this);
+        return inverse;
     }
 
     hasKeys() {

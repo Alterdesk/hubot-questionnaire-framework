@@ -33,6 +33,7 @@ class AnswerCondition extends Condition {
     }
 
     check(answers) {
+        var inverse = AnswerOrFixed.get(this.inverse, answers, false);
         for(let i in this.answerKeys) {
             var answerKey = this.answerKeys[i];
             if(!answers.has(answerKey)) {
@@ -43,22 +44,25 @@ class AnswerCondition extends Condition {
             if(typeof answerValue === "object") {
                 if(answerValue.length === 0) {
                     if(this.checkAnswer(answerKey, null)) {
-                        return true;
+                        Logger.debug("AnswerCondition::check() Condition met: inverse: " + inverse + " condition:", this);
+                        return !inverse;
                     }
                 }
                 for(let i in answerValue) {
                     if(this.checkAnswer(answerKey, answerValue[i])) {
-                        return true;
+                        Logger.debug("AnswerCondition::check() Condition met: inverse: " + inverse + " condition:", this);
+                        return !inverse;
                     }
                 }
             } else {
                 if(this.checkAnswer(answerKey, answerValue)) {
-                    return true;
+                    Logger.debug("AnswerCondition::check() Condition met: inverse: " + inverse + " condition:", this);
+                    return !inverse;
                 }
             }
         }
-        Logger.debug("AnswerCondition::check() Condition not met:", this);
-        return false;
+        Logger.debug("AnswerCondition::check() Condition not met: inverse: " + inverse + " condition:", this);
+        return inverse;
     }
 
     checkAnswer(answerKey, answerValue) {

@@ -21,10 +21,6 @@ class OrCondition extends Condition {
         return inverse;
     }
 
-    setInverse(inverse) {
-        this.inverse = inverse;
-    }
-
     addCondition(condition) {
         this.conditions.push(condition);
     }

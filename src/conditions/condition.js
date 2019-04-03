@@ -9,6 +9,9 @@ class Condition {
 
     }
 
+    setInverse(inverse) {
+        this.inverse = inverse;
+    }
 
 }
 
