@@ -926,6 +926,10 @@ class Flow {
             if(answerValue == null) {
                 Logger.debug("Flow::callback() No valid answer value from listener, resetting listener");
                 if(question.resendOnInvalid) {
+                    if(this.control.questionAnswerRejectedCallback) {
+                        var userId = this.control.getUserId(this.msg.message.user); // TODO Multi user questions
+                        this.control.questionAnswerRejectedCallback(userId, question.answerKey, response.message);
+                    }
                     response.send(question.invalidText);
                     question.send(flow.control, flow.msg, this.callback);
                 } else {
@@ -1088,7 +1092,7 @@ class Flow {
         Logger.info("Flow::questionExecute() answerKey: \"" + question.answerKey + "\"");
         question.execute(this.control, this.msg, this.callback, this.answers);
         if(this.control.questionAskedCallback) {
-            var userId = this.control.getUserId(this.msg.message.user);
+            var userId = this.control.getUserId(this.msg.message.user); // TODO Multi user questions
             this.control.questionAskedCallback(userId, question.answerKey, this.answers);
         }
     }
@@ -1123,7 +1127,7 @@ class Flow {
     questionDone(question) {
         Logger.info("Flow::questionDone() answerKey: \"" + question.answerKey + "\"");
         if(this.control.questionAnsweredCallback) {
-            var userId = this.control.getUserId(this.msg.message.user);
+            var userId = this.control.getUserId(this.msg.message.user); // TODO Multi user questions
             this.control.questionAnsweredCallback(userId, question.answerKey, this.answers);
         }
 

@@ -1,6 +1,7 @@
+const Condition = require('./condition.js');
 const Logger = require('./../logger.js');
 
-class EnvironmentCondition {
+class EnvironmentCondition extends Condition {
     constructor() {
         this.checkKeys = [];
         this.checkValues = {};

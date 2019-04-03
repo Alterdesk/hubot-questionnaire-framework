@@ -562,6 +562,11 @@ class Control {
         this.questionAskedCallback = questionAskedCallback;
     }
 
+    // Callback that is called when a question answer is rejected
+    setQuestionAnswerRejectedCallback(questionAnswerRejectedCallback) {
+        this.questionAnswerRejectedCallback = questionAnswerRejectedCallback;
+    }
+
     // Callback that is called when a question is answered
     setQuestionAnsweredCallback(questionAnsweredCallback) {
         this.questionAnsweredCallback = questionAnsweredCallback;

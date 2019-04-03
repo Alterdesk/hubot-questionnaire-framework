@@ -1,4 +1,5 @@
 const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
+const Condition = require('./condition.js');
 const Logger = require('./../logger.js');
 
 class AndCondition extends Condition {
