@@ -275,6 +275,10 @@ class Question {
                     // Store for cleanup if needed
                     question.multiUserMessages.push(userMessage);
 
+                    if(control.questionAskedCallback) {
+                        control.questionAskedCallback(userId, this.answerKey, this.flow.answers);
+                    }
+
                     if(question.useListeners) {
                         // Add listener for user and wait for answer
                         control.addListener(userMessage, new Listener(msg, callback, this));
@@ -289,9 +293,14 @@ class Question {
             Logger.error("Question::setListenersAndPendingRequests() Empty userId list for multi-user question");
             this.flow.sendRestartMessage(this.flow.errorText);
             if(this.flow.stoppedCallback) {
-                this.flow.stoppedCallback(flow.msg, flow.answers);
+                this.flow.stoppedCallback(this.flow.msg, this.flow.answers);
             }
             return;
+        }
+
+        if(control.questionAskedCallback) {
+            var userId = control.getUserId(msg.message.user);
+            control.questionAskedCallback(userId, this.answerKey, this.flow.answers);
         }
 
         if(this.useListeners) {

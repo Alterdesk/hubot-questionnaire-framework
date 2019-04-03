@@ -927,11 +927,11 @@ class Flow {
                 Logger.debug("Flow::callback() No valid answer value from listener, resetting listener");
                 if(question.resendOnInvalid) {
                     if(flow.control.questionAnswerRejectedCallback) {
-                        var userId = flow.control.getUserId(flow.msg.message.user); // TODO Multi user questions
+                        var userId = flow.control.getUserId(response.message.user);
                         flow.control.questionAnswerRejectedCallback(userId, question.answerKey, response.message, flow.answers);
                     }
                     response.send(question.invalidText);
-                    question.send(flow.control, flow.msg, this.callback);
+                    question.send(flow.control, response, this.callback);
                 } else {
                     flow.control.addListener(response.message, new Listener(response, this.callback, question));
                 }
@@ -1091,10 +1091,6 @@ class Flow {
         }
         Logger.info("Flow::questionExecute() answerKey: \"" + question.answerKey + "\"");
         question.execute(this.control, this.msg, this.callback, this.answers);
-        if(this.control.questionAskedCallback) {
-            var userId = this.control.getUserId(this.msg.message.user); // TODO Multi user questions
-            this.control.questionAskedCallback(userId, question.answerKey, this.answers);
-        }
     }
 
     questionStop(question) {
@@ -1127,8 +1123,22 @@ class Flow {
     questionDone(question) {
         Logger.info("Flow::questionDone() answerKey: \"" + question.answerKey + "\"");
         if(this.control.questionAnsweredCallback) {
-            var userId = this.control.getUserId(this.msg.message.user); // TODO Multi user questions
-            this.control.questionAnsweredCallback(userId, question.answerKey, this.answers);
+            if(question.isMultiUser) {
+                var multiAnswers = this.answers.get(question.answerKey);
+                if(multiAnswers) {
+                    var keys = multiAnswers.keys();
+                    for(let index in keys) {
+                        var key = keys[index];
+                        if(key.indexOf("_") !== -1) {
+                            continue;
+                        }
+                        this.control.questionAnsweredCallback(key, question.answerKey, this.answers);
+                    }
+                }
+            } else {
+                var userId = this.control.getUserId(this.msg.message.user);
+                this.control.questionAnsweredCallback(userId, question.answerKey, this.answers);
+            }
         }
 
         // Trigger sub flow if set in question, otherwise continue
