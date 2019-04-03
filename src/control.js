@@ -553,10 +553,6 @@ class Control {
         this.groupSubscribedCallback = groupSubscribedCallback;
     }
 
-    setUserAnsweredCallback(userAnsweredCallback) {
-        this.userAnsweredCallback = userAnsweredCallback;
-    }
-
     // Callback that is called when a question is asked
     setQuestionAskedCallback(questionAskedCallback) {
         this.questionAskedCallback = questionAskedCallback;
