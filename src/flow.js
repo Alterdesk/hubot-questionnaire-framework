@@ -928,7 +928,7 @@ class Flow {
                 if(question.resendOnInvalid) {
                     if(this.control.questionAnswerRejectedCallback) {
                         var userId = this.control.getUserId(this.msg.message.user); // TODO Multi user questions
-                        this.control.questionAnswerRejectedCallback(userId, question.answerKey, response.message);
+                        this.control.questionAnswerRejectedCallback(userId, question.answerKey, response.message, this.answers);
                     }
                     response.send(question.invalidText);
                     question.send(flow.control, flow.msg, this.callback);
