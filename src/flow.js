@@ -1141,6 +1141,10 @@ class Flow {
             Logger.debug("Flow::actionDone() Flow not running", this.name);
             return;
         }
+        if(this.control.actionDoneCallback) {
+            var userId = this.control.getUserId(this.msg.message.user);
+            this.control.actionDoneCallback(userId, action, this.answers);
+        }
         var className = "";
         if(action && action.constructor) {
             className = action.constructor.name;

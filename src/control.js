@@ -568,6 +568,11 @@ class Control {
         this.questionAnsweredCallback = questionAnsweredCallback;
     }
 
+    // Callback that is called when a action is done
+    setActionDoneCallback(actionDoneCallback) {
+        this.actionDoneCallback = actionDoneCallback;
+    }
+
     // Should a listener for a user be removed when a leave is detected
     setRemoveListenerOnLeave(remove) {
         this.removeListenerOnLeave = remove;
