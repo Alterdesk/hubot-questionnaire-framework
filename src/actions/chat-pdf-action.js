@@ -63,6 +63,9 @@ class ChatPdfAction extends Action {
         var filePath = await messengerApi.downloadChatPdf(filename, startDate, endDate, sourceChatId, sourceIsGroup, false);
         if(!filePath) {
             Logger.error("ChatPdfAction::start() Unable to generate PDF");
+            if(this.answerKey) {
+                answers.add(this.answerKey, false);
+            }
             if(this.errorMessage && this.errorMessage.length > 0) {
                 response.send(this.errorMessage);
             }
@@ -78,6 +81,9 @@ class ChatPdfAction extends Action {
         messageData.addAttachmentPath(filePath);
         messageData.overrideToken = this.overrideToken;
         messengerApi.sendMessage(messageData, (messageSuccess, json) => {
+            if(this.answerKey) {
+                answers.add(this.answerKey, messageSuccess);
+            }
             if(messageSuccess) {
                 Logger.debug("ChatPdfAction::start() PDF message sent successfully");
             } else {
@@ -90,6 +96,10 @@ class ChatPdfAction extends Action {
             // TODO Retry mechanism?
             // TODO Delete PDF after successful send
         });
+    }
+
+    setAnswerKey(answerKey) {
+        this.answerKey = answerKey;
     }
 
     addFilenameFormatter(formatter) {
