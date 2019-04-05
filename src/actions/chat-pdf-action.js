@@ -82,6 +82,7 @@ class ChatPdfAction extends Action {
         messageData.overrideToken = this.overrideToken;
         messengerApi.sendMessage(messageData, (messageSuccess, json) => {
             if(this.answerKey) {
+                answers.add(this.answerKey + "file_path", filePath);
                 answers.add(this.answerKey, messageSuccess);
             }
             if(messageSuccess) {
