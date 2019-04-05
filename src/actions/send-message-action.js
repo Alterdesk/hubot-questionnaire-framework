@@ -9,6 +9,7 @@ class SendMessageAction extends Action {
         }, 0);
         this.messageText = messageText;
         this.messageFormatters = [];
+        this.attachmentPaths = [];
         this.isAux = false;
     }
 
@@ -50,7 +51,9 @@ class SendMessageAction extends Action {
         messageData.isGroup = isGroup;
         messageData.isAux = isAux;
         messageData.message = messageText;
-//        messageData.addAttachmentPath(filePath);
+        if(this.attachmentPaths.length > 0) {
+            messageData.addAttachmentPaths(this.attachmentPaths);
+        }
         messageData.overrideToken = this.overrideToken;
         messengerApi.sendMessage(messageData, (messageSuccess, json) => {
             if(messageSuccess) {
@@ -64,6 +67,10 @@ class SendMessageAction extends Action {
 
     addMessageFormatter(formatter) {
         this.messageFormatters.push(formatter);
+    }
+
+    addAttachmentPath(filePath) {
+        this.attachmentPaths.push(filePath);
     }
 
     setChatId(chatId) {
