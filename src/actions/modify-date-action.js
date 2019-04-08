@@ -23,7 +23,7 @@ class ModifyDateAction extends Action {
             date = new Date();
         }
         var timeValue = AnswerOrFixed.get(this.timeValue, answers);
-        if(timeValue < 1) {
+        if(timeValue < 0) {
             Logger.error("ModifyDateAction::start() Invalid time value:", timeValue);
             flowCallback();
             return;
@@ -43,7 +43,7 @@ class ModifyDateAction extends Action {
             return;
         }
 
-        if(this.checkDateConditions.length > 0) {
+        if(this.dateConditions.length > 0) {
             var failTimeValue = AnswerOrFixed.get(this.failTimeValue, answers);
             if(failTimeValue < 1) {
                 Logger.error("ModifyDateAction::start() Invalid fail time value:", failTimeValue);
@@ -58,7 +58,7 @@ class ModifyDateAction extends Action {
                 return;
             }
             var failOperation = AnswerOrFixed.get(this.failOperation, answers);
-            while(!this.checkDateConditions(answers)) {
+            while(!this.checkDateConditions()) {
                 if(!this.doOperation(failOperation, moment, failTimeScale, failTimeValue)) {
                     flowCallback();
                     return;
@@ -70,12 +70,15 @@ class ModifyDateAction extends Action {
     }
 
     doOperation(operation, moment, timeScale, timeValue) {
-        if(operation === "ADD") {
-            moment.add(timeValue, timeScale);
-        } else if(operation === "SUBTRACT") {
-            moment.subtract(timeValue, timeScale);
-        } else {
-            return false;
+        Logger.debug("ModifyDateAction::doOperation() operation: " + operation + " scale: " + timeScale + " value: " + timeValue);
+        if(timeValue > 0) {
+            if(operation === "ADD") {
+                moment.add(timeValue, timeScale);
+            } else if(operation === "SUBTRACT") {
+                moment.subtract(timeValue, timeScale);
+            } else {
+                return false;
+            }
         }
         var date = moment.toDate();
         Logger.debug("ModifyDateAction::doOperation() Saving modified date:", this.answerKey, date);
@@ -83,10 +86,10 @@ class ModifyDateAction extends Action {
         return true;
     }
 
-    checkDateConditions(answers) {
+    checkDateConditions() {
         for(let i in this.dateConditions) {
             var condition = this.dateConditions[i];
-            if(!condition.check(answers)) {
+            if(!condition.check(this.answers)) {
                 Logger.debug("ModifyDateAction::checkDateConditions() Condition not met: ", condition);
                 return false;
             }
