@@ -1,6 +1,10 @@
+const Extra = require('node-messenger-extra');
+
 const Action = require('./action.js');
 const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const Logger = require('./../logger.js');
+
+const filePathRegex = Extra.getFilePathRegex();
 
 class SendMessageAction extends Action {
     constructor(messageText) {
@@ -52,7 +56,18 @@ class SendMessageAction extends Action {
         messageData.isAux = isAux;
         messageData.message = messageText;
         if(this.attachmentPaths.length > 0) {
-            messageData.addAttachmentPaths(this.attachmentPaths);
+            for(let index in this.attachmentPaths) {
+                var attachmentPath = AnswerOrFixed.get(this.attachmentPaths[index], answers);
+                if(typeof attachmentPath !== "string") {
+                    Logger.error("SendMessageAction::start() Invalid attachment path:", attachmentPath);
+                }
+                if(attachmentPath.match(filePathRegex)) {
+                    messageData.addAttachmentPath(attachmentPath);
+                } else {
+                    Logger.error("SendMessageAction::start() Illegal attachment path:", attachmentPath);
+                }
+            }
+
         }
         messageData.overrideToken = this.overrideToken;
         messengerApi.sendMessage(messageData, (messageSuccess, json) => {

@@ -1,6 +1,10 @@
+const Extra = require('node-messenger-extra');
+
 const Action = require('./action.js');
 const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const Logger = require('./../logger.js');
+
+const filePathRegex = Extra.getFilePathRegex();
 
 class ChangeGroupAvatarAction extends Action {
     constructor(avatarPath) {
@@ -19,8 +23,15 @@ class ChangeGroupAvatarAction extends Action {
             return;
         }
 
-        if(!this.avatarPath || this.avatarPath === "") {
-            Logger.error("ChangeGroupAvatarAction::start() Invalid avatar path:", this.avatarPath);
+        var avatarPath = AnswerOrFixed.get(this.avatarPath, answers);
+
+        if(!avatarPath || avatarPath === "") {
+            Logger.error("ChangeGroupAvatarAction::start() Invalid avatar path:", avatarPath);
+            flowCallback();
+            return;
+        }
+        if(!avatarPath.match(filePathRegex)) {
+            Logger.error("ChangeGroupAvatarAction::start() Illegal avatar path:", avatarPath);
             flowCallback();
             return;
         }
@@ -40,7 +51,7 @@ class ChangeGroupAvatarAction extends Action {
             chatId = this.flow.msg.message.room;
             isAux = false;
         }
-        this.flow.control.messengerApi.changeGroupAvatar(chatId, isAux, this.avatarPath, (success, json) => {
+        this.flow.control.messengerApi.changeGroupAvatar(chatId, isAux, avatarPath, (success, json) => {
             flowCallback();
         }, this.overrideToken);
     }
