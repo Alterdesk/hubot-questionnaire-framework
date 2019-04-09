@@ -50,9 +50,13 @@ class DateTools {
     }
 
     static timeInRange(date, min, max) {
+        var currentDate = DateTools.getMoment(date);
+        var currentTime = DateTools.getMoment();
+        currentTime.hours(currentDate.hours());
+        currentTime.minutes(currentDate.minutes());
         var minTime = DateTools.parse(min, "HH:mm");
         var maxTime = DateTools.parse(max, "HH:mm");
-        return DateTools.getMoment(date).isBetween(minTime, maxTime, "minute");
+        return currentTime.isBetween(minTime, maxTime, "minute");
     }
 
     static dateInRange(date, min, max) {
