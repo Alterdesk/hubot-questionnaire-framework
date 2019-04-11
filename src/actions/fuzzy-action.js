@@ -24,7 +24,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
     }
 
     start(response, answers, flowCallback) {
-        Logger.debug("FuzzyAction::start()", this.answerKey);
+        Logger.debug("FuzzyAction::start() \"" + this.answerKey + "\"");
         this.answers = answers;
         this.flowCallback = flowCallback;
 
@@ -60,8 +60,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
             var name = candidate.name;
             var label = candidate.label;
             var style = candidate.style;
-            var subFlow = candidate.subFlow;
-            askDidMeanFlow.option(name, subFlow)
+            askDidMeanFlow.option(name)
             .button(name, label, style);
         }
         askDidMeanFlow.option(this.didNotRegex)
@@ -85,11 +84,13 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
                 var candidate = candidates[index];
                 if(candidate.name === answerValue) {
                     this.done(candidate);
+                    subFlowCallback();
                     return;
                 }
             }
             Logger.error("FuzzyAction::showCandidates() Unable to find matching candidate: ", answerValue)
-            this.done();
+            this.done(null);
+            subFlowCallback();
         });
         this.flow.startSubFlow(askDidMeanFlow, false);
     }
@@ -273,7 +274,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
     }
 
     done(candidate) {
-        Logger.debug("FuzzyAction::done()", this.answerKey);
+        Logger.debug("FuzzyAction::done() Answer key: \"" + this.answerKey + "\" candidate:", candidate);
         if(candidate) {
             if(candidate.name) {
                 this.answers.add(this.answerKey, candidate.name);
@@ -295,15 +296,24 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
             this.setSubFlow(this.failFlow);
         }
         if(this.textAttempts && this.textAttempts > 0) {
-            this.answers.add(this.answerKey + "_attempts", this.textAttempts);
+            var attemptsKey = this.answerKey + "_attempts";
+            Logger.debug("FuzzyAction::done() Adding key: " + attemptsKey + " value: " + this.textAttempts);
+            this.answers.add(attemptsKey, this.textAttempts);
         }
         if(this.steps && this.steps.length > 0) {
-            this.answers.add(this.answerKey + "_steps", this.steps);
+            var stepsKey = this.answerKey + "_steps";
+            Logger.debug("FuzzyAction::done() Adding key: " + stepsKey + " value: " + this.steps);
+            this.answers.add(stepsKey, this.steps);
         }
         if(this.lastText && this.lastText !== "") {
-            this.answers.add(this.answerKey + "_text", this.lastText);
+            var textKey = this.answerKey + "_text";
+            Logger.debug("FuzzyAction::done() Adding key: " + textKey + " value: " + this.lastText);
+            this.answers.add(textKey, this.lastText);
         }
-        this.answers.add(this.answerKey + "_success", candidate != null);
+        var successKey = this.answerKey + "_success";
+        var successValue = candidate != null;
+        Logger.debug("FuzzyAction::done() Adding key: " + successKey + " value: " + successValue);
+        this.answers.add(successKey, successValue);
 
 //        var keys = this.answers.getKeysWithPrefix(this.answerKey);
 //        for(let i in keys) {
