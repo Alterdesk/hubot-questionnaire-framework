@@ -2,7 +2,7 @@ const Logger = require('./../logger.js');
 
 class Condition {
     constructor() {
-
+        this.repeatIteration = -1;
     }
 
     check(answers) {
@@ -11,6 +11,10 @@ class Condition {
 
     setInverse(inverse) {
         this.inverse = inverse;
+    }
+
+    setRepeatIteration(repeatIteration) {
+        this.repeatIteration = repeatIteration;
     }
 
 }

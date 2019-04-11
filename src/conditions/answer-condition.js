@@ -37,11 +37,16 @@ class AnswerCondition extends Condition {
         var inverse = AnswerOrFixed.get(this.inverse, answers, false);
         for(let i in this.answerKeys) {
             var answerKey = this.answerKeys[i];
-            if(!answers.has(answerKey)) {
-                Logger.debug("AnswerCondition::check() Key not available: " + answerKey);
+            var retrieveKey = answerKey;
+            if(this.repeatIteration > -1) {
+                retrieveKey = retrieveKey + "_" + this.repeatIteration;
+                Logger.debug("AnswerCondition::check() Using repeat key: " + retrieveKey);
+            }
+            if(!answers.has(retrieveKey)) {
+                Logger.debug("AnswerCondition::check() Key not available: " + retrieveKey);
                 continue;
             }
-            var answerValue = answers.get(answerKey);
+            var answerValue = answers.get(retrieveKey);
             if(typeof answerValue === "object") {
                 if(answerValue.length === 0) {
                     if(this.checkAnswer(answerKey, null)) {

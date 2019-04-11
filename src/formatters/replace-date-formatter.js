@@ -16,8 +16,12 @@ class ReplaceDateFormatter extends Formatter {
             Logger.debug("ReplaceDateFormatter::execute() Condition not met");
             return text;
         }
-        if(this.answerKey && answers.has(this.answerKey)) {
-            date = answers.get(this.answerKey);
+        var answerKey = this.answerKey;
+        if(answerKey && this.repeatIteration > -1) {
+            answerKey = answerKey + "_" + this.repeatIteration;
+        }
+        if(answerKey && answers.has(answerKey)) {
+            date = answers.get(answerKey);
         } else {
             date = new Date();
         }

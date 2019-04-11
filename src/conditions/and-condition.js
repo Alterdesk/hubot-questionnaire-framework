@@ -12,6 +12,9 @@ class AndCondition extends Condition {
         var inverse = AnswerOrFixed.get(this.inverse, answers, false);
         for(let i in this.conditions) {
             var condition = this.conditions[i];
+            if(this.repeatIteration > -1) {
+                condition.setRepeatIteration(this.repeatIteration);
+            }
             if(!condition.check(answers)) {
                 Logger.debug("AndCondition::check() Condition not met: inverse: " + inverse + " condition:", condition);
                 return inverse;

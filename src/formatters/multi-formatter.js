@@ -25,6 +25,9 @@ class MultiFormatter extends Formatter {
         var result = "";
         for(let i in this.formatters) {
             var formatter = this.formatters[i];
+            if(this.repeatIteration > -1) {
+                formatter.setRepeatIteration(this.repeatIteration);
+            }
             if(formatter instanceof AlternateTextFormatter) {
                 result += formatter.execute("", answers);
             } else {

@@ -1056,13 +1056,23 @@ class Flow {
             Logger.debug("Flow::onAnswer() Added answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
 
             if(choiceLabel && choiceLabel !== "") {
-                var labelKey = question.answerKey + "_label";
+                var labelKey;
+                if(question.originalAnswerKey && this.repeatIteration > -1) {
+                    labelKey = question.originalAnswerKey + "_label_" + this.repeatIteration;
+                } else {
+                    labelKey = question.answerKey + "_label";
+                }
                 this.answers.add(labelKey, choiceLabel);
                 Logger.debug("Flow::onAnswer() Added label answer: key: \"" + labelKey + "\" value: \"" + choiceLabel + "\"");
             }
 
             if(choiceValue != null) {
-                var valueKey = question.answerKey + "_value";
+                var valueKey;
+                if(question.originalAnswerKey && this.repeatIteration > -1) {
+                    valueKey = question.originalAnswerKey + "_value_" + this.repeatIteration;
+                } else {
+                    valueKey = question.answerKey + "_value";
+                }
                 this.answers.add(valueKey, choiceValue);
                 Logger.debug("Flow::onAnswer() Added value answer: key: \"" + valueKey + "\" value: \"" + choiceValue + "\"");
             }

@@ -14,33 +14,42 @@ class ReplaceAnswerFormatter extends Formatter {
     }
 
     execute(text, answers) {
-        Logger.debug("ReplaceAnswerFormatter::execute() Using from: \"" + this.from + "\" answerKey: \"" + this.answerKey + "\"");
+        var answerKey = this.answerKey;
+        if(!answerKey) {
+            Logger.error("ReplaceAnswerFormatter::execute() Invalid answerKey: \"" + answerKey + "\"");
+            return text;
+        }
+        if(!this.from) {
+            Logger.error("ReplaceAnswerFormatter::execute() Invalid from: \"" + this.from + "\"");
+            return text;
+        }
+        Logger.debug("ReplaceAnswerFormatter::execute() Using from: \"" + this.from + "\" answerKey: \"" + answerKey + "\"");
         if(!this.checkConditions(answers)) {
             Logger.debug("ReplaceAnswerFormatter::execute() Condition not met");
             return text;
         }
-        if(!this.from || !this.answerKey) {
-            return text;
+        if(this.repeatIteration > -1) {
+            answerKey = answerKey + "_" + this.repeatIteration;
         }
-        if(!answers.has(this.answerKey)) {
-            Logger.debug("ReplaceAnswerFormatter::execute() Answer not found: \"" + this.answerKey + "\"");
+        if(!answers.has(answerKey)) {
+            Logger.debug("ReplaceAnswerFormatter::execute() Answer not found: \"" + answerKey + "\"");
             if(this.fallbackText != null) {
-                Logger.debug("ReplaceAnswerFormatter::execute() Using fallback: \"" + this.fallbackText + "\" answerKey: \"" + this.answerKey + "\"");
+                Logger.debug("ReplaceAnswerFormatter::execute() Using fallback: \"" + this.fallbackText + "\" answerKey: \"" + answerKey + "\"");
                 return text.replace(this.from, this.fallbackText);
             }
             return text;
         }
-        var answerValue = answers.get(this.answerKey);
+        var answerValue = answers.get(answerKey);
         if(answerValue == null) {
-            Logger.error("ReplaceAnswerFormatter::execute() Invalid answer: \"" + this.answerKey + "\"");
+            Logger.error("ReplaceAnswerFormatter::execute() Invalid answer: \"" + answerKey + "\"");
             return text;
         }
         if(typeof answerValue === "object") {
             var result = this.getTextForArray(answerValue);
             if(!result || result.length === 0) {
-                Logger.debug("ReplaceAnswerFormatter::execute() Answer is empty or invalid: key:\"" + this.answerKey + "\" value:", this.answerValue);
+                Logger.debug("ReplaceAnswerFormatter::execute() Answer is empty or invalid: key:\"" + answerKey + "\" value:", this.answerValue);
                 if(this.fallbackText != null) {
-                    Logger.debug("ReplaceAnswerFormatter::execute() Using fallback: \"" + this.fallbackText + "\" answerKey: \"" + this.answerKey + "\"");
+                    Logger.debug("ReplaceAnswerFormatter::execute() Using fallback: \"" + this.fallbackText + "\" answerKey: \"" + answerKey + "\"");
                     return text.replace(this.from, this.fallbackText);
                 }
                 return text;

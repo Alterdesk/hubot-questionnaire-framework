@@ -86,6 +86,7 @@ class RepeatFormatter extends Formatter {
             result = result + this.dividerText;
             for(let i in this.dividerFormatters) {
                 var formatter = this.dividerFormatters[i];
+                formatter.setRepeatIteration(this.iteration);
                 result = formatter.execute(result, this.answers);
             }
         }
@@ -93,12 +94,7 @@ class RepeatFormatter extends Formatter {
         result = result + this.to;
         for(let i in this.formatters) {
             var formatter = this.formatters[i];
-            if(formatter.answerKey) {
-                if(!formatter.originalAnswerKey) {
-                    formatter.originalAnswerKey = formatter.answerKey;
-                }
-                formatter.answerKey = formatter.originalAnswerKey + "_" + this.iteration;
-            }
+            formatter.setRepeatIteration(this.iteration);
             result = formatter.execute(result, this.answers);
         }
         return result;
