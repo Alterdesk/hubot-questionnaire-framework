@@ -60,6 +60,7 @@ class SendMessageAction extends Action {
                 var attachmentPath = AnswerOrFixed.get(this.attachmentPaths[index], answers);
                 if(typeof attachmentPath !== "string") {
                     Logger.error("SendMessageAction::start() Invalid attachment path:", attachmentPath);
+                    continue;
                 }
                 if(attachmentPath.match(filePathRegex)) {
                     messageData.addAttachmentPath(attachmentPath);
