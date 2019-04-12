@@ -9,6 +9,7 @@ class AndCondition extends Condition {
     }
 
     check(answers) {
+        Logger.debug("AndCondition::check() Condition count:", this.conditions.length);
         var inverse = AnswerOrFixed.get(this.inverse, answers, false);
         for(let i in this.conditions) {
             var condition = this.conditions[i];

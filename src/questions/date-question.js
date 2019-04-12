@@ -23,7 +23,7 @@ class DateQuestion extends Question {
         if(!matchString || matchString.length === 0) {
             return null;
         }
-        var moment = DateTools.parse(matchString, this.dateFormat);
+        var moment = DateTools.parseLocalToUTC(matchString, this.dateFormat);
         if(!moment) {
             return null;
         }

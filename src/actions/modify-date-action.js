@@ -20,7 +20,7 @@ class ModifyDateAction extends Action {
         this.answers = answers;
         var date = AnswerOrFixed.get(this.useDate, answers);
         if(!date) {
-            date = new Date();
+            date = DateTools.utcDate();
         }
         var timeValue = AnswerOrFixed.get(this.timeValue, answers);
         if(timeValue < 0) {
@@ -37,7 +37,7 @@ class ModifyDateAction extends Action {
         }
         var operation = AnswerOrFixed.get(this.operation, answers);
         Logger.debug("ModifyDateAction::start() Modifying date:", date);
-        var moment = DateTools.getMoment(date);
+        var moment = DateTools.getUTCMoment(date);
         if(!this.doOperation(operation, moment, useScale, timeValue)) {
             flowCallback();
             return;

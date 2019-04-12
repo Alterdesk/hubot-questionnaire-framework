@@ -23,7 +23,7 @@ class ReplaceDateFormatter extends Formatter {
         if(answerKey && answers.has(answerKey)) {
             date = answers.get(answerKey);
         } else {
-            date = new Date();
+            date = DateTools.utcDate();
         }
         Logger.debug("ReplaceDateFormatter::execute() Using from: \"" + this.from + "\" format: \"" + this.format + "\"" + " Date: " + date);
         if(!this.from) {
@@ -35,7 +35,7 @@ class ReplaceDateFormatter extends Formatter {
         if(!date) {
             return text;
         }
-        var formatted = DateTools.format(date, this.format);
+        var formatted = DateTools.formatToLocal(date, this.format);
         if(this.prefixText && this.prefixText.length > 0) {
             formatted = this.prefixText + formatted;
         }

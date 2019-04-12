@@ -12,7 +12,7 @@ class DateCondition extends Condition {
     check(answers) {
         var date = AnswerOrFixed.get(this.checkDate, answers);
         if(!date) {
-            date = new Date();
+            date = DateTools.utcDate();
         }
         Logger.debug("DateCondition::check() Checking date:", date);
         var inverse = AnswerOrFixed.get(this.inverse, answers, false);

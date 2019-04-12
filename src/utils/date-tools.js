@@ -1,33 +1,48 @@
 const Moment = require('moment-timezone');
 
+const Logger = require('./../logger.js');
+
 const USE_TIMEZONE = process.env.HUBOT_QUESTIONNAIRE_USE_TIMEZONE || process.env.USE_TIMEZONE || "UTC";
 const USE_LOCALE = process.env.HUBOT_QUESTIONNAIRE_USE_LOCALE || process.env.USE_LOCALE || "en-US";
 
 class DateTools {
-    static getMoment(data) {
-        return Moment(data).locale(USE_LOCALE).tz(USE_TIMEZONE);
+
+    static getUTCMoment(data) {
+        return Moment.tz(data, "UTC").locale(USE_LOCALE);
     }
 
-    static parse(string, format) {
-        return Moment(string, format).locale(USE_LOCALE).tz(USE_TIMEZONE);
+    static getLocalMoment(data) {
+        return Moment.tz(data, USE_TIMEZONE).locale(USE_LOCALE);
     }
 
-    static format(date, format) {
-        return DateTools.getMoment(date).format(format);
+    static parseToUtc(string, format) {
+        return Moment.tz(string, format, "UTC").locale(USE_LOCALE);
+    }
+
+    static parseLocalToUTC(string, format) {
+        return Moment.tz(string, format, USE_TIMEZONE).locale(USE_LOCALE);
+    }
+
+    static formatToUTC(date, format) {
+        return DateTools.getUTCMoment(date).format(format);
+    }
+
+    static formatToLocal(date, format) {
+        return DateTools.getLocalMoment(date).format(format);
     }
 
     static timePassed(date, timeScale, timeValue) {
-        var moment = DateTools.getMoment(date);
+        var moment = DateTools.getUTCMoment(date);
         var useScale = DateTools.getTimeScale(timeScale);
         if(!useScale) {
             return false;
         }
         moment.add(timeValue, useScale);
-        return moment.isBefore(DateTools.getMoment());
+        return moment.isBefore(DateTools.getUTCMoment());
     }
 
     static isDate(date, year, month, day) {
-        var moment = DateTools.getMoment(date);
+        var moment = DateTools.getUTCMoment(date);
         if(year > 0) {
             var currentYear = moment.year();
             if(year !== currentYear) {
@@ -50,21 +65,22 @@ class DateTools {
     }
 
     static timeInRange(date, min, max) {
-        var currentDate = DateTools.getMoment(date);
-        var currentTime = DateTools.getMoment();
-        currentTime.hours(currentDate.hours());
-        currentTime.minutes(currentDate.minutes());
-        var minTime = DateTools.parse(min, "HH:mm");
-        var maxTime = DateTools.parse(max, "HH:mm");
-        return currentTime.isBetween(minTime, maxTime, "minute");
+        var parsedDate = DateTools.getUTCMoment(date);
+        var currentTime = DateTools.getUTCMoment();
+        currentTime.hours(parsedDate.hours());
+        currentTime.minutes(parsedDate.minutes());
+        currentTime.seconds(30);
+        var minTime = DateTools.parseLocalToUTC(min + ":00", "HH:mm:ss");
+        var maxTime = DateTools.parseLocalToUTC(max + ":59", "HH:mm:ss");
+        return currentTime.isBetween(minTime, maxTime, "second");
     }
 
     static dateInRange(date, min, max) {
-        return DateTools.getMoment(date).isBetween(min, max, "day");
+        return DateTools.getUTCMoment(date).isBetween(min, max, "day");
     }
 
     static weekdayInRange(date, min, max) {
-        var weekday = DateTools.getMoment(date).isoWeekday();
+        var weekday = DateTools.getUTCMoment(date).isoWeekday();
         return weekday >= min && weekday <= max;
     }
 
@@ -74,11 +90,11 @@ class DateTools {
     }
 
     static getWeekNumber(date) {
-        return DateTools.getMoment(date).isoWeek();
+        return DateTools.getUTCMoment(date).isoWeek();
     }
 
     static monthInRange(date, min, max) {
-        var month = DateTools.getMoment(date).month();
+        var month = DateTools.getUTCMoment(date).month();
         return month >= min && month <= max;
     }
 
@@ -101,6 +117,14 @@ class DateTools {
             return "y";
         }
         return null;
+    }
+
+    static localDate() {
+        return this.getLocalMoment().toDate();
+    }
+
+    static utcDate() {
+        return this.getUTCMoment().toDate();
     }
 }
 

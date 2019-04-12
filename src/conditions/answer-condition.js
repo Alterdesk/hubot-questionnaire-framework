@@ -47,6 +47,7 @@ class AnswerCondition extends Condition {
                 continue;
             }
             var answerValue = answers.get(retrieveKey);
+            Logger.debug("AnswerCondition::check() Checking key: " + retrieveKey + " value: ", answerValue);
             if(typeof answerValue === "object") {
                 if(answerValue.length === 0) {
                     if(this.checkAnswer(answerKey, null)) {

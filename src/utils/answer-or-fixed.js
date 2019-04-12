@@ -19,7 +19,7 @@ class AnswerOrFixed {
         this.value = value;
     }
 
-    static get(data, answers, defaultValue) {
+    static get(data, answers, defaultValue) {   // TODO Repeat iteration
         var result = null;
         if(data instanceof AnswerOrFixed) {
             result = AnswerOrFixed.get(data.getValue(answers), answers);
