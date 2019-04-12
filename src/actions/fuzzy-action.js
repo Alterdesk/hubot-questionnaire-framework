@@ -176,9 +176,6 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         var checkCandidates = this.candidates.slice();
         var possibleCandidates = [];
         var matchedCandidates = [];
-
-        var start = Date.now();
-
         var checkWords = [];
 
         var words = answerValue.match(Extra.getTextRegex());
