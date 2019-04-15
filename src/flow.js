@@ -1080,7 +1080,31 @@ class Flow {
             // Call question answered callback if set
             if(this.control.questionAnsweredCallback) {
                 var userId = this.control.getUserId(this.msg.message.user);
-                this.control.questionAnsweredCallback(userId, question.answerKey, answerValue, this.answers);
+                var useKey;
+                if(question.originalAnswerKey) {
+                    useKey = question.originalAnswerKey;
+                } else {
+                    useKey = question.answerKey;
+                }
+                this.control.questionAnsweredCallback(userId, useKey, answerValue, this.answers);
+                if(choiceLabel != null) {
+                    var useLabelKey;
+                    if(question.originalAnswerKey) {
+                        useLabelKey = question.originalAnswerKey + "_label";
+                    } else {
+                        useLabelKey = question.answerKey + "_label";
+                    }
+                    this.control.questionAnsweredCallback(userId, useLabelKey, choiceLabel, this.answers);
+                }
+                if(choiceValue != null) {
+                    var useValueKey;
+                    if(question.originalAnswerKey) {
+                        useValueKey = question.originalAnswerKey + "_value";
+                    } else {
+                        useValueKey = question.answerKey + "_value";
+                    }
+                    this.control.questionAnsweredCallback(userId, useValueKey, choiceValue, this.answers);
+                }
             }
         }
 

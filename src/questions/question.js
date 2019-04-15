@@ -300,7 +300,13 @@ class Question {
 
         if(control.questionAskedCallback) {
             var userId = control.getUserId(msg.message.user);
-            control.questionAskedCallback(userId, this.answerKey, this.flow.answers);
+            var useKey;
+            if(this.originalAnswerKey) {
+                useKey = this.originalAnswerKey;
+            } else {
+                useKey = this.answerKey;
+            }
+            control.questionAskedCallback(userId, useKey, this.flow.answers);
         }
 
         if(this.useListeners) {
