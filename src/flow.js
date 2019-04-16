@@ -928,7 +928,13 @@ class Flow {
                 if(question.resendOnInvalid) {
                     if(flow.control.questionAnswerRejectedCallback) {
                         var userId = flow.control.getUserId(response.message.user);
-                        flow.control.questionAnswerRejectedCallback(userId, question.answerKey, response.message, flow.answers);
+                        var useKey;
+                        if(question.originalAnswerKey) {
+                            useKey = question.originalAnswerKey;
+                        } else {
+                            useKey = question.answerKey;
+                        }
+                        flow.control.questionAnswerRejectedCallback(userId, useKey, response.message, flow.answers);
                     }
                     response.send(question.invalidText);
                     question.send(flow.control, response, this.callback);
