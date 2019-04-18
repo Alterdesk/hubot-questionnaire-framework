@@ -9,13 +9,16 @@ var Messenger;
 class Control {
     constructor() {
         // Listeners for active questionnaires
-        this.questionnaireListeners = {};
+        this.pendingListeners = {};
 
         // Pending requests for active questionnaires
-        this.questionnairePendingRequests = {};
+        this.pendingRequests = {};
 
         // Timeout timers for active questionnaires
-        this.questionnaireTimeoutTimers = {};
+        this.timeoutTimers = {};
+
+        // Active questionnaires
+        this.activeQuestionnaires = {};
 
         // Accepted commands
         this.acceptedCommands = [];
@@ -209,6 +212,11 @@ class Control {
                     return;
                 }
 
+                if(this.hasActiveQuestionnaire(message)) {
+                    Logger.debug("Control::receive() Ignoring message, has active questionnaire for user in room");
+                    return;
+                }
+
                 var userId = control.getUserId(message.user);
                 var roomId = message.room;
                 var isGroup = control.isUserInGroup(message.user);
@@ -290,7 +298,7 @@ class Control {
         listener.configure(this);
         var userId = this.getUserId(message.user);
         Logger.debug("Control::addListener() userId: " + userId + " room: " + message.room);
-        this.questionnaireListeners[message.room + userId] = listener;
+        this.pendingListeners[message.room + "/" + userId] = listener;
         if(!this.hasTimeoutTimer(message)) {
             this.addTimeoutTimer(message, listener.msg, listener.question);
         }
@@ -299,12 +307,12 @@ class Control {
     // Remove a listener that was added before
     removeListener(message) {
         var userId = this.getUserId(message.user);
-        if(this.questionnaireListeners[message.room + userId] == null) {
+        if(this.pendingListeners[message.room + "/" + userId] == null) {
             return null;
         }
         Logger.debug("Control::removeListener() userId: " + userId + " room: " + message.room);
-        var listener = this.questionnaireListeners[message.room + userId];
-        delete this.questionnaireListeners[message.room + userId];
+        var listener = this.pendingListeners[message.room + "/" + userId];
+        delete this.pendingListeners[message.room + "/" + userId];
         if(this.hasTimeoutTimer(message)) {
             this.removeTimeoutTimer(message, listener.question);
         }
@@ -313,14 +321,14 @@ class Control {
 
     // Check if a listener is present for a user in a room
     hasListener(message) {
-        return this.questionnaireListeners[message.room + this.getUserId(message.user)] != null;
+        return this.pendingListeners[message.room + "/" + this.getUserId(message.user)] != null;
     }
 
     // Add a pending request for a user
     addPendingRequest(message, pendingRequest) {
         var userId = this.getUserId(message.user);
         Logger.debug("Control::addPendingRequest() userId: " + userId + " room: " + message.room);
-        this.questionnairePendingRequests[message.room + userId] = pendingRequest;
+        this.pendingRequests[message.room + "/" + userId] = pendingRequest;
         if(!this.hasTimeoutTimer(message)) {
             this.addTimeoutTimer(message, pendingRequest.msg, pendingRequest.question);
         }
@@ -329,12 +337,12 @@ class Control {
     // Remove a pending request for a user
     removePendingRequest(message) {
         var userId = this.getUserId(message.user);
-        if(this.questionnairePendingRequests[message.room + userId] == null) {
+        if(this.pendingRequests[message.room + "/" + userId] == null) {
             return null;
         }
         Logger.debug("Control::removePendingRequest() userId: " + userId + " room: " + message.room);
-        var pendingRequest = this.questionnairePendingRequests[message.room + userId];
-        delete this.questionnairePendingRequests[message.room + userId];
+        var pendingRequest = this.pendingRequests[message.room + "/" + userId];
+        delete this.pendingRequests[message.room + "/" + userId];
         if(this.hasTimeoutTimer(message)) {
             this.removeTimeoutTimer(message, pendingRequest.question);
         }
@@ -343,7 +351,7 @@ class Control {
 
     // Check if a pending request is present for a user in a room
     hasPendingRequest(message) {
-        return this.questionnairePendingRequests[message.room + this.getUserId(message.user)] != null;
+        return this.pendingRequests[message.room + "/" + this.getUserId(message.user)] != null;
     }
 
     // Add a timeout timer for a user
@@ -364,32 +372,74 @@ class Control {
             Logger.debug("Timer timeout from user " + userId + " in room " + message.room);
             question.cleanup(message);
 
-            if(question.flow.stoppedCallback) {
-                question.flow.stoppedCallback(question.flow.msg, question.flow.answers);
-            }
+            question.flow.stop(false);
 
             // Call timeout callback
             useTimeoutCallback();
         }, useTimeoutMs);
 
-        this.questionnaireTimeoutTimers[message.room + userId] = timer;
+        this.timeoutTimers[message.room + "/" + userId] = timer;
     }
 
     // Remove a timeout timer for a user
     removeTimeoutTimer(message) {
         var userId = this.getUserId(message.user);
-        if(this.questionnaireTimeoutTimers[message.room + userId] == null) {
+        if(this.timeoutTimers[message.room + "/" + userId] == null) {
             return;
         }
         Logger.debug("Control::removeTimeoutTimer() userId: " + userId + " room: " + message.room);
-        var timer = this.questionnaireTimeoutTimers[message.room + userId];
-        delete this.questionnaireTimeoutTimers[message.room + userId];
+        var timer = this.timeoutTimers[message.room + "/" + userId];
+        delete this.timeoutTimers[message.room + "/" + userId];
         clearTimeout(timer);
     }
 
     // Check if a timeout timer is present for a user in a room
     hasTimeoutTimer(message) {
-        return this.questionnaireTimeoutTimers[message.room + this.getUserId(message.user)] != null;
+        return this.timeoutTimers[message.room + "/" + this.getUserId(message.user)] != null;
+    }
+
+    addActiveQuestionnaire(message, flow) {
+        var userId = this.getUserId(message.user);
+        if(this.activeQuestionnaires[message.room + "/" + userId]) {
+            Logger.error("Control::addActiveQuestionnaire() Already have an active questionnaire for userId: " + userId + " room: " + message.room);
+            return;
+        }
+        Logger.debug("Control::addActiveQuestionnaire() userId: " + userId + " room: " + message.room + " flow: " + flow.name);
+        this.activeQuestionnaires[message.room + "/" + userId] = flow;
+        Logger.debug("Control::addActiveQuestionnaire() Active questionnaires: " + this.getActiveQuestionnaireCount());
+    }
+
+    getActiveQuestionnaire(message) {
+        return this.activeQuestionnaires[message.room + "/" + this.getUserId(message.user)];
+    }
+
+    hasActiveQuestionnaire(message) {
+        return this.getActiveQuestionnaire(message) != null;
+    }
+
+    getActiveQuestionnaires() {
+        return Object.keys(this.activeQuestionnaires);
+    }
+
+    getActiveQuestionnaireCount() {
+        return this.getActiveQuestionnaires().length;
+    }
+
+    removeActiveQuestionnaire(message) {
+        var userId = this.getUserId(message.user);
+        var flow = this.activeQuestionnaires[message.room + "/" + userId];
+        if(!flow) {
+            Logger.error("Control::removeActiveQuestionnaire() No active questionnaire for userId: " + userId + " room: " + message.room);
+            return null;
+        }
+        Logger.debug("Control::removeActiveQuestionnaire() userId: " + userId + " room: " + message.room + " flow: " + flow.name);
+        delete this.activeQuestionnaires[message.room + "/" + userId];
+        Logger.debug("Control::removeActiveQuestionnaire() Active questionnaires: " + this.getActiveQuestionnaireCount());
+        if(this.exitOnIdle) {
+            Logger.debug("Control::removeActiveQuestionnaire() Exit on idle was armed, exiting");
+            process.exit(0);
+        }
+        return flow;
     }
 
     // Alterdesk adapter uses separate user id field(user.id in groups consists of (group_id + user_id)
@@ -681,7 +731,7 @@ class Control {
                 Logger.error("Control:checkCommandButton() Sending help message");
                 this.sendHelpMessage(message);
             } else {
-                Logger.error("Control:checkCommandButton() Accepted command: " + optionText);
+                Logger.debug("Control:checkCommandButton() Accepted command: " + optionText);
                 var messageUser = new User(userId);
                 messageUser.user_id = userId;
                 messageUser.room = roomId;
@@ -778,6 +828,11 @@ class Control {
             return null;
         }
         return new Messenger.QuestionPayload()
+    }
+
+    armExitOnIdle(arm) {
+        this.exitOnIdle = arm;
+        return this.getActiveQuestionnaireCount() === 0;
     }
 }
 

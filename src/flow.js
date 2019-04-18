@@ -831,6 +831,9 @@ class Flow {
     // Start the flow
     start(msg, answers) {
         Logger.info("Flow::start()");
+        if(!this.superFlow) {
+            this.control.addActiveQuestionnaire(msg.message, this);
+        }
         this.isRunning = true;
         if(this.steps.length === 0) {
             Logger.error("Flow::start() No steps for flow");
@@ -857,6 +860,8 @@ class Flow {
             }
             Logger.debug("Flow::start() got pre-filled answers", answers);
         }
+        this.msg = msg;
+        this.answers = answers || new Answers();
         if(this.repeatIteration > -1) {
             for(let i in this.steps) {
                 var step = this.steps[i];
@@ -867,10 +872,12 @@ class Flow {
                     step.originalAnswerKey = step.answerKey;
                 }
                 step.answerKey = step.originalAnswerKey + "_" + this.repeatIteration;
+                if(step instanceof Question
+                        || step instanceof Action) {
+                    step.reset(this.answers);
+                }
             }
         }
-        this.msg = msg;
-        this.answers = answers || new Answers();
         this.next();
     }
 
@@ -1289,8 +1296,13 @@ class Flow {
         if(sendMessage) {
             this.sendRestartMessage(this.stopText);
         }
-        if(this.stoppedCallback) {
-            this.stoppedCallback(this.msg, this.answers);
+        if(this.superFlow) {
+            this.superFlow.stop(false);
+        } else {
+            this.control.removeActiveQuestionnaire(this.msg.message);
+            if(this.stoppedCallback) {
+                this.stoppedCallback(this.msg, this.answers);
+            }
         }
     }
 
@@ -1304,6 +1316,9 @@ class Flow {
         // Check if has more steps or flow is finished
         if(this.currentStep == this.steps.length) {
             Logger.info("Flow::next() Flow finished", this.name);
+            if(!this.superFlow) {
+                this.control.removeActiveQuestionnaire(this.msg.message);
+            }
             if(this.finishedCallback != null) {
                 this.finishedCallback(this.msg, this.answers);
             }

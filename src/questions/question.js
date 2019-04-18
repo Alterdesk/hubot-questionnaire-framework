@@ -257,9 +257,7 @@ class Question {
                         if(timeoutText && timeoutText.length > 0) {
                             question.flow.sendRestartMessage(timeoutText);
                         }
-                        if(question.flow.stoppedCallback) {
-                            question.flow.stoppedCallback(flow.msg, flow.answers);
-                        }
+                        question.flow.stop(false);
                     }
                 };
 
@@ -292,9 +290,7 @@ class Question {
             }
             Logger.error("Question::setListenersAndPendingRequests() Empty userId list for multi-user question");
             this.flow.sendRestartMessage(this.flow.errorText);
-            if(this.flow.stoppedCallback) {
-                this.flow.stoppedCallback(this.flow.msg, this.flow.answers);
-            }
+            this.flow.stop(false);
             return;
         }
 
