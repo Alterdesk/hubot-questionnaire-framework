@@ -434,8 +434,9 @@ class Control {
         }
         Logger.debug("Control::removeActiveQuestionnaire() userId: " + userId + " room: " + message.room + " flow: " + flow.name);
         delete this.activeQuestionnaires[message.room + "/" + userId];
-        Logger.debug("Control::removeActiveQuestionnaire() Active questionnaires: " + this.getActiveQuestionnaireCount());
-        if(this.exitOnIdle) {
+        var count = this.getActiveQuestionnaireCount();
+        Logger.debug("Control::removeActiveQuestionnaire() Active questionnaires: " + count);
+        if(count === 0 && this.exitOnIdle) {
             Logger.debug("Control::removeActiveQuestionnaire() Exit on idle was armed, exiting");
             process.exit(0);
         }
@@ -831,6 +832,7 @@ class Control {
     }
 
     armExitOnIdle(arm) {
+        Logger.debug("Control::armExitOnIdle() arm: " + arm);
         this.exitOnIdle = arm;
         return this.getActiveQuestionnaireCount() === 0;
     }
