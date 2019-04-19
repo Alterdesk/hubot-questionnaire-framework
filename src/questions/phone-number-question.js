@@ -7,7 +7,8 @@ const Question = require('./question.js');
 class PhoneNumberQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
-        this.regex = Extra.getPhoneRegex();
+        this.regex = Extra.getTextRegex();
+        this.phoneRegex = Extra.getPhoneRegex();
         this.allowedCountryCodes = [];
     }
 
@@ -16,7 +17,16 @@ class PhoneNumberQuestion extends Question {
         if(matches == null || message.text == null) {
             return null;
         }
-        var phone = matches[0];
+        var text = message.text;
+        Logger.debug("PhoneNumberQuestion::checkAndParseAnswer() Got text:", text);
+        text = text.replace(new RegExp(/[ \-\_\(\)\[\]]/, 'gi'), "");
+        Logger.debug("PhoneNumberQuestion::checkAndParseAnswer() Filtered:", text);
+        var phoneMatches = text.match(this.phoneRegex);
+        Logger.debug("PhoneNumberQuestion::checkAndParseAnswer() Phone matches:", phoneMatches);
+        if(phoneMatches == null) {
+            return null;
+        }
+        var phone = phoneMatches[0];
         if(this.allowedCountryCodes.length === 0) {
             return phone;
         }
