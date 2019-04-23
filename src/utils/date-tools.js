@@ -50,7 +50,8 @@ class DateTools {
             }
         }
         if(month > 0) {
-            var currentMonth = moment.month();
+            // Months are zero indexed
+            var currentMonth = (moment.month() + 1);
             if(month !== currentMonth) {
                 return false;
             }
@@ -94,7 +95,8 @@ class DateTools {
     }
 
     static monthInRange(date, min, max) {
-        var month = DateTools.getUTCMoment(date).month();
+        // Months are zero indexed
+        var month = (DateTools.getUTCMoment(date).month() + 1);
         return month >= min && month <= max;
     }
 
