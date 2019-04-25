@@ -905,6 +905,10 @@ class Flow {
                 if(flow.backText && flow.backText != "") {
                     response.send(flow.backText)
                 }
+                if(flow.control.questionnaireBackCallback) {
+                    var userId = flow.control.getUserId(flow.msg.message.user);
+                    flow.control.questionnaireBackCallback(userId, false, flow.answers);
+                }
                 // Try to go back
                 if(!flow.previous(false)) {
                     Logger.error("Flow::callback() Unable to go back, restarting flow");
@@ -919,6 +923,10 @@ class Flow {
                 // Send checkpoint text message if set
                 if(flow.checkpointText && flow.checkpointText != "") {
                     response.send(flow.checkpointText)
+                }
+                if(flow.control.questionnaireBackCallback) {
+                    var userId = flow.control.getUserId(flow.msg.message.user);
+                    this.control.questionnaireBackCallback(userId, true, flow.answers);
                 }
                 // Try to go to last checkpoint
                 if(!flow.previous(true)) {
@@ -1153,6 +1161,10 @@ class Flow {
         Logger.info("Flow::questionStop()");
         if(question.onStopAnswerKey && question.onStopAnswerValue != null) {
             this.answers.add(question.onStopAnswerKey, question.onStopAnswerValue);
+        }
+        if(this.control.questionnaireStoppedCallback) {
+            var userId = this.control.getUserId(this.msg.message.user);
+            this.control.questionnaireStoppedCallback(userId, this.answers);
         }
         this.stop(question.sendMessageOnStop);
     }

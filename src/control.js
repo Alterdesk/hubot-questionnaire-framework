@@ -374,6 +374,11 @@ class Control {
 
             question.flow.stop(false);
 
+            if(this.questionnaireTimedOutCallback) {
+                var userId = this.getUserId(msg.message.user);
+                this.questionnaireTimedOutCallback(userId, question.flow.answers);
+            }
+
             // Call timeout callback
             useTimeoutCallback();
         }, useTimeoutMs);
@@ -622,6 +627,21 @@ class Control {
     // Callback that is called when a action is done
     setActionDoneCallback(actionDoneCallback) {
         this.actionDoneCallback = actionDoneCallback;
+    }
+
+    // Callback that is called when a questionnaire is timed out
+    setQuestionnaireTimedOutCallback(questionnaireTimedOutCallback) {
+        this.questionnaireTimedOutCallback = questionnaireTimedOutCallback;
+    }
+
+    // Callback that is called when a questionnaire is going back a question or to latest checkpoint
+    setQuestionnaireBackCallback(questionnaireBackCallback) {
+        this.questionnaireBackCallback = questionnaireBackCallback;
+    }
+
+    // Callback that is called when a questionnaire is stopped
+    setQuestionnaireStoppedCallback(questionnaireStoppedCallback) {
+        this.questionnaireStoppedCallback = questionnaireStoppedCallback;
     }
 
     // Should a listener for a user be removed when a leave is detected
