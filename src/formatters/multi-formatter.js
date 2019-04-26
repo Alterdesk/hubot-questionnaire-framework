@@ -25,6 +25,7 @@ class MultiFormatter extends Formatter {
         var result = "";
         for(let i in this.formatters) {
             var formatter = this.formatters[i];
+            formatter.setEscapeHtml(this.escapeHtml);
             if(this.repeatIteration > -1) {
                 formatter.setRepeatIteration(this.repeatIteration);
             }

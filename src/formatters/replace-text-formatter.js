@@ -1,3 +1,5 @@
+const Extra = require('node-messenger-extra');
+
 const Formatter = require('./formatter.js');
 const Logger = require('./../logger.js');
 
@@ -30,7 +32,9 @@ class ReplaceTextFormatter extends Formatter {
         if(this.suffixText && this.suffixText.length > 0) {
             to = to + this.suffixText;
         }
-
+        if(this.escapeHtml) {
+            to = Extra.escapeHtml(to);
+        }
         return text.replace(this.from, to);
     }
 

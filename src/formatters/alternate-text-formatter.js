@@ -1,3 +1,5 @@
+const Extra = require('node-messenger-extra');
+
 const AnswerCondition = require('./../conditions/answer-condition.js');
 const Formatter = require('./formatter.js');
 const Logger = require('./../logger.js');
@@ -14,6 +16,9 @@ class AlternateTextFormatter extends Formatter {
         if(!this.checkConditions(answers)) {
             Logger.debug("AlternateTextFormatter::execute() Condition not met");
             return text;
+        }
+        if(this.escapeHtml) {
+            return Extra.escapeHtml(this.alternateText);
         }
         return this.alternateText;
     }

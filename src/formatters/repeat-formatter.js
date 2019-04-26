@@ -1,3 +1,5 @@
+const Extra = require('node-messenger-extra');
+
 const Formatter = require('./formatter.js');
 const Logger = require('./../logger.js');
 
@@ -34,6 +36,7 @@ class RepeatFormatter extends Formatter {
             result = result + this.startText;
             for(let i in this.startFormatters) {
                 var formatter = this.startFormatters[i];
+                formatter.setEscapeHtml(this.escapeHtml);
                 result = formatter.execute(result, this.answers);
             }
         }
@@ -46,8 +49,13 @@ class RepeatFormatter extends Formatter {
             result = result + this.endText;
             for(let i in this.endFormatters) {
                 var formatter = this.endFormatters[i];
+                formatter.setEscapeHtml(this.escapeHtml);
                 result = formatter.execute(result, this.answers);
             }
+        }
+
+        if(this.escapeHtml) {
+            result = Extra.escapeHtml(result);
         }
 
         return text.replace(this.from, result);
@@ -86,6 +94,7 @@ class RepeatFormatter extends Formatter {
             result = result + this.dividerText;
             for(let i in this.dividerFormatters) {
                 var formatter = this.dividerFormatters[i];
+                formatter.setEscapeHtml(this.escapeHtml);
                 formatter.setRepeatIteration(this.iteration);
                 result = formatter.execute(result, this.answers);
             }
@@ -94,6 +103,7 @@ class RepeatFormatter extends Formatter {
         result = result + this.to;
         for(let i in this.formatters) {
             var formatter = this.formatters[i];
+            formatter.setEscapeHtml(this.escapeHtml);
             formatter.setRepeatIteration(this.iteration);
             result = formatter.execute(result, this.answers);
         }

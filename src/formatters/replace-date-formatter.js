@@ -1,3 +1,5 @@
+const Extra = require('node-messenger-extra');
+
 const Formatter = require('./formatter.js');
 const DateTools = require('./../utils/date-tools.js');
 const Logger = require('./../logger.js');
@@ -41,6 +43,9 @@ class ReplaceDateFormatter extends Formatter {
         }
         if(this.suffixText && this.suffixText.length > 0) {
             formatted = formatted + this.suffixText;
+        }
+        if(this.escapeHtml) {
+            formatted = Extra.escapeHtml(formatted);
         }
         return text.replace(this.from, formatted);
     }

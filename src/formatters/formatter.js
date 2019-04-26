@@ -5,6 +5,7 @@ class Formatter {
     constructor() {
         this.conditions = [];
         this.repeatIteration = -1;
+        this.escapeHtml = false;
     }
 
     execute(text, answers) {
@@ -31,6 +32,10 @@ class Formatter {
 
     setRepeatIteration(repeatIteration) {
         this.repeatIteration = repeatIteration;
+    }
+
+    setEscapeHtml(escapeHtml) {
+        this.escapeHtml = escapeHtml;
     }
 
 }
