@@ -14,6 +14,8 @@ class ModifyDateAction extends Action {
         this.timeScale = timeScale;
         this.timeValue = timeValue;
         this.dateConditions = [];
+        this.failOperations = 0;
+        this.maxFailOperations = 1000;
     }
 
     start(response, answers, flowCallback) {
@@ -59,6 +61,14 @@ class ModifyDateAction extends Action {
             }
             var failOperation = AnswerOrFixed.get(this.failOperation, answers);
             while(!this.checkDateConditions()) {
+                this.failOperations++;
+                if(this.failOperations < this.maxFailOperations) {
+                    if(this.failFlow) {
+                        this.setSubFlow(this.failFlow);
+                    }
+                    flowCallback();
+                    return;
+                }
                 if(!this.doOperation(failOperation, moment, failTimeScale, failTimeValue)) {
                     flowCallback();
                     return;
@@ -103,8 +113,21 @@ class ModifyDateAction extends Action {
         this.failTimeValue = failTimeValue;
     }
 
+    setMaxFailOperations(maxFailOperations) {
+        this.maxFailOperations = maxFailOperations;
+    }
+
+    setFailFlow(failFlow) {
+        this.failFlow = failFlow;
+    }
+
     addDateCondition(condition) {
         this.dateConditions.push(condition);
+    }
+
+    reset(answers) {
+        super.reset(answers);
+        this.failOperations = 0;
     }
 }
 
