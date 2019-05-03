@@ -18,6 +18,7 @@ module.exports = {
     AnswerOrFixed : require('./utils/answer-or-fixed.js'),
     Answers : require('./answers.js'),
     AppendAnswerAction : require('./actions/append-answer-action.js'),
+    AppendTextFormatter : require('./formatters/append-text-formatter.js'),
     AttachmentQuestion : require('./questions/attachment-question.js'),
     BackAction : require('./actions/back-action.js'),
     CaseFormatter : require('./formatters/case-formatter.js'),
