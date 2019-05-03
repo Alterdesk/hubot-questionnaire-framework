@@ -1,4 +1,3 @@
-const AlternateTextFormatter = require('./alternate-text-formatter.js');
 const Formatter = require('./formatter.js');
 const Logger = require('./../logger.js');
 
@@ -11,15 +10,16 @@ class MultiFormatter extends Formatter {
     }
 
     execute(text, answers) {
-        Logger.debug("MultiFormatter::execute() Using from: \"" + this.from + "\" formatters: \"" + this.formatters + "\"");
+        if(!this.formatters || this.formatters.length === 0) {
+            Logger.error("MultiFormatter::execute() Invalid formatters:", this.formatters);
+            return text;
+        }
+        if(this.from && !text.match(this.from)) {
+            Logger.debug("MultiFormatter::execute() No from regex match:", this.from, text);
+            return text;
+        }
         if(!this.checkConditions(answers)) {
             Logger.debug("MultiFormatter::execute() Condition not met");
-            return text;
-        }
-        if(!this.from) {
-            return text;
-        }
-        if(this.formatters.length === 0) {
             return text;
         }
         var result = "";
@@ -29,11 +29,7 @@ class MultiFormatter extends Formatter {
             if(this.repeatIteration > -1) {
                 formatter.setRepeatIteration(this.repeatIteration);
             }
-            if(formatter instanceof AlternateTextFormatter) {
-                result += formatter.execute("", answers);
-            } else {
-                result += formatter.execute("%replace%", answers);
-            }
+            result = formatter.execute(result, answers);
         }
         return text.replace(this.from, result);
     }
