@@ -29,6 +29,9 @@ class RepeatFormatter extends Formatter {
             Logger.error("RepeatFormatter::execute() No from was set:", this.from);
             return text;
         }
+        
+        this.repeatCount = this.getRepeatCount();
+        Logger.debug("RepeatFormatter::execute() Repeat count:", this.repeatCount);
 
         var result = "";
 
@@ -41,8 +44,8 @@ class RepeatFormatter extends Formatter {
             }
         }
 
-        while(this.checkRepeat()) {
-            result = this.nextIteration(result);
+        for(let iteration = 0; iteration < this.repeatCount; iteration++) {
+            result = this.nextIteration(iteration, result);
         }
 
         if(this.endText && this.endText.length > 0) {
@@ -61,41 +64,41 @@ class RepeatFormatter extends Formatter {
         return text.replace(this.from, result);
     }
 
-    checkRepeat() {
-        Logger.debug("RepeatFormatter::checkRepeat() Iteration:", this.iteration);
-
-        if(!this.checkConditions(this.answers)) {
-            Logger.debug("RepeatFormatter::execute() Condition not met");
-            return false;
+    getRepeatCount() {
+        Logger.debug("RepeatFormatter::getRepeatCount()");
+        if(!this.repeatKey || this.repeatKey === "") {
+            Logger.error("RepeatFormatter::getRepeatCount() Repeat answer key not set:", this.repeatKey);
+            return 0;
         }
-
-        if(this.iteration > -1 && this.repeatKey && this.repeatKey !== "") {
-            var key = this.repeatKey + "_" + this.iteration;
+        var count = 0;
+        while(true) {
+            var key = this.repeatKey + "_" + count;
             var value = this.answers.get(key);
             if(value == null) {
-                Logger.debug("RepeatFormatter::checkRepeat() Repeat answer not given:", key, value);
-                return false;
+                Logger.debug("RepeatFormatter::getRepeatCount() Repeat answer not given:", key, value);
+                break;
             }
             if(this.repeatValue !== value && this.repeatValue != null) {
-                Logger.debug("RepeatFormatter::checkRepeat() Repeat answer does not match:", key, value, this.repeatValue);
-                return false;
+                Logger.debug("RepeatFormatter::getRepeatCount() Repeat answer does not match:", key, value, this.repeatValue);
+                count++;
+                break;
             }
-            Logger.debug("RepeatFormatter::checkRepeat() Repeat answer accepted:", key, value);
+            Logger.debug("RepeatFormatter::getRepeatCount() Repeat answer accepted:", key, value);
+            count++;
         }
 
-        return true;
+        return count;
     }
 
-    nextIteration(result) {
-        this.iteration++;
-        Logger.debug("RepeatFormatter::nextIteration() Iteration:", this.iteration);
+    nextIteration(iteration, result) {
+        Logger.debug("RepeatFormatter::nextIteration() Iteration:", iteration);
 
         if(this.iteration > 0 && this.dividerText && this.dividerText.length > 0) {
             result = result + this.dividerText;
             for(let i in this.dividerFormatters) {
                 var formatter = this.dividerFormatters[i];
                 formatter.setEscapeHtml(this.escapeHtml);
-                formatter.setRepeatIteration(this.iteration);
+                formatter.setRepeatIteration(iteration);
                 result = formatter.execute(result, this.answers);
             }
         }
@@ -104,7 +107,7 @@ class RepeatFormatter extends Formatter {
         for(let i in this.formatters) {
             var formatter = this.formatters[i];
             formatter.setEscapeHtml(this.escapeHtml);
-            formatter.setRepeatIteration(this.iteration);
+            formatter.setRepeatIteration(iteration);
             result = formatter.execute(result, this.answers);
         }
         return result;
