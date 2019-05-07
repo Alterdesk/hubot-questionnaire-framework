@@ -289,8 +289,7 @@ class Question {
                 return;
             }
             Logger.error("Question::setListenersAndPendingRequests() Empty userId list for multi-user question");
-            this.flow.sendRestartMessage(this.flow.errorText);
-            this.flow.stop(false);
+            this.flow.stop(true, true);
             return;
         }
 

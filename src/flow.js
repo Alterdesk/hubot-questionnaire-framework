@@ -1162,10 +1162,6 @@ class Flow {
         if(question.onStopAnswerKey && question.onStopAnswerValue != null) {
             this.answers.add(question.onStopAnswerKey, question.onStopAnswerValue);
         }
-        if(this.control.questionnaireStoppedCallback) {
-            var userId = this.control.getUserId(this.msg.message.user);
-            this.control.questionnaireStoppedCallback(userId, this.answers);
-        }
         this.stop(question.sendMessageOnStop);
     }
 
@@ -1289,7 +1285,7 @@ class Flow {
     }
 
     // Stop the flow
-    stop(sendMessage) {
+    stop(sendMessage, error) {
         if(!this.isRunning) {
             Logger.debug("Flow::stop() Flow not running", this.name);
             // Already stopped
@@ -1306,14 +1302,22 @@ class Flow {
             }
         }
         if(sendMessage) {
-            this.sendRestartMessage(this.stopText);
+            if(error) {
+                this.sendRestartMessage(this.errorText);
+            } else {
+                this.sendRestartMessage(this.stopText);
+            }
         }
         if(this.superFlow) {
-            this.superFlow.stop(false);
+            this.superFlow.stop(false, error);
         } else {
             this.control.removeActiveQuestionnaire(this.msg.message);
             if(this.stoppedCallback) {
-                this.stoppedCallback(this.msg, this.answers);
+                this.stoppedCallback(this.msg, error, this.answers);
+            }
+            if(this.control.questionnaireStoppedCallback) {
+                var userId = this.control.getUserId(this.msg.message.user);
+                this.control.questionnaireStoppedCallback(userId, error, this.answers);
             }
         }
     }

@@ -42,8 +42,7 @@ class VerificationQuestion extends Question {
         // Unable to preform question without messenger api
         if(!control.messengerApi) {
             Logger.error("VerificationQuestion:send() Messenger API instance not set");
-            this.flow.sendRestartMessage(this.flow.errorText);
-            this.flow.stop(false);
+            this.flow.stop(true, true);
             return;
         }
         if(this.isMultiUser && this.userIds && this.userIds.length > 0) {
@@ -66,8 +65,7 @@ class VerificationQuestion extends Question {
         control.messengerApi.getUserProviders(userId, (providerSuccess, providerJson) => {
             if(!providerSuccess) {
                 Logger.error("VerificationQuestion:sendForUserId() Unable to retrieve providers for user: " + userId);
-                this.flow.sendRestartMessage(this.flow.errorText);
-                this.flow.stop(false);
+                this.flow.stop(true, true);
                 return;
             }
             var providerId;
@@ -88,8 +86,7 @@ class VerificationQuestion extends Question {
                     Logger.debug("VerificationQuestion:sendForUserId() Successful: " + askSuccess);
                     if(!askSuccess) {
                         Logger.error("VerificationQuestion:sendForUserId() Unable to send verification request for user: " + userId);
-                        this.flow.sendRestartMessage(this.flow.errorText);
-                        this.flow.stop(false);
+                        this.flow.stop(true, true);
                         return;
                     }
                     var messageId = askJson["id"];
@@ -102,8 +99,7 @@ class VerificationQuestion extends Question {
                 control.messengerApi.getUserVerifications(userId, (verificationsSuccess, verificationsJson) => {
                     if(!verificationsSuccess) {
                         Logger.error("VerificationQuestion:sendForUserId() Unable to retrieve verifications for user: " + userId);
-                        this.flow.sendRestartMessage(this.flow.errorText);
-                        this.flow.stop(false);
+                        this.flow.stop(true, true);
                         return;
                     }
                     var isVerified = false;
@@ -120,8 +116,7 @@ class VerificationQuestion extends Question {
                         this.flow.onAnswer(msg, this, true);
                     } else {
                         Logger.error("VerificationQuestion:sendForUserId() Provider not available for user and not verified: provider: " + this.provider + " user: " + userId);
-                        this.flow.sendRestartMessage(this.flow.errorText);
-                        this.flow.stop(false);
+                        this.flow.stop(true, true);
                         return;
                     }
                 });
