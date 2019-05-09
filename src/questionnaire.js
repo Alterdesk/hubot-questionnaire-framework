@@ -42,6 +42,7 @@ module.exports = {
     FlowAction : require('./actions/flow-action.js'),
     Formatter : require('./formatters/formatter.js'),
     FuzzyAction : require('./actions/fuzzy-action.js'),
+    GenerateNumberAction : require('./actions/generate-number-action.js'),
     Information : require('./information.js'),
     InviteAction : require('./actions/invite-action.js'),
     MentionQuestion : require('./questions/mention-question.js'),
