@@ -1,5 +1,6 @@
 const Action = require('./action.js');
 const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
+const Logger = require('./../logger.js');
 
 class CloseGroupAction extends Action {
     constructor() {
@@ -11,6 +12,7 @@ class CloseGroupAction extends Action {
 
     start(response, answers, flowCallback) {
         if(!this.flow || !this.flow.msg || !this.flow.control || !this.flow.control.messengerApi) {
+            Logger.error("CloseGroupAction::start() Invalid Flow, Control or MessengerApi");
             flowCallback();
             return;
         }
@@ -27,6 +29,11 @@ class CloseGroupAction extends Action {
             }
             chatId = this.flow.msg.message.room;
             isAux = false;
+        }
+        if(!chatId) {
+            Logger.error("CloseGroupAction::start() Invalid destination chat id");
+            flowCallback();
+            return;
         }
 
         var sendEmail = AnswerOrFixed.get(this.sendEmail, answers, true);

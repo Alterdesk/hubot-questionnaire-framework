@@ -1,5 +1,6 @@
 const Action = require('./action.js');
 const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
+const Logger = require('./../logger.js');
 
 class ChangeMembersAction extends Action {
     constructor(add, memberIds) {
@@ -13,6 +14,7 @@ class ChangeMembersAction extends Action {
 
     start(response, answers, flowCallback) {
         if(!this.flow || !this.flow.msg || !this.flow.control || !this.flow.control.messengerApi) {
+            Logger.error("ChangeMembersAction::start() Invalid Flow, Control or MessengerApi");
             flowCallback();
             return;
         }
@@ -24,11 +26,17 @@ class ChangeMembersAction extends Action {
         } else {
             var isGroup = this.flow.control.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
+                Logger.error("ChangeMembersAction::start() Not a group chat");
                 flowCallback();
                 return;
             }
             chatId = this.flow.msg.message.room;
             isAux = false;
+        }
+        if(!chatId) {
+            Logger.error("ChangeMembersAction::start() Invalid chat id");
+            flowCallback();
+            return;
         }
 
         if(this.add) {

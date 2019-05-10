@@ -51,6 +51,11 @@ class ChangeGroupAvatarAction extends Action {
             chatId = this.flow.msg.message.room;
             isAux = false;
         }
+        if(!chatId) {
+            Logger.error("ChangeGroupAvatarAction::start() Invalid chat id");
+            flowCallback();
+            return;
+        }
         this.flow.control.messengerApi.changeGroupAvatar(chatId, isAux, avatarPath, (success, json) => {
             flowCallback();
         }, this.overrideToken);

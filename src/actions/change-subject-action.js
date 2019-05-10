@@ -44,6 +44,11 @@ class ChangeSubjectAction extends Action {
             chatId = this.flow.msg.message.room;
             isAux = false;
         }
+        if(!chatId) {
+            Logger.error("ChangeSubjectAction::start() Invalid chat id");
+            flowCallback();
+            return;
+        }
         this.flow.control.messengerApi.changeGroupSubject(chatId, isAux, subjectValue, (success, json) => {
             flowCallback();
         }, this.overrideToken);

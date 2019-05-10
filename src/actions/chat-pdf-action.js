@@ -37,6 +37,11 @@ class ChatPdfAction extends Action {
 
         var sourceChatId = msg.message.room;
         var sourceIsGroup = control.isUserInGroup(msg.message.user);
+        if(!sourceChatId) {
+            Logger.error("ChatPdfAction::start() Invalid source chat id");
+            flowCallback();
+            return;
+        }
 
         var destinationChatId;
         var destinationIsGroup;
@@ -49,6 +54,11 @@ class ChatPdfAction extends Action {
             destinationChatId = sourceChatId;
             destinationIsGroup = sourceIsGroup;
             destinationIsAux = false;
+        }
+        if(!destinationChatId) {
+            Logger.error("ChatPdfAction::start() Invalid destination chat id");
+            flowCallback();
+            return;
         }
 
         var messageText = AnswerOrFixed.get(this.messageText, answers, "");

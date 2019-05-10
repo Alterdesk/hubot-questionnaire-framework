@@ -62,6 +62,11 @@ class ChangeGroupSettingsAction extends Action {
             chatId = this.flow.msg.message.room;
             isAux = false;
         }
+        if(!chatId) {
+            Logger.error("ChangeGroupSettingsAction::start() Invalid chat id");
+            flowCallback();
+            return;
+        }
 
         var settingsPostJson = JSON.stringify(settingsPostData);
         var postUrl;

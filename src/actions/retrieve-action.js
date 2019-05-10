@@ -20,6 +20,11 @@ class RetrieveAction extends Action {
 
         if(this.chatId) {
             var chatIdValue = AnswerOrFixed.get(this.chatId, answers);
+            if(!chatIdValue) {
+                Logger.error("RetrieveAction::start() Invalid chat id");
+                this.done(null);
+                return;
+            }
             var isGroupValue = AnswerOrFixed.get(this.isGroup, answers);
             var isAuxValue = AnswerOrFixed.get(this.isAux, answers);
             this.flow.control.messengerApi.getChat(chatIdValue, isGroupValue, isAuxValue, (success, json) => {
@@ -28,6 +33,11 @@ class RetrieveAction extends Action {
             }, this.overrideToken);
         } else if(this.userId) {
             var userIdValue = AnswerOrFixed.get(this.userId, answers);
+            if(!userIdValue) {
+                Logger.error("RetrieveAction::start() Invalid user id");
+                this.done(null);
+                return;
+            }
             var isAuxValue = AnswerOrFixed.get(this.isAux, answers);
             this.flow.control.messengerApi.getUser(userIdValue, isAuxValue, (success, json) => {
                 this.done(json);

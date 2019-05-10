@@ -33,6 +33,11 @@ class RetrieveMembersAction extends Action {
             chatId = this.flow.msg.message.room;
             isAux = false;
         }
+        if(!chatId) {
+            Logger.error("RetrieveMembersAction::start() Invalid chat id");
+            this.done(null);
+            return;
+        }
 
         this.flow.control.messengerApi.getGroupMembers(chatId, isAux, (success, json) => {
             this.done(json);
