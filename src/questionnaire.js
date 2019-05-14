@@ -21,6 +21,7 @@ module.exports = {
     AppendTextFormatter : require('./formatters/append-text-formatter.js'),
     AttachmentQuestion : require('./questions/attachment-question.js'),
     BackAction : require('./actions/back-action.js'),
+    CalculateNumberAction : require('./actions/calculate-number-action.js'),
     CaseFormatter : require('./formatters/case-formatter.js'),
     ChatPdfAction : require('./actions/chat-pdf-action.js'),
     ChangeGroupAvatarAction : require('./actions/change-group-avatar-action.js'),
