@@ -46,6 +46,7 @@ class CalculateNumberAction extends Action {
         }
 
         Logger.debug("CalculateNumberAction::start() Result:", result);
+        answers.add(this.answerKey, result);
         flowCallback();
     }
 
