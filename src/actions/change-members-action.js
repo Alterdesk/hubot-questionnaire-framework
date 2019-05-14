@@ -39,12 +39,20 @@ class ChangeMembersAction extends Action {
             return;
         }
 
+        var memberIds = [];
+        for(let index in this.memberIds) {
+            var memberId = AnswerOrFixed.get(this.memberIds[index], answers);
+            if(memberId && memberId.length > 0) {
+                memberIds.push(memberId);
+            }
+        }
+
         if(this.add) {
-            this.flow.control.messengerApi.addGroupMembers(chatId, isAux, this.memberIds, (success, json) => {
+            this.flow.control.messengerApi.addGroupMembers(chatId, isAux, memberIds, (success, json) => {
                 flowCallback();
             }, this.overrideToken);
         } else {
-            this.flow.control.messengerApi.removeGroupMembers(chatId, isAux, this.memberIds, (success, json) => {
+            this.flow.control.messengerApi.removeGroupMembers(chatId, isAux, memberIds, (success, json) => {
                 flowCallback();
             }, this.overrideToken);
         }
