@@ -80,13 +80,14 @@ class ModifyDateAction extends Action {
     }
 
     doOperation(operation, moment, timeScale, timeValue) {
-        Logger.debug("ModifyDateAction::doOperation() operation: " + operation + " scale: " + timeScale + " value: " + timeValue);
+        Logger.debug("ModifyDateAction::doOperation() Operation: " + operation + " scale: " + timeScale + " value: " + timeValue);
         if(timeValue > 0) {
             if(operation === "ADD") {
                 moment.add(timeValue, timeScale);
             } else if(operation === "SUBTRACT") {
                 moment.subtract(timeValue, timeScale);
             } else {
+                Logger.error("ModifyDateAction::doOperation() Invalid operation: " + operation);
                 return false;
             }
         }
