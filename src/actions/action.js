@@ -6,6 +6,7 @@ class Action {
         this.callback = callback;
         this.waitMs = waitMs || 0;
         this.controlsFlow = false;
+        this.askedQuestions = false;
     }
 
     // Set the parent flow
@@ -29,6 +30,10 @@ class Action {
                 flow.actionDone(this);
             }, this.waitMs);
         });
+    }
+
+    resetAskedQuestions() {
+        this.askedQuestions = false;
     }
 
     reset(answers) {

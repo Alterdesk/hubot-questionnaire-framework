@@ -1524,6 +1524,12 @@ class Flow {
                     Logger.info("Flow::previous() Not handled in sub flow of Action: \"" + className + "\"");
                 }
                 action.reset(this.answers);
+                if(!checkpoint && action.askedQuestions) {
+                    Logger.info("Flow::previous() Action \"" + className + "\" has asked questions, calling next()");
+                    action.resetAskedQuestions();
+                    this.next();
+                    return true;
+                }
             }
             if(step && step.addedAfterStart) {
                 Logger.info("Flow::previous() Step added after start, removing \"" + className + "\" from flow");

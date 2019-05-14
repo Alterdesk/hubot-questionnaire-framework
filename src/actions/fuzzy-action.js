@@ -41,6 +41,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         var askTextFlow = this.flow.createInstance()
         .text(textAnswerKey, text, this.invalidText)
         .action((response, answers, subFlowCallback) => {
+            this.askedQuestions = true;
             this.checkText(textAnswerKey);
             subFlowCallback();
         });
