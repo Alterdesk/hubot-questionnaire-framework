@@ -89,16 +89,23 @@ class Answers {
         return answersObject;
     }
 
-    merge(answers) {
+    merge(answers, skipExistingKeys) {
         if(!answers) {
             return;
         }
         var keys = answers.keys();
         for(let index in keys) {
             var key = keys[index];
+            if(this.has(key)) {
+                continue;
+            }
             var value = answers.get(key);
             this.add(key, value);
         }
+    }
+
+    static fromJson(json) {
+        return this.fromObject(JSON.parse(json));
     }
 
     static fromObject(object) {
