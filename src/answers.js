@@ -96,7 +96,7 @@ class Answers {
         var keys = answers.keys();
         for(let index in keys) {
             var key = keys[index];
-            if(this.has(key)) {
+            if(skipExistingKeys && this.has(key)) {
                 continue;
             }
             var value = answers.get(key);
