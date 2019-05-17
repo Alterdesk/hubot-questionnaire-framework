@@ -62,7 +62,7 @@ class ModifyDateAction extends Action {
             var failOperation = AnswerOrFixed.get(this.failOperation, answers);
             while(!this.checkDateConditions()) {
                 this.failOperations++;
-                if(this.failOperations < this.maxFailOperations) {
+                if(this.failOperations >= this.maxFailOperations) {
                     if(this.failFlow) {
                         this.setSubFlow(this.failFlow);
                     }
