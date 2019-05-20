@@ -8,6 +8,7 @@ class AnswerCondition extends Condition {
         this.answerKeys = [];
         this.answerValues = {};
         this.answerRegex = {};
+        this.answerRanges = {};
     }
 
     addKey(answerKey) {
@@ -31,6 +32,11 @@ class AnswerCondition extends Condition {
     setRegex(answerKey, answerRegex) {
         this.addKey(answerKey);
         this.answerRegex[answerKey] = answerRegex;
+    }
+
+    setRange(answerKey, min, max) {
+        this.addKey(answerKey);
+        this.answerRanges[answerKey] = new AnswerRange(min, max);
     }
 
     check(answers) {
@@ -75,7 +81,8 @@ class AnswerCondition extends Condition {
     checkAnswer(answerKey, answerValue) {
         var regex = this.answerRegex[answerKey];
         var values = this.answerValues[answerKey];
-        if((!values || values.length === 0) && !regex) {
+        var range = this.answerRanges[answerKey];
+        if((!values || values.length === 0) && !regex && !range) {
             Logger.debug("AnswerCondition::checkAnswer() Condition met key: " + answerKey);
             return true;
         }
@@ -96,6 +103,9 @@ class AnswerCondition extends Condition {
                     && answerValue.toUpperCase() === checkValue.toUpperCase()) {
                 Logger.debug("AnswerCondition::checkAnswer() Condition met key: " + answerKey + " value: " + answerValue);
                 return true;
+            } else if(typeof answerValue === "number" && range && range.check(answerValue)) {
+                Logger.debug("AnswerCondition::checkAnswer() Condition met key: " + answerKey + " value: " + answerValue);
+                return true;
             }
         }
         return false;
@@ -103,6 +113,17 @@ class AnswerCondition extends Condition {
 
     hasKeys() {
         return this.answerKeys.length > 0;
+    }
+}
+
+class AnswerRange {
+    constructor(min, max) {
+        this.min = min;
+        this.max = max;
+    }
+
+    check(value) {
+        return value >= min && value <= max;
     }
 }
 
