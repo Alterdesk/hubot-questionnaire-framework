@@ -360,13 +360,19 @@ class Control {
         Logger.debug("Control::addTimeoutTimer() userId: " + userId + " room: " + message.room);
         // Timeout milliseconds and callback
         var useTimeoutMs = question.timeoutMs || this.responseTimeoutMs;
-        var useTimeoutText = question.timeoutText || this.responseTimeoutText;
+        var useTimeoutText = question.timeoutText;
+        if(useTimeoutText == null) {
+            useTimeoutText = this.responseTimeoutText;
+        }
         var useTimeoutCallback = question.timeoutCallback;
         if(useTimeoutCallback == null && useTimeoutText && useTimeoutText.length > 0) {
+            Logger.debug("Control::addTimeoutTimer() ms: " + useTimeoutMs + " text: " + useTimeoutText);
             useTimeoutCallback = () => {
                 question.flow.sendRestartMessage(useTimeoutText);
             };
-        };
+        } else if(useTimeoutCallback != null) {
+            Logger.debug("Control::addTimeoutTimer() callback: " + useTimeoutCallback);
+        }
 
         var timer = setTimeout(() => {
             Logger.debug("Timer timeout from user " + userId + " in room " + message.room);
@@ -380,7 +386,9 @@ class Control {
             }
 
             // Call timeout callback
-            useTimeoutCallback();
+            if(useTimeoutCallback) {
+                useTimeoutCallback();
+            }
         }, useTimeoutMs);
 
         this.timeoutTimers[message.room + "/" + userId] = timer;
