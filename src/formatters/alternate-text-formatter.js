@@ -12,15 +12,20 @@ class AlternateTextFormatter extends Formatter {
     }
 
     execute(text, answers) {
-        Logger.debug("AlternateTextFormatter::execute() Alternate text:\"" + this.alternateText + "\"");
+        var alternateText = this.alternateText;
+        if(!alternateText || alternateText.length === 0) {
+            Logger.debug("AlternateTextFormatter::execute() Invalid alternate text: \"" + this.alternateText + "\"");
+            return text;
+        }
+        Logger.debug("AlternateTextFormatter::execute() Alternate text: \"" + this.alternateText + "\"");
         if(!this.checkConditions(answers)) {
             Logger.debug("AlternateTextFormatter::execute() Condition not met");
             return text;
         }
         if(this.escapeHtml) {
-            return Extra.escapeHtml(this.alternateText);
+            return Extra.escapeHtml(alternateText);
         }
-        return this.alternateText;
+        return alternateText;
     }
 
 }
