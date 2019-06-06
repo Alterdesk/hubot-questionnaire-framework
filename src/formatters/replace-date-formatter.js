@@ -18,6 +18,14 @@ class ReplaceDateFormatter extends Formatter {
             Logger.debug("ReplaceDateFormatter::execute() Condition not met");
             return text;
         }
+        if(!this.from || this.from.length === 0) {
+            Logger.error("ReplaceDateFormatter::execute() Invalid from: \"" + this.from + "\"");
+            return text;
+        }
+        if(!this.format || this.format.length === 0) {
+            Logger.error("ReplaceDateFormatter::execute() Invalid format: \"" + this.format + "\"");
+            return text;
+        }
         var answerKey = this.answerKey;
         if(answerKey && this.repeatIteration > -1) {
             answerKey = answerKey + "_" + this.repeatIteration;
@@ -27,16 +35,11 @@ class ReplaceDateFormatter extends Formatter {
         } else {
             date = DateTools.utcDate();
         }
-        Logger.debug("ReplaceDateFormatter::execute() Using from: \"" + this.from + "\" format: \"" + this.format + "\"" + " Date: " + date);
-        if(!this.from) {
-            return text;
-        }
-        if(!this.format) {
-            return text;
-        }
         if(!date) {
+            Logger.error("ReplaceDateFormatter::execute() Invalid date:", date);
             return text;
         }
+        Logger.debug("ReplaceDateFormatter::execute() Using from: \"" + this.from + "\" format: \"" + this.format + "\"" + " Date: " + date);
         var formatted = DateTools.formatToLocal(date, this.format);
         if(this.prefixText && this.prefixText.length > 0) {
             formatted = this.prefixText + formatted;
