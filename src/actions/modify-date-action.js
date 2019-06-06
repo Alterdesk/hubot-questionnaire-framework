@@ -63,6 +63,7 @@ class ModifyDateAction extends Action {
             while(!this.checkDateConditions()) {
                 this.failOperations++;
                 if(this.failOperations >= this.maxFailOperations) {
+                    Logger.error("ModifyDateAction::start() Maximum fail operations reached:", this.maxFailOperations);
                     if(this.failFlow) {
                         this.setSubFlow(this.failFlow);
                     }
@@ -76,6 +77,7 @@ class ModifyDateAction extends Action {
             }
         }
 
+        Logger.debug("ModifyDateAction::start() Modified date:", date);
         flowCallback();
     }
 
