@@ -49,6 +49,7 @@ class SendMessageAction extends Action {
             flowCallback();
             return;
         }
+        Logger.debug("SendMessageAction::start() Got message text:", messageText);
 
         var messageData = control.createSendMessageData();
         messageData.chatId = chatId;
@@ -63,6 +64,7 @@ class SendMessageAction extends Action {
                     continue;
                 }
                 if(attachmentPath.match(filePathRegex)) {
+                    Logger.debug("SendMessageAction::start() Adding attachment path:", attachmentPath);
                     messageData.addAttachmentPath(attachmentPath);
                 } else {
                     Logger.error("SendMessageAction::start() Illegal attachment path:", attachmentPath);
