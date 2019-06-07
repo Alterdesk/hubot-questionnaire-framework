@@ -4,8 +4,6 @@ const Action = require('./action.js');
 const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const Logger = require('./../logger.js');
 
-const filePathRegex = Extra.getFilePathRegex();
-
 class SendMessageAction extends Action {
     constructor(messageText) {
         super((response, answers, flowCallback) => {
@@ -57,6 +55,8 @@ class SendMessageAction extends Action {
         messageData.isAux = isAux;
         messageData.message = messageText;
         if(this.attachmentPaths.length > 0) {
+            Logger.debug("SendMessageAction::start() Got " + this.attachmentPaths.length + " attachments");
+            var filePathRegex = Extra.getFilePathRegex();
             for(let index in this.attachmentPaths) {
                 var attachmentPath = AnswerOrFixed.get(this.attachmentPaths[index], answers);
                 if(typeof attachmentPath !== "string") {
