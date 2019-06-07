@@ -1,6 +1,3 @@
-const Log = require('log');
+const Extra = require('node-messenger-extra');
 
-// Set the log instance
-const Logger = new Log(process.env.HUBOT_QUESTIONNAIRE_LOG_LEVEL || process.env.HUBOT_LOG_LEVEL || 'debug');
-
-module.exports = Logger;
+module.exports = new Extra.Logger(process.env.HUBOT_QUESTIONNAIRE_LOG_LEVEL || process.env.HUBOT_LOG_LEVEL || 'debug');
