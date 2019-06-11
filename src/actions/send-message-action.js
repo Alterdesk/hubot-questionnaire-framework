@@ -55,10 +55,12 @@ class SendMessageAction extends Action {
         messageData.isAux = isAux;
         messageData.message = messageText;
         if(this.attachmentPaths.length > 0) {
-            Logger.debug("SendMessageAction::start() Got " + this.attachmentPaths.length + " attachments");
+            Logger.debug("SendMessageAction::start() Got " + this.attachmentPaths.length + " attachments:", this.attachmentPaths);
             var filePathRegex = Extra.getFilePathRegex();
+            Logger.debug("SendMessageAction::start() Using file path regex:", filePathRegex);
             for(let index in this.attachmentPaths) {
                 var attachmentPath = AnswerOrFixed.get(this.attachmentPaths[index], answers);
+                Logger.debug("SendMessageAction::start() Got attachment path:", attachmentPath);
                 if(typeof attachmentPath !== "string") {
                     Logger.error("SendMessageAction::start() Invalid attachment path:", attachmentPath);
                     continue;
