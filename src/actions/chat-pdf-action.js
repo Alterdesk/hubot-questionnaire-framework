@@ -31,7 +31,6 @@ class ChatPdfAction extends Action {
             flowCallback();
             return;
         }
-        filename = filename.replace(new RegExp(/[\W]+/, 'gi'), "_");
         var msg = this.flow.msg;
         var control = this.flow.control;
         var messengerApi = control.messengerApi;
