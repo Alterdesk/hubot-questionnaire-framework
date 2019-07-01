@@ -375,6 +375,7 @@ class Control {
         }
 
         var timer = setTimeout(() => {
+            var userId = this.getUserId(msg.message.user);
             Logger.debug("Timer timeout from user " + userId + " in room " + message.room);
             question.cleanup(message);
 
