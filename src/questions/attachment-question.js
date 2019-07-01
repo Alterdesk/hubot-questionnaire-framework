@@ -115,6 +115,9 @@ class AttachmentQuestion extends Question {
             Logger.error("AttachmentQuestion::addAllowedExtension() Extension already configured as allowed: " + extension);
             return;
         }
+        if(!extension.startsWith(".")) {
+            extension = "." + extension;
+        }
         this.allowedExtensions.push(extension.toUpperCase());
     }
 
