@@ -83,30 +83,39 @@ class AnswerCondition extends Condition {
         var values = this.answerValues[answerKey];
         var range = this.answerRanges[answerKey];
         if((!values || values.length === 0) && !regex && !range) {
-            Logger.debug("AnswerCondition::checkAnswer() Condition met key: " + answerKey);
+            Logger.debug("AnswerCondition::checkAnswer() Condition met: key: " + answerKey);
             return true;
         }
-        if(regex && answerValue.match && answerValue.match(regex)) {
-            Logger.debug("AnswerCondition::checkAnswer() Condition met key: " + answerKey + " value: " + answerValue + " regex: " + regex);
-            return true;
-        }
-        if(!values || values.length === 0) {
-            return false;
-        }
-        for(let i in values) {
-            var checkValue = values[i];
-            if(answerValue === checkValue) {
-                Logger.debug("AnswerCondition::checkAnswer() Condition met key: " + answerKey + " value: " + answerValue);
-                return true;
-            } else if(typeof answerValue === "string"
-                    && typeof checkValue === "string"
-                    && answerValue.toUpperCase() === checkValue.toUpperCase()) {
-                Logger.debug("AnswerCondition::checkAnswer() Condition met key: " + answerKey + " value: " + answerValue);
-                return true;
-            } else if(typeof answerValue === "number" && range && range.check(answerValue)) {
-                Logger.debug("AnswerCondition::checkAnswer() Condition met key: " + answerKey + " value: " + answerValue);
+        if(regex) {
+            if(typeof answerValue === "string"
+                    && answerValue.match(regex)) {
+                Logger.debug("AnswerCondition::checkAnswer() Condition met: key: " + answerKey + " value: " + answerValue + " regex: " + regex);
                 return true;
             }
+            Logger.debug("AnswerCondition::checkAnswer() Condition not met: key: " + answerKey + " value: " + answerValue + " regex: " + regex);
+        }
+        if(values && values.length > 0) {
+            for(let i in values) {
+                var checkValue = values[i];
+                if(answerValue === checkValue) {
+                    Logger.debug("AnswerCondition::checkAnswer() Condition met: key: " + answerKey + " value: " + answerValue);
+                    return true;
+                } else if(typeof answerValue === "string"
+                        && typeof checkValue === "string"
+                        && answerValue.toUpperCase() === checkValue.toUpperCase()) {
+                    Logger.debug("AnswerCondition::checkAnswer() Condition met: key: " + answerKey + " value: " + answerValue);
+                    return true;
+                }
+                Logger.debug("AnswerCondition::checkAnswer() Condition not met: key: " + answerKey + " value: " + answerValue + " check: " + checkValue);
+            }
+        }
+        if(range) {
+            if(typeof answerValue === "number"
+                    && range.check(answerValue)) {
+                Logger.debug("AnswerCondition::checkAnswer() Condition met: key: " + answerKey + " value: " + answerValue + " range: " + range);
+                return true;
+            }
+            Logger.debug("AnswerCondition::checkAnswer() Condition not met: key: " + answerKey + " value: " + answerValue + " range: " + range);
         }
         return false;
     }
@@ -123,7 +132,7 @@ class AnswerRange {
     }
 
     check(value) {
-        return value >= min && value <= max;
+        return value >= this.min && value <= this.max;
     }
 }
 
