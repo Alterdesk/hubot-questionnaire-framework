@@ -1,4 +1,5 @@
 const {Response, User, Message, TextMessage, LeaveMessage, TopicMessage} = require('hubot');
+const Extra = require('node-messenger-extra');
 
 const Logger = require('./logger.js');
 
@@ -681,7 +682,7 @@ class Control {
         }
         Logger.debug("Control::addAcceptedCommand() Command configured as accepted: " + c);
         this.acceptedCommands.push(c);
-        this.acceptedRegex.push(new RegExp("^[ \\n\\r\\t]*" + c + "+[ \\n\\r\\t]*$", 'gi'));
+        this.acceptedRegex.push(Extra.getStartCommandRegex(c));
         if(helpText != null) {
             this.acceptedHelpTexts[command] = helpText;
         }
