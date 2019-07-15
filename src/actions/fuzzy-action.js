@@ -61,7 +61,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
             var name = candidate.name;
             var label = candidate.label;
             var style = candidate.style;
-            askDidMeanFlow.option(new RegExp("^[ \\n\\r\\t]*" + name + "[ \\n\\r\\t]*$", "i"))
+            askDidMeanFlow.option(Extra.getOptionRegex(name))
             .button(name, label, style);
         }
         askDidMeanFlow.option(this.didNotRegex)
@@ -139,7 +139,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
             var option = availableOptions[index];
             var label = option.toUpperCase();
             var style = "orange";
-            indexFlow.option(new RegExp("^[ \\n\\r\\t]*" + option + "[ \\n\\r\\t]*$", "i"))
+            indexFlow.option(Extra.getOptionRegex(option))
             .button(option, label, style);
         }
         indexFlow.action((response, answers, subFlowCallback) => {
