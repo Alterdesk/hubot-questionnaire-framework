@@ -324,7 +324,11 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
     }
 
     addCandidate(name, label, style, aliases, subFlow) {
-        this.candidates.push(new FuzzyCandidate(name, label, style, aliases, subFlow));
+        var candidate = new FuzzyCandidate(name, label, style, subFlow);
+        if(aliases && aliases.length > 0) {
+            candidate.addAliases(aliases);
+        }
+        this.candidates.push(candidate);
     }
 
     addExcludeWord(word) {
@@ -397,12 +401,23 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
 }
 
 class FuzzyCandidate {
-    constructor(name, label, style, aliases, subFlow) {
+    constructor(name, label, style, subFlow) {
         this.name = name;
         this.label = label;
         this.style = style;
-        this.aliases = aliases;
         this.subFlow = subFlow;
+
+        this.aliases = [];
+    }
+
+    addAlias(alias) {
+        this.aliases.push(alias.toLowerCase());
+    }
+
+    addAliases(aliases) {
+        for(let index in aliases) {
+            this.addAlias(aliases[index]);
+        }
     }
 
     getDistance(word) {
