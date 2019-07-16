@@ -20,7 +20,7 @@ class GenerateNumberAction extends Action {
         this.answers = answers;
         var min = AnswerOrFixed.get(this.min, answers, 0)
         var max = AnswerOrFixed.get(this.max, answers, Number.MAX_SAFE_INTEGER);
-        if(this.min >= this.max) {
+        if(min >= max) {
             Logger.error("GenerateNumberAction::start() Invalid range: min: " + min + " max: " + max);
             flowCallback();
             return;
