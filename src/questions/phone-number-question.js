@@ -1,5 +1,6 @@
 const Extra = require('node-messenger-extra');
 
+const LocaleTools = require('./../utils/locale-tools.js');
 const Logger = require('./../logger.js');
 const Question = require('./question.js');
 
@@ -10,6 +11,7 @@ class PhoneNumberQuestion extends Question {
         this.regex = Extra.getTextRegex();
         this.phoneRegex = Extra.getPhoneRegex();
         this.allowedCountryCodes = [];
+        this.replaceLeadingZero = true;
     }
 
     // Check if valid phone number and if country code is allowed
@@ -27,6 +29,12 @@ class PhoneNumberQuestion extends Question {
             return null;
         }
         var phone = phoneMatches[0];
+        if(this.replaceLeadingZero && phone.startsWith("0")) {
+            var code = LocaleTools.getPhoneCountryCode();
+            if(code && code.length > 0) {
+                phone = code + phone.substring(1);
+            }
+        }
         if(this.allowedCountryCodes.length === 0) {
             return phone;
         }
@@ -36,6 +44,10 @@ class PhoneNumberQuestion extends Question {
             }
         }
         return null;
+    }
+
+    setReplaceLeadingZero(replaceLeadingZero) {
+        this.replaceLeadingZero = replaceLeadingZero;
     }
 
     // Add a country code to limit accepted answers to
