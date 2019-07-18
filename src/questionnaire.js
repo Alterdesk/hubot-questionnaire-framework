@@ -54,6 +54,7 @@ module.exports = {
     OrCondition : require('./conditions/or-condition.js'),
     LeaveGroupAction : require('./actions/leave-group-action.js'),
     Listener : require('./listener.js'),
+    LocaleTools : require('./utils/locale-tools.js'),
     Logger : require('./logger.js'),
     PendingRequest : require('./pending-request.js'),
     PhoneNumberQuestion : require('./questions/phone-number-question.js'),

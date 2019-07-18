@@ -1,9 +1,10 @@
 const Moment = require('moment-timezone');
 
+const LocaleTools = require('./locale-tools.js');
 const Logger = require('./../logger.js');
 
 const USE_TIMEZONE = process.env.HUBOT_QUESTIONNAIRE_USE_TIMEZONE || process.env.USE_TIMEZONE || "UTC";
-const USE_LOCALE = process.env.HUBOT_QUESTIONNAIRE_USE_LOCALE || process.env.USE_LOCALE || "en-US";
+const USE_LOCALE = LocaleTools.getLocale();
 
 class DateTools {
 
