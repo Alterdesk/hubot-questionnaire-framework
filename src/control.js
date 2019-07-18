@@ -261,7 +261,7 @@ class Control {
 
                 // Stop if catch all is enabled and an unknown command was sent
                 if(control.catchAllCommands && unknownCommand) {
-                    if(control.catchAllStartCommand && !isGroup && control.acceptedCommands.length === 1) {
+                    if(control.catchAllStartCommand && (!isGroup || isMentioned) && control.acceptedCommands.length === 1) {
                         var accepted = control.acceptedCommands[0];
                         Logger.debug("Control::receive() Catched unknown command, changed to \"" + accepted + "\"");
                         message.text = accepted;
