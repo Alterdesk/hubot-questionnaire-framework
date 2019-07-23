@@ -411,7 +411,7 @@ class FuzzyCandidate {
     }
 
     addAlias(alias) {
-        this.aliases.push(alias.toLowerCase());
+        this.aliases.push(Extra.safeName(alias, -1, true, true));
     }
 
     addAliases(aliases) {
