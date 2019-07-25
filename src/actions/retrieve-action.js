@@ -81,7 +81,6 @@ class RetrieveAction extends Action {
             } else if(this.userId) {
                 this.answers.addObject(this.answerKey, value);
             }
-            Logger.error("RetrieveAction::done() Answers", this.answers.toJson());
         }
         if(value) {
             if(this.positiveSubFlow) {
