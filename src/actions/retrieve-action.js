@@ -53,7 +53,35 @@ class RetrieveAction extends Action {
     done(value) {
         if(this.answerKey && value != null) {
             this.answers.add(this.answerKey, value);
-            this.answers.addObject(this.answerKey, value);
+            if(this.chatId) {
+                var subject = value["subject"];
+                if(subject) {
+                    this.answers.add(this.answerKey + "_subject", subject);
+                }
+                var closed = value["closed"];
+                if(closed != null) {
+                    this.answers.add(this.answerKey + "_closed", closed);
+                }
+                var members = value["members"];
+                if(members) {
+                    for(let i in members) {
+                        var member = members[i];
+                        var firstName = member["first_name"];
+                        if(firstName) {
+                            this.answers.add(this.answerKey + "_member_first_name_" + i, firstName);
+                        }
+                        var lastName = member["last_name"];
+                        if(lastName) {
+                            this.answers.add(this.answerKey + "_member_last_name_" + i, lastName);
+                        }
+                        this.answers.add(this.answerKey + "_member_" + i, member);
+                    }
+                    this.answers.add(this.answerKey + "_members", members.length);
+                }
+            } else if(this.userId) {
+                this.answers.addObject(this.answerKey, value);
+            }
+            Logger.error("RetrieveAction::done() Answers", this.answers.toJson());
         }
         if(value) {
             if(this.positiveSubFlow) {
