@@ -1610,7 +1610,7 @@ class Flow {
         for(let index in this.steps) {
             var step = this.steps[index];
             if(step instanceof Question) {
-                var question = (Question)step;
+                var question = step;
                 if(!question.summaryOptions) {
                     continue;
                 }
