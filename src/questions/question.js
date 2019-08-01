@@ -116,6 +116,10 @@ class Question {
         this.isMultiUser = true;
     }
 
+    setSummaryOptions(summaryOptions) {
+        this.summaryOptions = summaryOptions;
+    }
+
     setResendOnInvalid(resendOnInvalid) {
         this.resendOnInvalid = resendOnInvalid;
     }
