@@ -1546,7 +1546,7 @@ class Flow {
         return false;
     }
 
-    getQuestion(answerKey, ignoreSuperFlow) {
+    getQuestion(answerKey, checkSuperFlow) {
         Logger.info("Flow::getQuestion()", answerKey, this.name);
         for(let index in this.steps) {
             var step = this.steps[index];
@@ -1558,13 +1558,13 @@ class Flow {
             }
             if(step.subFlow) {
                 Logger.info("Flow::getQuestion() Checking sub flow:", step.subFlow.name);
-                var question = step.subFlow.getQuestion(answerKey, true);
+                var question = step.subFlow.getQuestion(answerKey, false);
                 if(question) {
                     return question;
                 }
             }
         }
-        if(this.superFlow && !ignoreSuperFlow) {
+        if(this.superFlow && checkSuperFlow) {
             Logger.info("Flow::getQuestion() Checking super flow:", this.superFlow.name);
             var question = this.superFlow.getQuestion(answerKey);
             if(question) {
@@ -1575,7 +1575,7 @@ class Flow {
         return null;
     }
 
-    getQuestions(answerKeys, ignoreSuperFlow) {
+    getQuestions(answerKeys, checkSuperFlow) {
         Logger.info("Flow::getQuestions()", answerKeys, this.name);
         var questions = [];
         for(let index in this.steps) {
@@ -1588,13 +1588,13 @@ class Flow {
             }
             if(step.subFlow) {
                 Logger.info("Flow::getQuestion() Checking sub flow:", step.subFlow.name);
-                var subQuestions = step.subFlow.getQuestions(answerKeys, true);
+                var subQuestions = step.subFlow.getQuestions(answerKeys, false);
                 if(subQuestions && subQuestions.length > 0) {
                     questions = questions.concat(subQuestions);
                 }
             }
         }
-        if(this.superFlow && !ignoreSuperFlow) {
+        if(this.superFlow && checkSuperFlow) {
             Logger.info("Flow::getQuestion() Checking super flow:", this.superFlow.name);
             var superQuestions = this.superFlow.getQuestions(answerKeys);
             if(superQuestions && superQuestions.length > 0) {
@@ -1604,36 +1604,39 @@ class Flow {
         return questions;
     }
 
-    getSummaryQuestions(limitToTitles, ignoreSuperFlow) {
+    getSummaryQuestions(limitToTitles, excludeTitles, checkSuperFlow) {
         Logger.info("Flow::getSummaryQuestions()", this.name);
         var questions = [];
         for(let index in this.steps) {
             var step = this.steps[index];
+            Logger.info("Flow::getSummaryQuestions() Checking:", step);
             if(step instanceof Question) {
                 var question = step;
-                if(!question.summaryOptions) {
-                    continue;
-                }
-                if(limitToTitles && limitToTitles.length > 0) {
+                var summaryOptions = question.summaryOptions;
+                if(summaryOptions) {
                     var title = summaryOptions.title;
-                    if(!title || title === "" || limitToTitles.indexOf(title) === -1) {
-                        continue;
+                    if((!excludeTitles || excludeTitles.length === 0 || !title || excludeTitles.indexOf(summaryOptions.title) === -1)
+                       && ((!limitToTitles || limitToTitles.length === 0) || (title && limitToTitles.indexOf(title) !== -1))) {
+                        Logger.info("Flow::getSummaryQuestions() Found summary question:", question.answerKey);
+                        questions.push(question);
+                    } else {
+                        Logger.error("Flow::getSummaryQuestions() Not including question:", question.answerKey);
                     }
+                } else {
+                    Logger.error("Flow::getSummaryQuestions() No summary options for question:", question.answerKey);
                 }
-                Logger.info("Flow::getSummaryQuestions() Found summary question:", step.answerKey);
-                questions.push(step);
             }
             if(step.subFlow) {
                 Logger.info("Flow::getSummaryQuestions() Checking sub flow:", step.subFlow.name);
-                var subQuestions = step.subFlow.getQuestions(answerKeys, true);
+                var subQuestions = step.subFlow.getSummaryQuestions(limitToTitles, excludeTitles, false);
                 if(subQuestions && subQuestions.length > 0) {
                     questions = questions.concat(subQuestions);
                 }
             }
         }
-        if(this.superFlow && !ignoreSuperFlow) {
+        if(this.superFlow && checkSuperFlow) {
             Logger.info("Flow::getSummaryQuestions() Checking super flow:", this.superFlow.name);
-            var superQuestions = this.superFlow.getQuestions(answerKeys);
+            var superQuestions = this.superFlow.getSummaryQuestions(limitToTitles, excludeTitles);
             if(superQuestions && superQuestions.length > 0) {
                 questions = questions.concat(superQuestions);
             }
