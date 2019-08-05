@@ -128,6 +128,10 @@ class ReplaceAnswerFormatter extends Formatter {
         this.textForAnswers[value] = text;
     }
 
+    setAnswerKey(answerKey) {
+        this.answerKey = answerKey;
+    }
+
     setPrefixText(prefixText) {
         this.prefixText = prefixText;
     }
