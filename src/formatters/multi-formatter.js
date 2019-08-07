@@ -9,7 +9,7 @@ class MultiFormatter extends Formatter {
         this.formatters = formatters;
     }
 
-    execute(text, answers) {
+    execute(text, answers, flow) {
         if(!this.formatters || this.formatters.length === 0) {
             Logger.error("MultiFormatter::execute() Invalid formatters:", this.formatters);
             return text;
@@ -30,7 +30,7 @@ class MultiFormatter extends Formatter {
             if(this.repeatIteration > -1) {
                 formatter.setRepeatIteration(this.repeatIteration);
             }
-            result = formatter.execute(result, answers);
+            result = formatter.execute(result, answers, flow);
         }
         return text.replace(this.from, result);
     }

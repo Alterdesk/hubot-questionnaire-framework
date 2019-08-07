@@ -15,7 +15,7 @@ class ReplaceAnswerFormatter extends Formatter {
         this.bulletStyle = " • ";
     }
 
-    execute(text, answers) {
+    execute(text, answers, flow) {
         var answerKey = this.answerKey;
         if(!answerKey) {
             Logger.error("ReplaceAnswerFormatter::execute() Invalid answerKey: \"" + answerKey + "\"");

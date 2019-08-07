@@ -1620,7 +1620,7 @@ class Flow {
                         Logger.info("Flow::getSummaryQuestions() Found summary question:", question.answerKey);
                         questions.push(question);
                     } else {
-                        Logger.error("Flow::getSummaryQuestions() Not including question:", question.answerKey);
+                        Logger.info("Flow::getSummaryQuestions() Not including question:", question.answerKey);
                     }
                 } else {
                     Logger.error("Flow::getSummaryQuestions() No summary options for question:", question.answerKey);

@@ -11,7 +11,7 @@ class AlternateTextFormatter extends Formatter {
         this.alternateText = alternateText;
     }
 
-    execute(text, answers) {
+    execute(text, answers, flow) {
         var alternateText = this.alternateText;
         if(!alternateText || alternateText.length === 0) {
             Logger.debug("AlternateTextFormatter::execute() Invalid alternate text: \"" + this.alternateText + "\"");

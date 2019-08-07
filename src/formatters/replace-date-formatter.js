@@ -12,7 +12,7 @@ class ReplaceDateFormatter extends Formatter {
         this.format = format;
     }
 
-    execute(text, answers) {
+    execute(text, answers, flow) {
         var date;
         if(!this.checkConditions(answers)) {
             Logger.debug("ReplaceDateFormatter::execute() Condition not met");

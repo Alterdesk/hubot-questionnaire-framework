@@ -40,7 +40,7 @@ class SendMessageAction extends Action {
         var messageText = AnswerOrFixed.get(this.messageText, answers, "");
         for(let i in this.messageFormatters) {
             var formatter = this.messageFormatters[i];
-            messageText = formatter.execute(messageText, answers);
+            messageText = formatter.execute(messageText, answers, this.flow);
         }
         if(!messageText || messageText === "") {
             Logger.error("SendMessageAction::start() Invalid message text:", messageText);

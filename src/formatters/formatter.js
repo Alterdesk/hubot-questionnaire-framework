@@ -8,7 +8,7 @@ class Formatter {
         this.escapeHtml = false;
     }
 
-    execute(text, answers) {
+    execute(text, answers, flow) {
 
     }
 

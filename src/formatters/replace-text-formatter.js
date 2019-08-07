@@ -11,7 +11,7 @@ class ReplaceTextFormatter extends Formatter {
         this.to = to;
     }
 
-    execute(text, answers) {
+    execute(text, answers, flow) {
         Logger.debug("ReplaceTextFormatter::execute() Using from: \"" + this.from + "\" to: \"" + this.to + "\"");
         if(!this.checkConditions(answers)) {
             Logger.debug("ReplaceTextFormatter::execute() Condition not met");

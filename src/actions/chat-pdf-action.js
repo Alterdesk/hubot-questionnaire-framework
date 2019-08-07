@@ -21,7 +21,7 @@ class ChatPdfAction extends Action {
         var filename = AnswerOrFixed.get(this.filename, answers, "");
         for(let i in this.filenameFormatters) {
             var formatter = this.filenameFormatters[i];
-            filename = formatter.execute(filename, answers);
+            filename = formatter.execute(filename, answers, this.flow);
         }
         if(!filename || filename.length === 0) {
             Logger.error("ChatPdfAction::start() Invalid filename:", this.filename);
@@ -64,7 +64,7 @@ class ChatPdfAction extends Action {
         var messageText = AnswerOrFixed.get(this.messageText, answers, "");
         for(let i in this.messageFormatters) {
             var formatter = this.messageFormatters[i];
-            messageText = formatter.execute(messageText, answers);
+            messageText = formatter.execute(messageText, answers, this.flow);
         }
 
         var startDate = AnswerOrFixed.get(this.startDate, answers);

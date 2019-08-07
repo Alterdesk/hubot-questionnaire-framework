@@ -135,7 +135,7 @@ class Question {
             formatted = this.questionText;
             for(let i in this.questionFormatters) {
                 var formatter = this.questionFormatters[i];
-                formatted = formatter.execute(formatted, answers);
+                formatted = formatter.execute(formatted, answers, this.flow);
             }
         }
         if(formatted && formatted !== "") {

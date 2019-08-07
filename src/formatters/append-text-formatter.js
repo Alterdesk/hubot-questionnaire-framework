@@ -11,7 +11,7 @@ class AppendTextFormatter extends Formatter {
         this.formatters = [];
     }
 
-    execute(text, answers) {
+    execute(text, answers, flow) {
         if(typeof this.appendText !== "string") {
             Logger.error("AppendTextFormatter::execute() Invalid text:", this.appendText);
             return text;
@@ -35,7 +35,7 @@ class AppendTextFormatter extends Formatter {
             if(this.repeatIteration > -1) {
                 formatter.setRepeatIteration(this.repeatIteration);
             }
-            result = formatter.execute(result, answers);
+            result = formatter.execute(result, answers, flow);
         }
         if(this.escapeHtml) {
             result = Extra.escapeHtml(result);
