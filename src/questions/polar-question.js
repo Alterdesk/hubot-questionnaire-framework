@@ -58,8 +58,12 @@ class PolarQuestion extends Question {
 
     send(control, msg, callback) {
         if(control.messengerApi && this.useButtons) {
+            var answers;
+            if(this.flow) {
+                answers = this.flow.answers;
+            }
             var messageData = control.createSendMessageData();
-            messageData.message = this.getQuestionText();
+            messageData.message = this.getQuestionText(answers);
             messageData.chatId = msg.message.room;
             messageData.isGroup = control.isUserInGroup(msg.message.user);
             messageData.isAux = false;
@@ -123,7 +127,7 @@ class PolarQuestion extends Question {
                     question.requestMessageId = messageId;
                 } else {
                     // Fallback
-                    msg.send(question.getQuestionText());
+                    msg.send(question.getQuestionText(answers));
                 }
             });
         } else {
@@ -131,7 +135,7 @@ class PolarQuestion extends Question {
                 Logger.error("PolarQuestion:send() Messenger API instance not set");
             }
             this.setListenersAndPendingRequests(control, msg, callback);
-            msg.send(this.getQuestionText());
+            msg.send(this.getQuestionText(answers));
         }
     }
 

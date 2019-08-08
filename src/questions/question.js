@@ -126,23 +126,6 @@ class Question {
 
     // Execute this question
     execute(control, msg, callback, answers) {
-        var formatted;
-        if(this.formatQuestionFunction != null) {
-            Logger.debug("Question::execute() Formatting question with function");
-            formatted = this.formatQuestionFunction(answers);
-        } else if(this.questionFormatters.length > 0) {
-            Logger.debug("Question::execute() Formatting question with " + this.questionFormatters.length + " formatter(s)");
-            formatted = this.questionText;
-            for(let i in this.questionFormatters) {
-                var formatter = this.questionFormatters[i];
-                formatted = formatter.execute(formatted, answers, this.flow);
-            }
-        }
-        if(formatted && formatted !== "") {
-            // Set formatted question as question text
-            this.formattedQuestionText = formatted;
-        }
-
         // Generate user id list by mentioned users
         if(this.isMultiUser && !this.userIds && this.mentionAnswerKey) {
             var mentions = answers.get(this.mentionAnswerKey);
@@ -169,10 +152,30 @@ class Question {
     // Send the message text
     send(control, msg, callback) {
         this.setListenersAndPendingRequests(control, msg, callback);
-        msg.send(this.getQuestionText());
+        var answers;
+        if(this.flow) {
+            answers = this.flow.answers;
+        }
+        msg.send(this.getQuestionText(answers));
     }
 
-    getQuestionText() {
+    getQuestionText(answers) {
+        var formatted;
+        if(this.formatQuestionFunction != null) {
+            Logger.debug("Question::getQuestionText() Formatting question with function");
+            formatted = this.formatQuestionFunction(answers);
+        } else if(this.questionFormatters.length > 0) {
+            Logger.debug("Question::getQuestionText() Formatting question with " + this.questionFormatters.length + " formatter(s)");
+            formatted = this.questionText;
+            for(let i in this.questionFormatters) {
+                var formatter = this.questionFormatters[i];
+                formatted = formatter.execute(formatted, answers, this.flow);
+            }
+        }
+        if(formatted && formatted !== "") {
+            // Set formatted question as question text
+            this.formattedQuestionText = formatted;
+        }
         return this.formattedQuestionText || this.questionText;
     }
 
@@ -346,7 +349,9 @@ class Question {
     // Reset the question to be asked again
     reset(answers) {
         this.subFlow = null;
+        this.formattedQuestionText = null;
         answers.remove(this.answerKey + "_label");
+        answers.remove(this.answerKey + "_value");
     }
 }
 

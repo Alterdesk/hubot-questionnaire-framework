@@ -1438,7 +1438,7 @@ class Flow {
                     }
                 }
             }
-            Logger.info("Flow::next() Question: \"" + question.answerKey + "\": \"" + question.getQuestionText() + "\"");
+            Logger.info("Flow::next() Question: \"" + question.answerKey + "\": \"" + question.getQuestionText(this.answers) + "\"");
 
             // Delay executing this message if a delay was set
             if(question.delayMs && question.delayMs > 0) {
@@ -1494,7 +1494,7 @@ class Flow {
                     }
                     Logger.info("Flow::previous() Not handled in sub flow of Question: \"" + question.answerKey + "\"");
                 }
-                Logger.info("Flow::previous() Question: \"" + question.answerKey + "\": " + question.getQuestionText());
+                Logger.info("Flow::previous() Question: \"" + question.answerKey + "\": " + question.getQuestionText(this.answers));
 
                 let removedAnswer = this.answers.remove(question.answerKey);
 
