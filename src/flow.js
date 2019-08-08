@@ -1612,10 +1612,9 @@ class Flow {
             Logger.info("Flow::getSummaryQuestions() Checking:", step);
             if(step instanceof Question) {
                 var question = step;
-                var summaryOptions = question.summaryOptions;
-                if(summaryOptions) {
-                    var title = summaryOptions.title;
-                    if((!excludeTitles || excludeTitles.length === 0 || !title || excludeTitles.indexOf(summaryOptions.title) === -1)
+                if(question.inSummary) {
+                    var title = question.summaryTitle;
+                    if((!excludeTitles || excludeTitles.length === 0 || !title || excludeTitles.indexOf(title) === -1)
                        && ((!limitToTitles || limitToTitles.length === 0) || (title && limitToTitles.indexOf(title) !== -1))) {
                         Logger.info("Flow::getSummaryQuestions() Found summary question:", question.answerKey);
                         questions.push(question);

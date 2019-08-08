@@ -17,6 +17,7 @@ class Question {
         this.resendOnInvalid = true;
         this.sendMessageOnStop = true;
         this.useFinalize = false;
+        this.inSummary = false;
         this.questionFormatters = [];
     }
 
@@ -116,8 +117,20 @@ class Question {
         this.isMultiUser = true;
     }
 
-    setSummaryOptions(summaryOptions) {
-        this.summaryOptions = summaryOptions;
+    setInSummary(inSummary) {
+        this.inSummary = inSummary;
+    }
+
+    setSummaryTitle(summaryTitle) {
+        this.summaryTitle = summaryTitle;
+    }
+
+    setSummaryAnswerFormatter(summaryAnswerFormatter) {
+        this.summaryAnswerFormatter = summaryAnswerFormatter;
+    }
+
+    setSummaryPart(summaryPart) {
+        this.summaryPart = summaryPart;
     }
 
     setResendOnInvalid(resendOnInvalid) {
