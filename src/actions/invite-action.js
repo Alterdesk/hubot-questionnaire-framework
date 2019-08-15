@@ -41,7 +41,7 @@ class InviteAction extends Action {
         var inviteTextValue = AnswerOrFixed.get(this.inviteText, answers);
         for(let i in this.inviteFormatters) {
             var formatter = this.inviteFormatters[i];
-            inviteTextValue = formatter.execute(inviteTextValue, answers);
+            inviteTextValue = formatter.execute(inviteTextValue, answers, this.flow);
         }
         if(inviteTextValue && inviteTextValue !== "") {
             inviteData["invite_text"] = inviteTextValue;  // Only used when creating conversation

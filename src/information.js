@@ -15,7 +15,7 @@ class Information {
         // Format text with formatters if set
         for(let i in this.formatters) {
             var formatter = this.formatters[i];
-            result = formatter.execute(result, answers);
+            result = formatter.execute(result, answers, flow);
         }
 
         // Send information message text

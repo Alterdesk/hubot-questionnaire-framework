@@ -21,7 +21,7 @@ class ChangeSubjectAction extends Action {
         var subjectValue = AnswerOrFixed.get(this.subject, answers, "");
         for(let i in this.subjectFormatters) {
             var formatter = this.subjectFormatters[i];
-            subjectValue = formatter.execute(subjectValue, answers);
+            subjectValue = formatter.execute(subjectValue, answers, this.flow);
         }
         if(!subjectValue || subjectValue === "") {
             Logger.error("ChangeSubjectAction::start() Invalid subject:" + subjectValue);
