@@ -1,13 +1,12 @@
-const Extra = require('node-messenger-extra');
-
 const Logger = require('./../logger.js');
 const Question = require('./question.js');
+const RegexTools = require('./../utils/regex-tools.js');
 
 // Attachment question, request files from a user
 class AttachmentQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
-        this.regex = Extra.getTextRegex();
+        this.regex = RegexTools.getTextRegex();
         this.allowedExtensions = [];
         this.allowedMimeTypes = [];
     }

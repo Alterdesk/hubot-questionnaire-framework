@@ -1,7 +1,6 @@
-const Extra = require('node-messenger-extra');
-
 const Formatter = require('./formatter.js');
 const Logger = require('./../logger.js');
+const StringTools = require('./../utils/string-tools.js');
 
 class AppendTextFormatter extends Formatter {
 
@@ -38,7 +37,7 @@ class AppendTextFormatter extends Formatter {
             result = formatter.execute(result, answers, flow);
         }
         if(this.escapeHtml) {
-            result = Extra.escapeHtml(result);
+            result = StringTools.escapeHtml(result);
         }
         return text + result;
     }

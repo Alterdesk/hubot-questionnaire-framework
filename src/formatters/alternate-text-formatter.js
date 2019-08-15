@@ -1,8 +1,7 @@
-const Extra = require('node-messenger-extra');
-
 const AnswerCondition = require('./../conditions/answer-condition.js');
 const Formatter = require('./formatter.js');
 const Logger = require('./../logger.js');
+const StringTools = require('./../utils/string-tools.js');
 
 class AlternateTextFormatter extends Formatter {
 
@@ -23,7 +22,7 @@ class AlternateTextFormatter extends Formatter {
             return text;
         }
         if(this.escapeHtml) {
-            return Extra.escapeHtml(alternateText);
+            return StringTools.escapeHtml(alternateText);
         }
         return alternateText;
     }

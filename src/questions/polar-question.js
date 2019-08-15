@@ -1,13 +1,12 @@
-const Extra = require('node-messenger-extra');
-
 const Logger = require('./../logger.js');
 const Question = require('./question.js');
+const RegexTools = require('./../utils/regex-tools.js');
 
 // Polar Question, accepts by positive or negative regex, and can set sub flow for an answer
 class PolarQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
-        this.regex = Extra.getTextRegex();
+        this.regex = RegexTools.getTextRegex();
         this.useButtons = false;
     }
 

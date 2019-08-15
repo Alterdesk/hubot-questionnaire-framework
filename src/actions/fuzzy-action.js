@@ -1,8 +1,9 @@
-const Extra = require('node-messenger-extra');
 const Levenshtein = require('js-levenshtein');
 
 const Action = require('./action.js');
 const Logger = require('./../logger.js');
+const RegexTools = require('./../utils/regex-tools.js');
+const StringTools = require('./../utils/string-tools.js');
 
 class FuzzyAction extends Action {  // TODO This class may be subject to change
     constructor(answerKey, questionText, invalidText, waitMs) {
@@ -61,7 +62,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
             var name = candidate.name;
             var label = candidate.label;
             var style = candidate.style;
-            askDidMeanFlow.option(Extra.getOptionRegex(name))
+            askDidMeanFlow.option(RegexTools.getOptionRegex(name))
             .button(name, label, style);
         }
         askDidMeanFlow.option(this.didNotRegex)
@@ -139,7 +140,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
             var option = availableOptions[index];
             var label = option.toUpperCase();
             var style = "orange";
-            indexFlow.option(Extra.getOptionRegex(option))
+            indexFlow.option(RegexTools.getOptionRegex(option))
             .button(option, label, style);
         }
         indexFlow.action((response, answers, subFlowCallback) => {
@@ -179,7 +180,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         var matchedCandidates = [];
         var checkWords = [];
 
-        var words = answerValue.match(Extra.getTextRegex());
+        var words = answerValue.match(RegexTools.getTextRegex());
         for(let i in words) {
             var word = words[i];
             if(word.length < this.minWordLength) {
@@ -411,7 +412,7 @@ class FuzzyCandidate {
     }
 
     addAlias(alias) {
-        this.aliases.push(Extra.safeName(alias, -1, true, true));
+        this.aliases.push(StringTools.safeName(alias, -1, true, true));
     }
 
     addAliases(aliases) {

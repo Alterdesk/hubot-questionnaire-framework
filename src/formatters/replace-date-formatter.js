@@ -1,8 +1,7 @@
-const Extra = require('node-messenger-extra');
-
 const Formatter = require('./formatter.js');
 const DateTools = require('./../utils/date-tools.js');
 const Logger = require('./../logger.js');
+const StringTools = require('./../utils/string-tools.js');
 
 class ReplaceDateFormatter extends Formatter {
 
@@ -48,7 +47,7 @@ class ReplaceDateFormatter extends Formatter {
             formatted = formatted + this.suffixText;
         }
         if(this.escapeHtml) {
-            formatted = Extra.escapeHtml(formatted);
+            formatted = StringTools.escapeHtml(formatted);
         }
         return text.replace(this.from, formatted);
     }

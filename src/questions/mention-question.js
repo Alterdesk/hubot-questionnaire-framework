@@ -1,13 +1,12 @@
-const Extra = require('node-messenger-extra');
-
 const Logger = require('./../logger.js');
 const Question = require('./question.js');
+const RegexTools = require('./../utils/regex-tools.js');
 
 // Mention Question, accepts mentioned all and mentioned user tags
 class MentionQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
-        this.regex = Extra.getMentionedRegex();
+        this.regex = RegexTools.getMentionedRegex();
         this.allAllowed = true;
         this.robotAllowed = false;
     }
@@ -38,7 +37,7 @@ class MentionQuestion extends Question {
         var value = [];
 
         // Check for the mentioned all tag
-        if(message.text.match(Extra.getMentionedAllRegex()) !== null) {
+        if(message.text.match(RegexTools.getMentionedAllRegex()) !== null) {
             // Check if the all tag is configured as allowed
             if(!this.allAllowed) {
                 return null;
@@ -58,8 +57,8 @@ class MentionQuestion extends Question {
         } else {
             // Not parsed yet
             mentions = [];
-            var mentionedUserRegex = Extra.getMentionedUserRegex();
-            var uuidRegex = Extra.getUuidRegex();
+            var mentionedUserRegex = RegexTools.getMentionedUserRegex();
+            var uuidRegex = RegexTools.getUuidRegex();
             var mentionResult;
             while((mentionResult = mentionedUserRegex.exec(message.text)) !== null) {
                 var userResult = mentionResult[0].match(uuidRegex);

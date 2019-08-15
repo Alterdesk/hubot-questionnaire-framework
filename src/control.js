@@ -1,7 +1,7 @@
 const {Response, User, Message, TextMessage, LeaveMessage, TopicMessage} = require('hubot');
-const Extra = require('node-messenger-extra');
 
 const Logger = require('./logger.js');
+const RegexTools = require('./utils/regex-tools.js');
 
 // Optional dependency, only loaded when Control.setMessengerApi() was called
 var Messenger;
@@ -682,7 +682,7 @@ class Control {
         }
         Logger.debug("Control::addAcceptedCommand() Command configured as accepted: " + c);
         this.acceptedCommands.push(c);
-        this.acceptedRegex.push(Extra.getStartCommandRegex(c));
+        this.acceptedRegex.push(RegexTools.getStartCommandRegex(c));
         if(helpText != null) {
             this.acceptedHelpTexts[command] = helpText;
         }

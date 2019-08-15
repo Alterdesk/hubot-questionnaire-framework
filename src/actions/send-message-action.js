@@ -1,8 +1,7 @@
-const Extra = require('node-messenger-extra');
-
 const Action = require('./action.js');
 const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const Logger = require('./../logger.js');
+const RegexTools = require('./../utils/regex-tools.js');
 
 class SendMessageAction extends Action {
     constructor(messageText) {
@@ -56,7 +55,7 @@ class SendMessageAction extends Action {
         messageData.message = messageText;
         if(this.attachmentPaths.length > 0) {
             Logger.debug("SendMessageAction::start() Got " + this.attachmentPaths.length + " attachments:", this.attachmentPaths);
-            var filePathRegex = Extra.getFilePathRegex();
+            var filePathRegex = RegexTools.getFilePathRegex();
             Logger.debug("SendMessageAction::start() Using file path regex:", filePathRegex);
             for(let index in this.attachmentPaths) {
                 var attachmentPath = AnswerOrFixed.get(this.attachmentPaths[index], answers);

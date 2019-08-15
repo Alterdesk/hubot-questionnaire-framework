@@ -1,12 +1,11 @@
-const Extra = require('node-messenger-extra');
-
 const Question = require('./question.js');
+const RegexTools = require('./../utils/regex-tools.js');
 
 // Text Question, accepts non empty text
 class TextQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
-        this.regex = Extra.getTextRegex();
+        this.regex = RegexTools.getTextRegex();
         this.min = -1;
         this.max = -1;
     }

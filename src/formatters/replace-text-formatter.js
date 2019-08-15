@@ -1,7 +1,6 @@
-const Extra = require('node-messenger-extra');
-
 const Formatter = require('./formatter.js');
 const Logger = require('./../logger.js');
+const StringTools = require('./../utils/string-tools.js');
 
 class ReplaceTextFormatter extends Formatter {
 
@@ -33,7 +32,7 @@ class ReplaceTextFormatter extends Formatter {
             to = to + this.suffixText;
         }
         if(this.escapeHtml) {
-            to = Extra.escapeHtml(to);
+            to = StringTools.escapeHtml(to);
         }
         return text.replace(this.from, to);
     }

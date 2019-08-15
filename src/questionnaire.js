@@ -51,6 +51,7 @@ module.exports = {
     MultiFormatter : require('./formatters/multi-formatter.js'),
     MultipleChoiceQuestion : require('./questions/multiple-choice-question.js'),
     NumberQuestion : require('./questions/number-question.js'),
+    NumberTools : require('./utils/number-tools.js'),
     OrCondition : require('./conditions/or-condition.js'),
     LeaveGroupAction : require('./actions/leave-group-action.js'),
     Listener : require('./listener.js'),
@@ -60,6 +61,7 @@ module.exports = {
     PhoneNumberQuestion : require('./questions/phone-number-question.js'),
     PolarQuestion : require('./questions/polar-question.js'),
     Question : require('./questions/question.js'),
+    RegexTools : require('./utils/regex-tools.js'),
     RemoveAnswerAction : require('./actions/remove-answer-action.js'),
     RepeatFlowAction : require('./actions/repeat-flow-action.js'),
     RepeatFormatter : require('./formatters/repeat-formatter.js'),
@@ -71,6 +73,7 @@ module.exports = {
     SendMessageAction : require('./actions/send-message-action.js'),
     SetAnswerAction : require('./actions/set-answer-action.js'),
     StopConditionAction : require('./actions/stop-condition-action.js'),
+    StringTools : require('./utils/string-tools.js'),
     SummaryAction : require('./actions/summary-action.js'),
     TextQuestion : require('./questions/text-question.js'),
     VerificationQuestion : require('./questions/verification-question.js')

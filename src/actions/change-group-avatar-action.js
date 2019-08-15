@@ -1,10 +1,7 @@
-const Extra = require('node-messenger-extra');
-
 const Action = require('./action.js');
 const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const Logger = require('./../logger.js');
-
-const filePathRegex = Extra.getFilePathRegex();
+const RegexTools = require('./../utils/regex-tools.js');
 
 class ChangeGroupAvatarAction extends Action {
     constructor(avatarPath) {
@@ -30,7 +27,7 @@ class ChangeGroupAvatarAction extends Action {
             flowCallback();
             return;
         }
-        if(!avatarPath.match(filePathRegex)) {
+        if(!avatarPath.match(RegexTools.getFilePathRegex())) {
             Logger.error("ChangeGroupAvatarAction::start() Illegal avatar path:", avatarPath);
             flowCallback();
             return;

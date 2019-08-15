@@ -1,13 +1,12 @@
-const Extra = require('node-messenger-extra');
-
 const Logger = require('./../logger.js');
 const Question = require('./question.js');
+const RegexTools = require('./../utils/regex-tools.js');
 
 // Multiple choice question, add options by regex and optional sub flow
 class MultipleChoiceQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
-        this.regex = Extra.getNonEmptyRegex();
+        this.regex = RegexTools.getNonEmptyRegex();
         this.options = [];
         this.useButtons = false;
         this.multiAnswer = false;

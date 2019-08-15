@@ -1,7 +1,6 @@
-const Extra = require('node-messenger-extra');
-
 const Formatter = require('./formatter.js');
 const Logger = require('./../logger.js');
+const StringTools = require('./../utils/string-tools.js');
 
 class ReplaceAnswerFormatter extends Formatter {
 
@@ -39,7 +38,7 @@ class ReplaceAnswerFormatter extends Formatter {
                 Logger.debug("ReplaceAnswerFormatter::execute() Using fallback: \"" + this.fallbackText + "\" answerKey: \"" + answerKey + "\"");
                 var fallback = this.fallbackText;
                 if(this.escapeHtml) {
-                    fallback = Extra.escapeHtml(fallback);
+                    fallback = StringTools.escapeHtml(fallback);
                 }
                 return text.replace(this.from, fallback);
             }
@@ -58,14 +57,14 @@ class ReplaceAnswerFormatter extends Formatter {
                     Logger.debug("ReplaceAnswerFormatter::execute() Using fallback: \"" + this.fallbackText + "\" answerKey: \"" + answerKey + "\"");
                     var fallback = this.fallbackText;
                     if(this.escapeHtml) {
-                        fallback = Extra.escapeHtml(fallback);
+                        fallback = StringTools.escapeHtml(fallback);
                     }
                     return text.replace(this.from, fallback);
                 }
                 return text;
             }
             if(this.escapeHtml) {
-                result = Extra.escapeHtml(result);
+                result = StringTools.escapeHtml(result);
             }
             return text.replace(this.from, result);
         }
@@ -77,7 +76,7 @@ class ReplaceAnswerFormatter extends Formatter {
             result = result + this.suffixText;
         }
         if(this.escapeHtml) {
-            result = Extra.escapeHtml(result);
+            result = StringTools.escapeHtml(result);
         }
         return text.replace(this.from, result);
     }

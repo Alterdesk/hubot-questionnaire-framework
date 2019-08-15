@@ -1,7 +1,7 @@
-const Extra = require('node-messenger-extra');
 const {Response} = require('hubot');
 
 const Logger = require('./logger.js');
+const RegexTools = require('./utils/regex-tools.js');
 
 // Listener class for consecutive questions
 class Listener {
@@ -10,7 +10,7 @@ class Listener {
         this.msg = msg;
         this.callback = callback;
         this.question = question;
-        this.regex = question.regex || Extra.getTextRegex();
+        this.regex = question.regex || RegexTools.getTextRegex();
 
         // Matcher for given regex
         this.matcher = (message) => {

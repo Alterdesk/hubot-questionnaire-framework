@@ -1,12 +1,11 @@
-const Extra = require('node-messenger-extra');
-
 const Question = require('./question.js');
+const RegexTools = require('./../utils/regex-tools.js');
 
 // Number Question, accepts numbers, can limit to accepted range
 class NumberQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
-        this.regex = Extra.getNumberRegex();
+        this.regex = RegexTools.getNumberRegex();
     }
 
     // Limit the valid answer to range
