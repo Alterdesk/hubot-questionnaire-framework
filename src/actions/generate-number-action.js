@@ -2,6 +2,7 @@ const Action = require('./action.js');
 const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const Answers = require('./../answers.js');
 const Logger = require('./../logger.js');
+const NumberTools = require('./../utils/number-tools.js');
 
 class GenerateNumberAction extends Action {
     constructor(answerKey, min, max) {
@@ -57,7 +58,7 @@ class GenerateNumberAction extends Action {
     }
 
     generate(min, max) {
-        var num = Math.round((Math.random() * (max - min)) + min);
+        var num = NumberTools.generate(min, max);
         Logger.debug("GenerateNumberAction::start() Generated number: " + num);
         this.answers.add(this.answerKey, num);
     }

@@ -1,5 +1,6 @@
 const Action = require('./action.js');
 const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
+const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
 const RegexTools = require('./../utils/regex-tools.js');
 
@@ -11,11 +12,11 @@ class ChangeGroupAvatarAction extends Action {
         this.avatarPath = avatarPath;
     }
 
-    start(response, answers, flowCallback) {
+    async start(response, answers, flowCallback) {
         this.answers = answers;
         this.flowCallback = flowCallback;
-        if(!this.flow || !this.flow.msg || !this.flow.control || !this.flow.control.messengerApi) {
-            Logger.error("ChangeGroupAvatarAction::start() Invalid Flow, Control or MessengerApi");
+        if(!this.flow || !this.flow.msg || !this.flow.control) {
+            Logger.error("ChangeGroupAvatarAction::start() Invalid Flow or Control");
             flowCallback();
             return;
         }
@@ -39,7 +40,7 @@ class ChangeGroupAvatarAction extends Action {
             chatId = AnswerOrFixed.get(this.chatId, answers);
             isAux = AnswerOrFixed.get(this.isAux, answers);
         } else {
-            var isGroup = this.flow.control.isUserInGroup(this.flow.msg.message.user);
+            var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
                 Logger.error("ChangeGroupAvatarAction::start() Not a group chat");
                 flowCallback();
@@ -53,9 +54,8 @@ class ChangeGroupAvatarAction extends Action {
             flowCallback();
             return;
         }
-        this.flow.control.messengerApi.changeGroupAvatar(chatId, isAux, avatarPath, (success, json) => {
-            flowCallback();
-        }, this.overrideToken);
+        await this.flow.control.messengerClient.changeGroupAvatar(chatId, isAux, avatarPath, this.overrideToken);
+        flowCallback();
     }
 
     setChatId(chatId) {

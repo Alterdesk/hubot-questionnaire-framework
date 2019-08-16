@@ -6,6 +6,10 @@ class NumberTools {
         return Math.round(value * multiplier) / multiplier;
     }
 
+    static generate(min, max) {
+        return Math.round((Math.random() * (max - min)) + min);
+    }
+
 }
 
 module.exports = NumberTools;

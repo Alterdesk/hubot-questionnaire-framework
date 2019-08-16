@@ -1,6 +1,8 @@
 const Action = require('./action.js');
 const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
+const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
+const SendMessageData = require('./../containers/send-message-data.js');
 
 class ChatPdfAction extends Action {
     constructor(filename) {
@@ -14,7 +16,7 @@ class ChatPdfAction extends Action {
     }
 
     async start(response, answers, flowCallback) {
-        if(!this.flow || !this.flow.msg || !this.flow.control || !this.flow.control.messengerApi) {
+        if(!this.flow || !this.flow.msg || !this.flow.control) {
             flowCallback();
             return;
         }
@@ -33,10 +35,10 @@ class ChatPdfAction extends Action {
         }
         var msg = this.flow.msg;
         var control = this.flow.control;
-        var messengerApi = control.messengerApi;
+        var messengerClient = control.messengerClient;
 
         var sourceChatId = msg.message.room;
-        var sourceIsGroup = control.isUserInGroup(msg.message.user);
+        var sourceIsGroup = ChatTools.isUserInGroup(msg.message.user);
         if(!sourceChatId) {
             Logger.error("ChatPdfAction::start() Invalid source chat id");
             flowCallback();
@@ -70,7 +72,7 @@ class ChatPdfAction extends Action {
         var startDate = AnswerOrFixed.get(this.startDate, answers);
         var endDate = AnswerOrFixed.get(this.endDate, answers);
 
-        var filePath = await messengerApi.downloadChatPdf(filename, startDate, endDate, sourceChatId, sourceIsGroup, false);
+        var filePath = await messengerClient.downloadChatPdf(filename, startDate, endDate, sourceChatId, sourceIsGroup, false);
         if(!filePath) {
             Logger.error("ChatPdfAction::start() Unable to generate PDF");
             if(this.answerKey) {
@@ -83,30 +85,30 @@ class ChatPdfAction extends Action {
             return;
         }
         Logger.debug("ChatPdfAction::start() Generated PDF: " + filePath);
-        var messageData = control.createSendMessageData();
-        messageData.chatId = destinationChatId;
-        messageData.isGroup = destinationIsGroup;
-        messageData.isAux = destinationIsAux;
-        messageData.message = messageText;
-        messageData.addAttachmentPath(filePath);
-        messageData.overrideToken = this.overrideToken;
-        messengerApi.sendMessage(messageData, (messageSuccess, json) => {
-            if(this.answerKey) {
-                answers.add(this.answerKey + "_file_path", filePath);
-                answers.add(this.answerKey, messageSuccess);
+
+        var sendMessageData = new SendMessageData();
+        sendMessageData.setMessage(messageText);
+        sendMessageData.setChat(destinationChatId, destinationIsGroup, destinationIsAux);
+        sendMessageData.addAttachmentPath(filePath);
+        if(this.overrideToken) {
+            sendMessageData.setOverrideToken(this.overrideToken);
+        }
+
+        var json = await messengerClient.sendMessage(sendMessageData);
+        var messageSuccess = json != null;
+        if(this.answerKey) {
+            answers.add(this.answerKey + "_file_path", filePath);
+            answers.add(this.answerKey, messageSuccess);
+        }
+        if(messageSuccess) {
+            Logger.debug("ChatPdfAction::start() PDF message sent successfully");
+        } else {
+            Logger.error("ChatPdfAction::start() Unable to send PDF");
+            if(this.errorMessage && this.errorMessage.length > 0) {
+                response.send(this.errorMessage);
             }
-            if(messageSuccess) {
-                Logger.debug("ChatPdfAction::start() PDF message sent successfully");
-            } else {
-                Logger.error("ChatPdfAction::start() Unable to send PDF");
-                if(this.errorMessage && this.errorMessage.length > 0) {
-                    response.send(this.errorMessage);
-                }
-            }
-            flowCallback();
-            // TODO Retry mechanism?
-            // TODO Delete PDF after successful send
-        });
+        }
+        flowCallback();
     }
 
     setAnswerKey(answerKey) {

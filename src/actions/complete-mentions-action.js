@@ -1,4 +1,5 @@
 const Action = require('./action.js');
+const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
 
 class CompleteMentionsAction extends Action {
@@ -10,9 +11,9 @@ class CompleteMentionsAction extends Action {
         this.onlyCompleteAll = onlyCompleteAll;
     }
 
-    start(response, answers, flowCallback) {
-        if(!this.flow.msg || !this.flow.control || !this.flow.control.messengerApi) {
-            Logger.error("CompleteMentionsAction::start() Invalid Flow or MessengerApi not set");
+    async start(response, answers, flowCallback) {
+        if(!this.flow.msg || !this.flow.control) {
+            Logger.error("CompleteMentionsAction::start() Invalid Flow or Control");
             flowCallback();
             return;
         }
@@ -24,7 +25,7 @@ class CompleteMentionsAction extends Action {
         }
         var question = this.flow.getQuestion(this.answerKey);
         var chatId = this.flow.msg.message.room;
-        var isGroup = this.flow.control.isUserInGroup(this.flow.msg.message.user);
+        var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
         var excludeIds;
 
         if(question && !question.robotAllowed) {
@@ -32,12 +33,11 @@ class CompleteMentionsAction extends Action {
             excludeIds.push(this.flow.control.robotUserId);
         }
         Logger.debug("CompleteMentionsAction::start() Completing mention data");
-        this.flow.control.messengerApi.completeMentions(mentions, excludeIds, chatId, isGroup, false, (mentionedMembers) => {
-            if(mentionedMembers) {
-                answers.add(this.answerKey, mentionedMembers);
-            }
-            flowCallback();
-        });
+        var mentionedMembers = await this.flow.control.messengerClient.completeMentions(mentions, excludeIds, chatId, isGroup, false);
+        if(mentionedMembers) {
+            answers.add(this.answerKey, mentionedMembers);
+        }
+        flowCallback();
     }
 }
 

@@ -1,4 +1,5 @@
 const Answers = require('./../answers.js');
+const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
 const Question = require('./question.js');
 
@@ -39,12 +40,6 @@ class VerificationQuestion extends Question {
         this.chatId = msg.message.room;
         this.isGroup = control.isUserInGroup(msg.message.user);
 
-        // Unable to preform question without messenger api
-        if(!control.messengerApi) {
-            Logger.error("VerificationQuestion:send() Messenger API instance not set");
-            this.flow.stop(true, true);
-            return;
-        }
         if(this.isMultiUser && this.userIds && this.userIds.length > 0) {
             let remainingUserIds = this.getRemainingUserIds();
             if(remainingUserIds && remainingUserIds.length > 0) {
@@ -53,75 +48,70 @@ class VerificationQuestion extends Question {
                 }
             } else {
                 Logger.error("VerificationQuestion:send() Got no remaining user ids for multi-user question: " + this.answerKey);
-                this.sendForUserId(control, msg, callback, control.getUserId(msg.message.user));
+                this.sendForUserId(control, msg, callback, ChatTools.getUserId(msg.message.user));
             }
         } else {
-            this.sendForUserId(control, msg, callback, control.getUserId(msg.message.user));
+            this.sendForUserId(control, msg, callback, ChatTools.getUserId(msg.message.user));
         }
     }
 
-    sendForUserId(control, msg, callback, userId) {
+    async sendForUserId(control, msg, callback, userId) {
         // Try to retrieve provider for user
-        control.messengerApi.getUserProviders(userId, (providerSuccess, providerJson) => {
-            if(!providerSuccess) {
-                Logger.error("VerificationQuestion:sendForUserId() Unable to retrieve providers for user: " + userId);
+        var providerJson = await control.messengerClient.getUserProviders(userId);
+        if(!providerJson) {
+            Logger.error("VerificationQuestion:sendForUserId() Unable to retrieve providers for user: " + userId);
+            this.flow.stop(true, true);
+            return;
+        }
+        var providerId;
+        for(let i in providerJson) {
+            var provider = providerJson[i];
+            if(provider["name"] === this.provider) {
+                providerId = provider["provider_id"];
+                break;
+            }
+        }
+        if(providerId) {
+            // Got provider, send verification request
+            this.setListenersAndPendingRequests(control, msg, callback);
+
+            control.sendComposing(msg);
+
+            var askJson = await control.messengerClient.askUserVerification(userId, providerId, this.chatId, this.isGroup, false);
+            if(!askJson) {
+                Logger.error("VerificationQuestion:sendForUserId() Unable to send verification request for user: " + userId);
                 this.flow.stop(true, true);
                 return;
             }
-            var providerId;
-            for(let i in providerJson) {
-                var provider = providerJson[i];
-                if(provider["name"] === this.provider) {
-                    providerId = provider["provider_id"];
+            var messageId = askJson["id"];
+            Logger.debug("VerificationQuestion:sendForUserId() Verification message id: " + messageId);
+            this.requests[userId] = messageId;
+        } else {
+            // Unable to get provider for this user, check if user already verified via provider
+            var verificationsJson = await control.messengerClient.getUserVerifications(userId);
+            if(!verificationsJson) {
+                Logger.error("VerificationQuestion:sendForUserId() Unable to retrieve verifications for user: " + userId);
+                this.flow.stop(true, true);
+                return;
+            }
+            var isVerified = false;
+            var userVerifications = verificationsJson["user"];
+            for(let i in userVerifications) {
+                var verification = userVerifications[i];
+                if(verification["name"] === this.provider) {
+                    isVerified = true;
                     break;
                 }
             }
-            if(providerId) {
-                // Got provider, send verification request
-                this.setListenersAndPendingRequests(control, msg, callback);
-
-                control.sendComposing(msg);
-
-                control.messengerApi.askUserVerification(userId, providerId, this.chatId, this.isGroup, false, (askSuccess, askJson) => {
-                    Logger.debug("VerificationQuestion:sendForUserId() Successful: " + askSuccess);
-                    if(!askSuccess) {
-                        Logger.error("VerificationQuestion:sendForUserId() Unable to send verification request for user: " + userId);
-                        this.flow.stop(true, true);
-                        return;
-                    }
-                    var messageId = askJson["id"];
-                    Logger.debug("VerificationQuestion:sendForUserId() Verification message id: " + messageId);
-
-                    this.requests[userId] = messageId;
-                });
+            if(isVerified) {
+                this.setSubFlow(this.verifiedSubFlow);
+                this.flow.onAnswer(msg, this, true);
             } else {
-                // Unable to get provider for this user, check if user already verified via provider
-                control.messengerApi.getUserVerifications(userId, (verificationsSuccess, verificationsJson) => {
-                    if(!verificationsSuccess) {
-                        Logger.error("VerificationQuestion:sendForUserId() Unable to retrieve verifications for user: " + userId);
-                        this.flow.stop(true, true);
-                        return;
-                    }
-                    var isVerified = false;
-                    var userVerifications = verificationsJson["user"];
-                    for(let i in userVerifications) {
-                        var verification = userVerifications[i];
-                        if(verification["name"] === this.provider) {
-                            isVerified = true;
-                            break;
-                        }
-                    }
-                    if(isVerified) {
-                        this.setSubFlow(this.verifiedSubFlow);
-                        this.flow.onAnswer(msg, this, true);
-                    } else {
-                        Logger.error("VerificationQuestion:sendForUserId() Provider not available for user and not verified: provider: " + this.provider + " user: " + userId);
-                        this.flow.stop(true, true);
-                        return;
-                    }
-                });
+                Logger.error("VerificationQuestion:sendForUserId() Provider not available for user and not verified: provider: " + this.provider + " user: " + userId);
+                this.flow.stop(true, true);
+                return;
             }
-        });
+        }
     }
 
     checkAndParseAnswer(matches, message) {
@@ -142,26 +132,25 @@ class VerificationQuestion extends Question {
     retrieveAttributes(requestMessageId) {
         return new Promise(async (resolve) => {
             try {
-                this.control.messengerApi.getMessage(requestMessageId, this.chatId, this.isGroup, false, (success, json) => {
-                    if(!success) {
-                        Logger.error("VerificationQuestion:retrieveAttributes() Unable to retrieve message");
-                        resolve(null);
-                        return;
-                    }
-                    var payload = json["payload"];
-                    if(!payload || payload["type"] !== "verification_request") {
-                        Logger.error("VerificationQuestion:retrieveAttributes() Message has no payload or is wrong type");
-                        resolve(null);
-                        return;
-                    }
-                    var attributes = payload["attributes"];
-                    if(!attributes) {
-                        Logger.error("VerificationQuestion:retrieveAttributes() Payload holds no attributes");
-                        resolve(null);
-                        return;
-                    }
-                    resolve(Answers.fromObject(attributes));
-                });
+                var json = await this.control.messengerClient.getMessage(requestMessageId, this.chatId, this.isGroup, false);
+                if(!json) {
+                    Logger.error("VerificationQuestion:retrieveAttributes() Unable to retrieve message");
+                    resolve(null);
+                    return;
+                }
+                var payload = json["payload"];
+                if(!payload || payload["type"] !== "verification_request") {
+                    Logger.error("VerificationQuestion:retrieveAttributes() Message has no payload or is wrong type");
+                    resolve(null);
+                    return;
+                }
+                var attributes = payload["attributes"];
+                if(!attributes) {
+                    Logger.error("VerificationQuestion:retrieveAttributes() Payload holds no attributes");
+                    resolve(null);
+                    return;
+                }
+                resolve(Answers.fromObject(attributes));
             } catch(err) {
                 Logger.error(err);
                 resolve(null);
@@ -171,8 +160,8 @@ class VerificationQuestion extends Question {
 
     // Asynchronously retrieve verification attributes
     async finalize(answers, callback) {
-        if(!this.control || !this.control.messengerApi || this.requests.length === 0) {
-            Logger.error("VerificationQuestion:finalize() Messenger API instance not set or data incomplete");
+        if(!this.control || this.requests.length === 0) {
+            Logger.error("VerificationQuestion:finalize() Data incomplete");
             callback();
             return;
         }

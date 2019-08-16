@@ -9,11 +9,11 @@ class CheckUserAction extends Action {
         this.check = check;
     }
 
-    start(response, answers, flowCallback) {
+    async start(response, answers, flowCallback) {
         this.answers = answers;
         this.flowCallback = flowCallback;
-        if(!this.flow || !this.flow.msg || !this.flow.control || !this.flow.control.messengerApi) {
-            Logger.error("CheckUserAction::start() Invalid Flow, Control or MessengerApi");
+        if(!this.flow || !this.flow.msg || !this.flow.control) {
+            Logger.error("CheckUserAction::start() Invalid Flow or Control");
             this.done(null);
             return;
         }
@@ -26,15 +26,13 @@ class CheckUserAction extends Action {
         }
 
         if(this.check === "BUSINESS") {
-            this.flow.control.messengerApi.getUser(userId, false, (success, json) => {
-                if(!success || !json) {
-                    this.done(null);
-                    return;
-                }
-                var business = json["private_user"] === false;
-                this.done(business);
-
-            }, this.overrideToken);
+            var json = await this.flow.control.messengerClient.getUser(userId, false, this.overrideToken);
+            if(!json) {
+                this.done(null);
+                return;
+            }
+            var business = json["private_user"] === false;
+            this.done(business);
         } else if(this.check === "COWORKER") {
             var robotUser = this.flow.control.robotUser;
             if(!robotUser) {
@@ -48,39 +46,37 @@ class CheckUserAction extends Action {
                 this.done(null);
                 return;
             }
-            this.flow.control.messengerApi.getUser(userId, false, (success, json) => {
-                if(!success || !json) {
-                    this.done(null);
-                    return;
-                }
-                var coworker = json["company_id"] === robotCompany;
-                this.done(coworker);
-            }, this.overrideToken);
+            var json = await this.flow.control.messengerClient.getUser(userId, false, this.overrideToken);
+            if(!json) {
+                this.done(null);
+                return;
+            }
+            var coworker = json["company_id"] === robotCompany;
+            this.done(coworker);
         } else if(this.check === "VERIFIED") {
-            this.flow.control.messengerApi.getUserVerifications(userId, (success, json) => {
-                if(!success || !json) {
-                    this.done(null);
-                    return;
-                }
-                var userVerifications = json["user"];
-                if(!userVerifications || userVerifications.length === 0) {
-                    this.done(false);
-                    return;
-                }
-                if(!this.provider || this.provider === "") {
+            var json = await this.flow.control.messengerClient.getUserVerifications(userId, this.overrideToken);
+            if(!json) {
+                this.done(null);
+                return;
+            }
+            var userVerifications = json["user"];
+            if(!userVerifications || userVerifications.length === 0) {
+                this.done(false);
+                return;
+            }
+            if(!this.provider || this.provider === "") {
+                this.done(true);
+                return;
+            }
+            for(let i in userVerifications) {
+                var userVerification = userVerifications[i];
+                if(this.provider === userVerification["name"]) {
                     this.done(true);
                     return;
                 }
-                for(let i in userVerifications) {
-                    var userVerification = userVerifications[i];
-                    if(this.provider === userVerification["name"]) {
-                        this.done(true);
-                        return;
-                    }
-                }
-                this.done(null);
-                return;
-            }, this.overrideToken);
+            }
+            this.done(null);
+            return;
         } else {
             Logger.error("CheckUserAction::start() Unknown check:", this.check);
             this.done(null);

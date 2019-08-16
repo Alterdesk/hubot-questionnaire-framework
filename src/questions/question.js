@@ -1,5 +1,6 @@
 const {User, Message} = require('hubot');
 
+const ChatTools = require('./../utils/chat-tools.js');
 const Listener = require('./../listener.js');
 const Logger = require('./../logger.js');
 const PendingRequest = require('./../pending-request.js');
@@ -245,7 +246,7 @@ class Question {
     // Set the Listeners and PendingRequests for this Question
     setListenersAndPendingRequests(control, msg, callback) {
         // Check if listeners or pending requests should be added
-        if(!this.useListeners && !this.usePendingRequests || (this.pendingRequest && !control.messengerApi)) {
+        if(!this.useListeners && !this.usePendingRequests) {
             return;
         }
 
@@ -314,7 +315,7 @@ class Question {
         }
 
         if(control.questionAskedCallback) {
-            var userId = control.getUserId(msg.message.user);
+            var userId = ChatTools.getUserId(msg.message.user);
             var useKey;
             if(this.originalAnswerKey) {
                 useKey = this.originalAnswerKey;

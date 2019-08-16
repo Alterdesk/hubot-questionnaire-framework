@@ -1,5 +1,6 @@
 const Action = require('./action.js');
 const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
+const InviteUserData = require('./../containers/invite-user-data.js');
 const Logger = require('./../logger.js');
 
 class InviteAction extends Action {
@@ -14,11 +15,11 @@ class InviteAction extends Action {
         this.inviteFormatters = [];
     }
 
-    start(response, answers, flowCallback) {
+    async start(response, answers, flowCallback) {
         this.answers = answers;
         this.flowCallback = flowCallback;
-        if(!this.flow || !this.flow.msg || !this.flow.control || !this.flow.control.messengerApi) {
-            Logger.error("InviteAction::start() Invalid Flow, Control or MessengerApi");
+        if(!this.flow || !this.flow.msg || !this.flow.control) {
+            Logger.error("InviteAction::start() Invalid Flow or Control");
             this.done(null);
             return;
         }
@@ -34,41 +35,28 @@ class InviteAction extends Action {
             return;
         }
 
-        var inviteData = {};
-        inviteData["email"] = emailValue;
-        inviteData["first_name"] = firstNameValue;
-        inviteData["last_name"] = lastNameValue;
+        var inviteUserData = new InviteUserData();
+        inviteUserData.setEmail(emailValue);
+        inviteUserData.setFirstName(firstNameValue);
+        inviteUserData.setLastName(lastNameValue);
+
         var inviteTextValue = AnswerOrFixed.get(this.inviteText, answers);
         for(let i in this.inviteFormatters) {
             var formatter = this.inviteFormatters[i];
             inviteTextValue = formatter.execute(inviteTextValue, answers, this.flow);
         }
         if(inviteTextValue && inviteTextValue !== "") {
-            inviteData["invite_text"] = inviteTextValue;  // Only used when creating conversation
+            inviteUserData.set(inviteTextValue);    // Only used when creating conversation
         }
         var auxId = AnswerOrFixed.get(this.auxId, answers);
         if(auxId) {
-            inviteData["aux_id"] = auxId;
+            inviteUserData.setAuxId(auxId);
         }
-        inviteData["send_email"] = AnswerOrFixed.get(this.sendEmail, answers, true);
-        var invitePostJson = JSON.stringify(inviteData);
+        var sendEmailValue = AnswerOrFixed.get(this.sendEmail, answers, true);
+        inviteUserData.setSendEmail(sendEmailValue);
 
-        if(this.inviteType == "COWORKER") {
-            this.flow.control.messengerApi.post("users/invite/coworker", invitePostJson, (success, json) => {
-                this.done(json);
-            }, this.overrideToken);
-        } else if(this.inviteType == "CONTACT") {
-            this.flow.control.messengerApi.post("users/invite/contact", invitePostJson, (success, json) => {
-                this.done(json);
-            }, this.overrideToken);
-        } else if(this.inviteType == "PRIVATE") {
-            this.flow.control.messengerApi.post("users/invite/private", invitePostJson, (success, json) => {
-                this.done(json);
-            }, this.overrideToken);
-        } else {
-            logger.error("InviteAction::start() Unknown invite type on invite: \"" + this.inviteType + "\"")
-            this.done(null);
-        }
+        var result = await this.flow.control.messengerClient.inviteUser(inviteUserData);
+        this.done(result)
     }
 
     done(value) {

@@ -9,11 +9,11 @@ class RetrieveAction extends Action {
         }, 0);
     }
 
-    start(response, answers, flowCallback) {
+    async start(response, answers, flowCallback) {
         this.answers = answers;
         this.flowCallback = flowCallback;
-        if(!this.flow || !this.flow.msg || !this.flow.control || !this.flow.control.messengerApi) {
-            Logger.error("RetrieveAction::start() Invalid Flow, Control or MessengerApi");
+        if(!this.flow || !this.flow.msg || !this.flow.control) {
+            Logger.error("RetrieveAction::start() Invalid Flow or Control");
             this.done(null);
             return;
         }
@@ -27,10 +27,9 @@ class RetrieveAction extends Action {
             }
             var isGroupValue = AnswerOrFixed.get(this.isGroup, answers);
             var isAuxValue = AnswerOrFixed.get(this.isAux, answers);
-            this.flow.control.messengerApi.getChat(chatIdValue, isGroupValue, isAuxValue, (success, json) => {
-                this.done(json);
-                return;
-            }, this.overrideToken);
+            var json = await this.flow.control.messengerClient.getChat(chatIdValue, isGroupValue, isAuxValue, this.overrideToken);
+            this.done(json);
+            return;
         } else if(this.userId) {
             var userIdValue = AnswerOrFixed.get(this.userId, answers);
             if(!userIdValue) {
@@ -39,10 +38,9 @@ class RetrieveAction extends Action {
                 return;
             }
             var isAuxValue = AnswerOrFixed.get(this.isAux, answers);
-            this.flow.control.messengerApi.getUser(userIdValue, isAuxValue, (success, json) => {
-                this.done(json);
-                return;
-            }, this.overrideToken);
+            var json = await this.flow.control.messengerClient.getUser(userIdValue, isAuxValue, this.overrideToken);
+            this.done(json);
+            return;
         } else {
             Logger.error("RetrieveAction::start() Invalid retrieve data");
             this.done(null);

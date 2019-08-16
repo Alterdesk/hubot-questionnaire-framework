@@ -1,10 +1,10 @@
 const {Response, User, Message, TextMessage, LeaveMessage, TopicMessage} = require('hubot');
 
+const ChatTools = require('./utils/chat-tools.js');
 const Logger = require('./logger.js');
+const MessengerClient = require('./clients/messenger-client.js');
 const RegexTools = require('./utils/regex-tools.js');
-
-// Optional dependency, only loaded when Control.setMessengerApi() was called
-var Messenger;
+const SendMessageData = require('./containers/send-message-data.js');
 
 // Class to control the questionnaires with
 class Control {
@@ -71,16 +71,15 @@ class Control {
 
         // Milliseconds to show hubot as "Typing..."
         this.typingDelayMs = parseInt(process.env.HUBOT_ALTERDESK_TYPING_DELAY || 2500);
-    }
 
-    // Set the messenger api instance to use
-    setMessengerApi(messengerApi) {
-        try {
-            Messenger = require('node-messenger-sdk');
-            this.messengerApi = messengerApi;
-        } catch(error) {
-            Logger.error("Control::setMessengerApi() ", error);
-        }
+        this.messengerClient = new MessengerClient();
+//        var url = process.env.NODE_ALTERDESK_URL || "https://api.alterdesk.com/v1/";
+//        var port = process.env.NODE_ALTERDESK_PORT || 443;
+//        this.messengerClient = JsonRestClient(url, port)
+//        var token = process.env.NODE_ALTERDESK_TOKEN;
+//        if(token) {
+//            this.messengerClient.setApiToken(token);
+//        }
     }
 
     // Override the default receiver
@@ -131,8 +130,8 @@ class Control {
                     }
                 } else if(event === "typing" || event === "stop_typing") {
                     if(control.typingCallback) {
-                        var userId = control.getUserId(message.user);
-                        var isGroup = control.isUserInGroup(message.user);
+                        var userId = ChatTools.getUserId(message.user);
+                        var isGroup = ChatTools.isUserInGroup(message.user);
                         control.typingCallback(userId, event === "typing", message.room, isGroup);
                     }
                 } else if(event === "presence_update") {
@@ -153,14 +152,14 @@ class Control {
                     }
                 } else if(event === "conversation_message_liked" || event === "groupchat_message_liked") {
                     if(control.messageLikedCallback) {
-                        var userId = control.getUserId(message.user);
-                        var isGroup = control.isUserInGroup(message.user);
+                        var userId = ChatTools.getUserId(message.user);
+                        var isGroup = ChatTools.isUserInGroup(message.user);
                         control.messageLikedCallback(userId, message.id, message.room, isGroup);
                     }
                 } else if(event === "conversation_message_deleted" || event === "groupchat_message_deleted") {
                     if(control.messageDeletedCallback) {
-                        var userId = control.getUserId(message.user);
-                        var isGroup = control.isUserInGroup(message.user);
+                        var userId = ChatTools.getUserId(message.user);
+                        var isGroup = ChatTools.isUserInGroup(message.user);
                         control.messageDeletedCallback(userId, message.id, message.room, isGroup);
                     }
                 } else if(event === "conversation_verification_accepted" || event === "conversation_verification_rejected"
@@ -170,8 +169,8 @@ class Control {
                         pendingRequest.call(message);
                     }
                     if(control.verificationCallback) {
-                        var userId = control.getUserId(message.user);
-                        var isGroup = control.isUserInGroup(message.user);
+                        var userId = ChatTools.getUserId(message.user);
+                        var isGroup = ChatTools.isUserInGroup(message.user);
                         var accepted = event === "conversation_verification_accepted" || event === "groupchat_verification_accepted";
                         control.verificationCallback(userId, message.id, message.room, isGroup, accepted);
                     }
@@ -183,8 +182,8 @@ class Control {
                         control.checkCommandButton(message);
                     }
                     if(control.questionCallback && message.id) {
-                        var userId = control.getUserId(message.user);
-                        var isGroup = control.isUserInGroup(message.user);
+                        var userId = ChatTools.getUserId(message.user);
+                        var isGroup = ChatTools.isUserInGroup(message.user);
                         var messageId = message.id["message_id"];
                         var options = message.id["options"];
                         if(messageId && options) {
@@ -218,9 +217,9 @@ class Control {
                     return;
                 }
 
-                var userId = control.getUserId(message.user);
+                var userId = ChatTools.getUserId(message.user);
                 var roomId = message.room;
-                var isGroup = control.isUserInGroup(message.user);
+                var isGroup = ChatTools.isUserInGroup(message.user);
                 var commandString = message.text.toLowerCase();
 
                 var isMentioned;
@@ -297,7 +296,7 @@ class Control {
     // Add a listeners for followup questions
     addListener(message, listener) {
         listener.configure(this);
-        var userId = this.getUserId(message.user);
+        var userId = ChatTools.getUserId(message.user);
         Logger.debug("Control::addListener() userId: " + userId + " room: " + message.room);
         this.pendingListeners[message.room + "/" + userId] = listener;
         if(!this.hasTimeoutTimer(message)) {
@@ -307,7 +306,7 @@ class Control {
 
     // Remove a listener that was added before
     removeListener(message) {
-        var userId = this.getUserId(message.user);
+        var userId = ChatTools.getUserId(message.user);
         if(this.pendingListeners[message.room + "/" + userId] == null) {
             return null;
         }
@@ -322,12 +321,12 @@ class Control {
 
     // Check if a listener is present for a user in a room
     hasListener(message) {
-        return this.pendingListeners[message.room + "/" + this.getUserId(message.user)] != null;
+        return this.pendingListeners[message.room + "/" + ChatTools.getUserId(message.user)] != null;
     }
 
     // Add a pending request for a user
     addPendingRequest(message, pendingRequest) {
-        var userId = this.getUserId(message.user);
+        var userId = ChatTools.getUserId(message.user);
         Logger.debug("Control::addPendingRequest() userId: " + userId + " room: " + message.room);
         this.pendingRequests[message.room + "/" + userId] = pendingRequest;
         if(!this.hasTimeoutTimer(message)) {
@@ -337,7 +336,7 @@ class Control {
 
     // Remove a pending request for a user
     removePendingRequest(message) {
-        var userId = this.getUserId(message.user);
+        var userId = ChatTools.getUserId(message.user);
         if(this.pendingRequests[message.room + "/" + userId] == null) {
             return null;
         }
@@ -352,12 +351,12 @@ class Control {
 
     // Check if a pending request is present for a user in a room
     hasPendingRequest(message) {
-        return this.pendingRequests[message.room + "/" + this.getUserId(message.user)] != null;
+        return this.pendingRequests[message.room + "/" + ChatTools.getUserId(message.user)] != null;
     }
 
     // Add a timeout timer for a user
     addTimeoutTimer(message, msg, question) {
-        var userId = this.getUserId(message.user);
+        var userId = ChatTools.getUserId(message.user);
         Logger.debug("Control::addTimeoutTimer() userId: " + userId + " room: " + message.room);
         // Timeout milliseconds and callback
         var useTimeoutMs = question.timeoutMs || this.responseTimeoutMs;
@@ -376,14 +375,14 @@ class Control {
         }
 
         var timer = setTimeout(() => {
-            var userId = this.getUserId(msg.message.user);
+            var userId = ChatTools.getUserId(msg.message.user);
             Logger.debug("Timer timeout from user " + userId + " in room " + message.room);
             question.cleanup(message);
 
             question.flow.stop(false);
 
             if(this.questionnaireTimedOutCallback) {
-                var userId = this.getUserId(msg.message.user);
+                var userId = ChatTools.getUserId(msg.message.user);
                 this.questionnaireTimedOutCallback(userId, question.flow.answers);
             }
 
@@ -398,7 +397,7 @@ class Control {
 
     // Remove a timeout timer for a user
     removeTimeoutTimer(message) {
-        var userId = this.getUserId(message.user);
+        var userId = ChatTools.getUserId(message.user);
         if(this.timeoutTimers[message.room + "/" + userId] == null) {
             return;
         }
@@ -410,11 +409,11 @@ class Control {
 
     // Check if a timeout timer is present for a user in a room
     hasTimeoutTimer(message) {
-        return this.timeoutTimers[message.room + "/" + this.getUserId(message.user)] != null;
+        return this.timeoutTimers[message.room + "/" + ChatTools.getUserId(message.user)] != null;
     }
 
     addActiveQuestionnaire(message, flow) {
-        var userId = this.getUserId(message.user);
+        var userId = ChatTools.getUserId(message.user);
         if(this.activeQuestionnaires[message.room + "/" + userId]) {
             Logger.error("Control::addActiveQuestionnaire() Already have an active questionnaire for userId: " + userId + " room: " + message.room);
             return;
@@ -425,7 +424,7 @@ class Control {
     }
 
     getActiveQuestionnaire(message) {
-        return this.activeQuestionnaires[message.room + "/" + this.getUserId(message.user)];
+        return this.activeQuestionnaires[message.room + "/" + ChatTools.getUserId(message.user)];
     }
 
     hasActiveQuestionnaire(message) {
@@ -441,7 +440,7 @@ class Control {
     }
 
     removeActiveQuestionnaire(message) {
-        var userId = this.getUserId(message.user);
+        var userId = ChatTools.getUserId(message.user);
         var flow = this.activeQuestionnaires[message.room + "/" + userId];
         if(!flow) {
             Logger.error("Control::removeActiveQuestionnaire() No active questionnaire for userId: " + userId + " room: " + message.room);
@@ -456,22 +455,6 @@ class Control {
             process.exit(0);
         }
         return flow;
-    }
-
-    // Alterdesk adapter uses separate user id field(user.id in groups consists of (group_id + user_id)
-    getUserId(user) {
-        if(user.user_id != null) {
-            return user.user_id;
-        }
-        return user.id;
-    }
-
-    // Alterdesk adapter uses user.is_groupchat variable to pass group chat id when message was sent in group
-    isUserInGroup(user) {
-        if(user.is_groupchat != null) {
-            return user.is_groupchat;
-        }
-        return false;
     }
 
     // Regex to check if user wants to stop the current process
@@ -699,20 +682,8 @@ class Control {
         this.helpQuestionStyle = style;
     }
 
-    createHubotResponse(userId, chatId, isGroup) {
-        var user = new User(userId);
-        user.is_groupchat = isGroup;
-        var message = new Message(user);
-        message.room = chatId;
-        return new Response(this.robot, message, true);
-    }
-
     // Check if the received answer was a command and trigger it if so
-    checkCommandButton(message) {
-        if(!this.messengerApi) {
-            Logger.error("Control:checkCommandButton() Messenger API instance not set");
-            return;
-        }
+    async checkCommandButton(message) {
         var acceptedCommand = false;
         var options = message.id["options"];
         var optionText = "";
@@ -735,44 +706,40 @@ class Control {
                 return;
             }
         }
-        var userId = this.getUserId(message.user);
-        var roomId = message.room;
-        var isGroup = this.isUserInGroup(message.user);
+        var userId = ChatTools.getUserId(message.user);
+        var chatId = message.room;
+        var isGroup = ChatTools.isUserInGroup(message.user);
         var messageId = message.id["message_id"];
-        this.messengerApi.getMessage(messageId, roomId, isGroup, false, (success, json) => {
-            if(!success) {
-                Logger.error("Control::checkCommandButton() Unable to retrieve request message on checkCommandButton");
-                return;
-            }
-            if(!json) {
-                Logger.error("Control::checkCommandButton() Retrieved invalid json on checkCommandButton:", json);
-                return;
-            }
-            var user = json["user"];
-            if(!user) {
-                Logger.error("Control::checkCommandButton() Retrieved invalid user on checkCommandButton:", json);
-                return;
-            }
-            var id = user["id"];
-            if(id !== this.robotUserId) {
-                Logger.error("Control::checkCommandButton() User id is not robot id on checkCommandButton:", this.robotUserId, json);
-                return;
-            }
-            if(helpCommand) {
-                Logger.error("Control:checkCommandButton() Sending help message");
-                this.sendHelpMessage(message);
-            } else {
-                Logger.debug("Control:checkCommandButton() Accepted command: " + optionText);
-                var messageUser = new User(userId);
-                messageUser.user_id = userId;
-                messageUser.room = roomId;
-                messageUser.name = roomId;
-                messageUser.is_groupchat = isGroup;
-                var textMessage = new TextMessage(messageUser, optionText, "dummy_id");
-                textMessage.room = roomId;
-                this.robot.receive(textMessage);
-            }
-        });
+
+        var messageJson = await this.messengerClient.getMessage(messageId, chatId, isGroup, false);
+        if(!messageJson) {
+            Logger.error("Control::checkCommandButton() Unable to retrieve request message on checkCommandButton");
+            return;
+        }
+        var user = messageJson["user"];
+        if(!user) {
+            Logger.error("Control::checkCommandButton() Retrieved invalid user on checkCommandButton:", messageJson);
+            return;
+        }
+        var id = user["id"];
+        if(id !== this.robotUserId) {
+            Logger.error("Control::checkCommandButton() User id is not robot id on checkCommandButton:", this.robotUserId, messageJson);
+            return;
+        }
+        if(helpCommand) {
+            Logger.error("Control:checkCommandButton() Sending help message");
+            this.sendHelpMessage(message);
+        } else {
+            Logger.debug("Control:checkCommandButton() Accepted command: " + optionText);
+            var messageUser = new User(userId);
+            messageUser.user_id = userId;
+            messageUser.room = chatId;
+            messageUser.name = chatId;
+            messageUser.is_groupchat = isGroup;
+            var textMessage = new TextMessage(messageUser, optionText, "dummy_id");
+            textMessage.room = chatId;
+            this.robot.receive(textMessage);
+        }
     }
 
     // Send the help message
@@ -781,84 +748,57 @@ class Control {
         for(let field in this.acceptedHelpTexts) {
             helpText += "\n • \'" + field + "\' - " + this.acceptedHelpTexts[field];
         }
-        var questionPayload;
-        if(this.messengerApi && Object.keys(this.acceptedButtonLabels).length > 0) {
-            questionPayload = new Messenger.QuestionPayload();
-            questionPayload.multiAnswer = false;
-            questionPayload.style = this.helpQuestionStyle || "horizontal";
+        var sendMessageData = new SendMessageData();
+        sendMessageData.setHubotMessage(message);
+        sendMessageData.setMessage(helpText);
+        if(Object.keys(this.acceptedButtonLabels).length > 0) {
+            var style = this.helpQuestionStyle || "horizontal";
+            sendMessageData.setRequestOptions(false, style);
             for(let key in this.acceptedButtonLabels) {
-                var buttonStyle = this.acceptedButtonStyles[key] || "theme";
-                questionPayload.addOption(key, this.acceptedButtonLabels[key], buttonStyle);
+                var buttonStyle = this.acceptedButtonStyles[key];
+                sendMessageData.addQuestionButtonWithName(key, this.acceptedButtonLabels[key], buttonStyle);
             }
-            questionPayload.addUserId(this.getUserId(message.user));
+            sendMessageData.addRequestUserId(ChatTools.getUserId(message.user));
         }
-        this.sendRequestMessage(message, helpText, questionPayload);
+        this.sendRequestMessage(sendMessageData);
     }
 
     // Send the catch all message
     sendCatchAllMessage(message) {
-        var questionPayload;
-        if(this.messengerApi && this.catchAllButtonName && this.catchAllButtonLabel) {
-            questionPayload = new Messenger.QuestionPayload();
-            questionPayload.multiAnswer = false;
-//            questionPayload.style = "horizontal";
+        var sendMessageData = new SendMessageData();
+        sendMessageData.setHubotMessage(message);
+        sendMessageData.setMessage(this.catchAllText);
+        if(this.catchAllButtonName && this.catchAllButtonLabel) {
             var style = this.catchAllButtonStyle || "theme";
-            questionPayload.addOption(this.catchAllButtonName, this.catchAllButtonLabel, style);
-            questionPayload.addUserId(this.getUserId(message.user));
+            sendMessageData.addQuestionButtonWithName(this.catchAllButtonName, this.catchAllButtonLabel, style);
+            sendMessageData.addRequestUserId(ChatTools.getUserId(message.user));
         }
-        this.sendRequestMessage(message, this.catchAllText, questionPayload);
+        this.sendRequestMessage(sendMessageData);
     }
 
     // Send a request message
-    sendRequestMessage(message, text, questionPayload) {
-        if(this.messengerApi && questionPayload) {
-            var messageData = new Messenger.SendMessageData();
-            messageData.message = text;
-            messageData.chatId = message.room;
-            messageData.isGroup = this.isUserInGroup(message.user);
-            messageData.isAux = false;
-            messageData.payload = questionPayload;
-
-            var response = new Response(this.robot, message, true);
+    async sendRequestMessage(sendMessageData) {
+        if(sendMessageData.usePostCall()) {
+            var response = new Response(this.robot, sendMessageData.getHubotMessage(), true);
             this.sendComposing(response);
 
-            // Send the message and parse result in callback
-            this.messengerApi.sendMessage(messageData, (success, json) => {
-                Logger.debug("Control::sendRequestMessage() Successful: " + success);
-                if(json == null) {
-                    // Fallback
-                    response.send(text);
-                }
-            });
+            var result = await this.messengerClient.sendMessage(sendMessageData);
+            if(!result) {
+                response.send(sendMessageData.getMessage());
+            }
         } else {
-            var response = new Response(this.robot, message, true);
-            response.send(text);
+            var response = new Response(this.robot, sendMessageData.getHubotMessage(), true);
+            response.send(sendMessageData.getMessage());
         }
     }
 
-    sendComposing(msg) {
+    sendComposing(msg) {    // TODO Check if able to move to MessengerClient
         if(this.typingDelayMs) {
             msg.topic("typing");
             setTimeout(() => {
                 msg.topic("stop_typing");
             }, this.typingDelayMs);
         }
-    }
-
-    createSendMessageData() {
-        if(!Messenger) {
-            Logger.error("Control::createSendMessageData() Messenger null");
-            return null;
-        }
-        return new Messenger.SendMessageData()
-    }
-
-    createQuestionPayload() {
-        if(!Messenger) {
-            Logger.error("Control::createQuestionPayload() Messenger null");
-            return null;
-        }
-        return new Messenger.QuestionPayload()
     }
 
     armExitOnIdle(arm) {

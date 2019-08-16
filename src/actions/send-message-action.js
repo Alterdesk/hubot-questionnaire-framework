@@ -2,6 +2,7 @@ const Action = require('./action.js');
 const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const Logger = require('./../logger.js');
 const RegexTools = require('./../utils/regex-tools.js');
+const SendMessageData = require('./../containers/send-message-data.js');
 
 class SendMessageAction extends Action {
     constructor(messageText) {
@@ -15,12 +16,14 @@ class SendMessageAction extends Action {
     }
 
     async start(response, answers, flowCallback) {
-        if(!this.flow || !this.flow.msg || !this.flow.control || !this.flow.control.messengerApi) {
+        if(!this.flow || !this.flow.msg || !this.flow.control) {
             flowCallback();
             return;
         }
         var control = this.flow.control;
-        var messengerApi = control.messengerApi;
+        var messengerClient = control.messengerClient;
+
+        var sendMessageData = new SendMessageData();
 
         var chatId;
         var isGroup;
@@ -29,11 +32,9 @@ class SendMessageAction extends Action {
             chatId = AnswerOrFixed.get(this.chatId, answers);
             isGroup = AnswerOrFixed.get(this.isGroup, answers);
             isAux = AnswerOrFixed.get(this.isAux, answers);
+            sendMessageData.setChat(chatId, isGroup, isAux);
         } else {
-            var msg = this.flow.msg;
-            chatId = msg.message.room;
-            isGroup = control.isUserInGroup(msg.message.user);
-            isAux = false;
+            sendMessageData.setHubotMessage(this.flow.msg.message);
         }
 
         var messageText = AnswerOrFixed.get(this.messageText, answers, "");
@@ -48,11 +49,8 @@ class SendMessageAction extends Action {
         }
         Logger.debug("SendMessageAction::start() Got message text:", messageText);
 
-        var messageData = control.createSendMessageData();
-        messageData.chatId = chatId;
-        messageData.isGroup = isGroup;
-        messageData.isAux = isAux;
-        messageData.message = messageText;
+        sendMessageData.setMessage(messageText);
+
         if(this.attachmentPaths.length > 0) {
             Logger.debug("SendMessageAction::start() Got " + this.attachmentPaths.length + " attachments:", this.attachmentPaths);
             var filePathRegex = RegexTools.getFilePathRegex();
@@ -66,22 +64,24 @@ class SendMessageAction extends Action {
                 }
                 if(attachmentPath.match(filePathRegex)) {
                     Logger.debug("SendMessageAction::start() Adding attachment path:", attachmentPath);
-                    messageData.addAttachmentPath(attachmentPath);
+                    sendMessageData.addAttachmentPath(attachmentPath);
                 } else {
                     Logger.error("SendMessageAction::start() Illegal attachment path:", attachmentPath);
                 }
             }
-
         }
-        messageData.overrideToken = this.overrideToken;
-        messengerApi.sendMessage(messageData, (messageSuccess, json) => {
-            if(messageSuccess) {
-                Logger.debug("SendMessageAction::start() Message sent successfully");
-            } else {
-                Logger.error("SendMessageAction::start() Unable to send message");
-            }
-            flowCallback();
-        });
+
+        if(this.overrideToken) {
+            sendMessageData.setOverrideToken(this.overrideToken);
+        }
+
+        var json = await messengerClient.sendMessage(sendMessageData);
+        if(json) {
+            Logger.debug("SendMessageAction::start() Message sent successfully");
+        } else {
+            Logger.error("SendMessageAction::start() Unable to send message");
+        }
+        flowCallback();
     }
 
     addMessageFormatter(formatter) {

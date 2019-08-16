@@ -3,6 +3,7 @@ const Answers = require('./answers.js');
 const AnswerCondition = require('./conditions/answer-condition.js');
 const AttachmentQuestion = require('./questions/attachment-question.js');
 const BackAction = require('./actions/back-action.js');
+const ChatTools = require('./utils/chat-tools.js');
 const CloseGroupAction = require('./actions/close-group-action.js');
 const CompleteMentionsAction = require('./actions/complete-mentions-action.js');
 const EmailQuestion = require('./questions/email-question.js');
@@ -18,6 +19,7 @@ const PhoneNumberQuestion = require('./questions/phone-number-question.js');
 const PendingRequest = require('./pending-request.js');
 const PolarQuestion = require('./questions/polar-question.js');
 const Question = require('./questions/question.js');
+const SendMessageData = require('./containers/send-message-data.js');
 const SetAnswerAction = require('./actions/set-answer-action.js');
 const StopConditionAction = require('./actions/stop-condition-action.js');
 const StringTools = require('./utils/string-tools.js');
@@ -803,16 +805,16 @@ class Flow {
         if(!this.msg || !this.msg.message || !this.msg.message.user) {
             return;
         }
-        var questionPayload;
-        if(this.control.messengerApi && this.restartButtonName && this.restartButtonLabel) {
-            questionPayload = this.control.createQuestionPayload();
-            questionPayload.multiAnswer = false;
-//            questionPayload.style = "horizontal";
+
+        var sendMessageData = new SendMessageData();
+        sendMessageData.setHubotMessage(this.msg.message);
+        sendMessageData.setMessage(text);
+        if(this.restartButtonName && this.restartButtonLabel) {
             var style = this.restartButtonStyle || "theme";
-            questionPayload.addOption(this.restartButtonName, this.restartButtonLabel, style);
-            questionPayload.addUserId(this.control.getUserId(this.msg.message.user));
+            sendMessageData.addQuestionButtonWithName(this.restartButtonName, this.restartButtonLabel, style);
+            sendMessageData.addRequestUserId(ChatTools.getUserId(this.msg.message.user));
         }
-        this.control.sendRequestMessage(this.msg.message, text, questionPayload);
+        this.control.sendRequestMessage(sendMessageData);
     }
 
     // Set the flow stopped callback function

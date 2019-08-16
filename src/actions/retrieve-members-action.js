@@ -1,5 +1,6 @@
 const Action = require('./action.js');
 const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
+const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
 
 class RetrieveMembersAction extends Action {
@@ -9,11 +10,11 @@ class RetrieveMembersAction extends Action {
         }, 0);
     }
 
-    start(response, answers, flowCallback) {
+    async start(response, answers, flowCallback) {
         this.answers = answers;
         this.flowCallback = flowCallback;
-        if(!this.flow || !this.flow.msg || !this.flow.control || !this.flow.control.messengerApi) {
-            Logger.error("RetrieveMembersAction::start() Invalid Flow, Control or MessengerApi");
+        if(!this.flow || !this.flow.msg || !this.flow.control) {
+            Logger.error("RetrieveMembersAction::start() Invalid Flow or Control");
             this.done(null);
             return;
         }
@@ -24,7 +25,7 @@ class RetrieveMembersAction extends Action {
             chatId = AnswerOrFixed.get(this.chatId, answers);
             isAux = AnswerOrFixed.get(this.isAux, answers);
         } else {
-            var isGroup = this.flow.control.isUserInGroup(this.flow.msg.message.user);
+            var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
                 Logger.error("RetrieveMembersAction::start() Not a group chat");
                 flowCallback();
@@ -39,10 +40,8 @@ class RetrieveMembersAction extends Action {
             return;
         }
 
-        this.flow.control.messengerApi.getGroupMembers(chatId, isAux, (success, json) => {
-            this.done(json);
-            return;
-        }, this.overrideToken);
+        var json = await this.flow.control.messengerClient.getGroupMembers(chatId, isAux, this.overrideToken);
+        this.done(json);
     }
 
     done(value) {

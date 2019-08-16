@@ -1,6 +1,8 @@
+const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
 const Question = require('./question.js');
 const RegexTools = require('./../utils/regex-tools.js');
+const SendMessageData = require('./../containers/send-message-data.js');
 
 // Multiple choice question, add options by regex and optional sub flow
 class MultipleChoiceQuestion extends Question {
@@ -113,22 +115,19 @@ class MultipleChoiceQuestion extends Question {
         return this.requestMessageId;
     }
 
-    send(control, msg, callback) {
-        if(control.messengerApi && this.useButtons) {
+    async send(control, msg, callback) {
+        if(this.useButtons) {
             var answers;
             if(this.flow) {
                 answers = this.flow.answers;
             }
+            var sendMessageData = new SendMessageData();
+            var messageText =  this.getQuestionText(answers);
+            sendMessageData.setMessage(messageText);
+            sendMessageData.setHubotMessage(msg.message);
+            var requestStyle = this.questionStyle || "horizontal";
+            sendMessageData.setRequestOptions(this.multiAnswer, requestStyle);
 
-            var messageData = control.createSendMessageData();
-            messageData.message = this.getQuestionText(answers);
-            messageData.chatId = msg.message.room;
-            messageData.isGroup = control.isUserInGroup(msg.message.user);
-            messageData.isAux = false;
-
-            var questionPayload = control.createQuestionPayload();
-            questionPayload.multiAnswer = this.multiAnswer;
-            questionPayload.style = this.questionStyle || "horizontal";
             for(let i in this.options) {
                 var option = this.options[i];
 
@@ -140,59 +139,52 @@ class MultipleChoiceQuestion extends Question {
                 if(!label) {
                     label = "Label" + i;
                 }
+                var style = option.style || "theme";
 
                 var name = option.name || option.regex;
                 if(name) {
                     name = name.toLowerCase();
+                    sendMessageData.addQuestionButtonWithName(name, label, style);
                 } else {
-                    name = "name" + i;
+                    sendMessageData.addQuestionButton(label, style);
                 }
 
-                var style = option.style || "theme";
-                questionPayload.addOption(name, label, style);
             }
             if(this.isMultiUser && this.userIds && this.userIds.length > 0) {
                 let remainingUserIds = this.getRemainingUserIds();
                 if(remainingUserIds && remainingUserIds.length > 0) {
-                    questionPayload.addUserIds(remainingUserIds);
+                    sendMessageData.addRequestUserIds(remainingUserIds);
                 } else {
                     Logger.error("MultipleChoiceQuestion::send() Got no remaining user ids for multi-user question: " + this.answerKey);
-                    questionPayload.addUserId(control.getUserId(msg.message.user));
+                    sendMessageData.addRequestUserId(ChatTools.getUserId(msg.message.user));
                 }
             } else {
-                questionPayload.addUserId(control.getUserId(msg.message.user));
+                sendMessageData.addRequestUserId(ChatTools.getUserId(msg.message.user));
             }
-            messageData.payload = questionPayload;
 
-            var question = this;
-            question.usePendingRequests = true;
-
-            question.setListenersAndPendingRequests(control, msg, callback);
+            this.usePendingRequests = true;
+            this.setListenersAndPendingRequests(control, msg, callback);
 
             control.sendComposing(msg);
 
-            // Send the message and parse result in callback
-            control.messengerApi.sendMessage(messageData, function(success, json) {
-                Logger.debug("MultipleChoiceQuestion::send() Successful: " + success);
-                if(json != null) {
-                    var messageId = json["id"];
-                    Logger.debug("MultipleChoiceQuestion::send() Question message id: " + messageId);
-                    question.requestMessageId = messageId;
-                } else {
-                    var fallbackText = question.getQuestionText(answers);
-                    for(let i in questionPayload.questionOptions) {
-                        var option = questionPayload.questionOptions[i];
-                        fallbackText += "\n • \"" + option.name + "\" - " + option.label;
-                    }
-                    msg.send(fallbackText);
+            var json = await control.messengerClient.sendMessage(sendMessageData);
+            var success = json != null;
+            Logger.debug("MultipleChoiceQuestion::send() Successful: " + success);
+            if(json != null) {
+                var messageId = json["id"];
+                Logger.debug("MultipleChoiceQuestion::send() Question message id: " + messageId);
+                this.requestMessageId = messageId;
+            } else {
+                var fallbackText = messageText;
+                for(let i in this.options) {
+                    var option = this.options[i];
+                    fallbackText += "\n • \"" + option.name + "\" - " + option.label;
                 }
-            });
-        } else {
-            if(this.useButtons) {
-                Logger.error("MultipleChoiceQuestion::send() Messenger API instance not set");
+                msg.send(fallbackText);
             }
+        } else {
             this.setListenersAndPendingRequests(control, msg, callback);
-            msg.send(this.getQuestionText(answers));
+            msg.send(messageText);
         }
     }
 
