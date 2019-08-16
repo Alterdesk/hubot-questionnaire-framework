@@ -1,5 +1,6 @@
 const {Response, User, Message, TextMessage, LeaveMessage, TopicMessage} = require('hubot');
 
+const BotApi = require('./bot-api.js');
 const ChatTools = require('./utils/chat-tools.js');
 const Logger = require('./logger.js');
 const MessengerClient = require('./clients/messenger-client.js');
@@ -84,17 +85,13 @@ class Control {
 
     // Override the default receiver
     overrideReceiver(robot) {
-        this.robot = robot;
         // Check if robot receiver is already overridden
         if(robot.defaultRobotReceiver != null) {
             Logger.error("Control::overrideReceiver() Robot receiver already overridden!")
             return;
         }
-
-        var control = this;
-
-        // Store robot instance
-        control.robot = robot;
+        this.robot = robot;
+        this.botApi = new BotApi(robot, this);
 
         // Store default robot receiver in separate variable
         robot.defaultRobotReceiver = robot.receive;
@@ -103,14 +100,14 @@ class Control {
         robot.receive = (message) => {
             Logger.debug("Control::receive() Message:", message);
 
-            if(control.robotUserId == null && robot.user != null) {
-                control.robotUser = robot.user;
-                control.robotUserId = robot.user.id;
+            if(this.robotUserId == null && robot.user != null) {
+                this.robotUser = robot.user;
+                this.robotUserId = robot.user.id;
             }
 
-            if(control.robotMentionRegex == null && robot.user != null) {
+            if(this.robotMentionRegex == null && robot.user != null) {
                 // Set the robot mention tag regex
-                control.robotMentionRegex = new RegExp("\\[mention=" + robot.user.id + "\\]+", 'i');
+                this.robotMentionRegex = new RegExp("\\[mention=" + robot.user.id + "\\]+", 'i');
             }
 
             var className;
@@ -125,89 +122,89 @@ class Control {
                 var event = message.text;
                 Logger.debug("Control::receive() TopicMessage: \"" + event + "\"");
                 if(event === "authenticated") {
-                    if(control.authenticatedCallback) {
-                        control.authenticatedCallback(message.id);
+                    if(this.authenticatedCallback) {
+                        this.authenticatedCallback(message.id);
                     }
                 } else if(event === "typing" || event === "stop_typing") {
-                    if(control.typingCallback) {
+                    if(this.typingCallback) {
                         var userId = ChatTools.getUserId(message.user);
                         var isGroup = ChatTools.isUserInGroup(message.user);
-                        control.typingCallback(userId, event === "typing", message.room, isGroup);
+                        this.typingCallback(userId, event === "typing", message.room, isGroup);
                     }
                 } else if(event === "presence_update") {
-                    if(control.presenceCallback) {
-                        control.presenceCallback(message.user.id, message.id);
+                    if(this.presenceCallback) {
+                        this.presenceCallback(message.user.id, message.id);
                     }
                 } else if(event === "new_conversation" || message.text === "new_groupchat") {
-                    if(control.newChatCallback) {
-                        control.newChatCallback(message.id, message.text === "new_groupchat");
+                    if(this.newChatCallback) {
+                        this.newChatCallback(message.id, message.text === "new_groupchat");
                     }
                 } else if(event === "groupchat_removed") {
-                    if(control.removedFromChatCallback) {
-                        control.removedFromChatCallback(message.id);
+                    if(this.removedFromChatCallback) {
+                        this.removedFromChatCallback(message.id);
                     }
                 } else if(event === "groupchat_closed") {
-                    if(control.closedChatCallback) {
-                        control.closedChatCallback(message.id);
+                    if(this.closedChatCallback) {
+                        this.closedChatCallback(message.id);
                     }
                 } else if(event === "conversation_message_liked" || event === "groupchat_message_liked") {
-                    if(control.messageLikedCallback) {
+                    if(this.messageLikedCallback) {
                         var userId = ChatTools.getUserId(message.user);
                         var isGroup = ChatTools.isUserInGroup(message.user);
-                        control.messageLikedCallback(userId, message.id, message.room, isGroup);
+                        this.messageLikedCallback(userId, message.id, message.room, isGroup);
                     }
                 } else if(event === "conversation_message_deleted" || event === "groupchat_message_deleted") {
-                    if(control.messageDeletedCallback) {
+                    if(this.messageDeletedCallback) {
                         var userId = ChatTools.getUserId(message.user);
                         var isGroup = ChatTools.isUserInGroup(message.user);
-                        control.messageDeletedCallback(userId, message.id, message.room, isGroup);
+                        this.messageDeletedCallback(userId, message.id, message.room, isGroup);
                     }
                 } else if(event === "conversation_verification_accepted" || event === "conversation_verification_rejected"
                     || event === "groupchat_verification_accepted" || event === "groupchat_verification_rejected") {
-                    if(control.hasPendingRequest(message)) {
-                        var pendingRequest = control.removePendingRequest(message);
+                    if(this.hasPendingRequest(message)) {
+                        var pendingRequest = this.removePendingRequest(message);
                         pendingRequest.call(message);
                     }
-                    if(control.verificationCallback) {
+                    if(this.verificationCallback) {
                         var userId = ChatTools.getUserId(message.user);
                         var isGroup = ChatTools.isUserInGroup(message.user);
                         var accepted = event === "conversation_verification_accepted" || event === "groupchat_verification_accepted";
-                        control.verificationCallback(userId, message.id, message.room, isGroup, accepted);
+                        this.verificationCallback(userId, message.id, message.room, isGroup, accepted);
                     }
                 } else if(event === "conversation_question_answer" || event === "groupchat_question_answer") {
-                    if(control.hasPendingRequest(message)) {
-                        var pendingRequest = control.removePendingRequest(message);
+                    if(this.hasPendingRequest(message)) {
+                        var pendingRequest = this.removePendingRequest(message);
                         pendingRequest.call(message);
                     } else if(message.id) {
-                        control.checkCommandButton(message);
+                        this.checkCommandButton(message);
                     }
-                    if(control.questionCallback && message.id) {
+                    if(this.questionCallback && message.id) {
                         var userId = ChatTools.getUserId(message.user);
                         var isGroup = ChatTools.isUserInGroup(message.user);
                         var messageId = message.id["message_id"];
                         var options = message.id["options"];
                         if(messageId && options) {
-                            control.questionCallback(userId, messageId, message.room, isGroup, options);
+                            this.questionCallback(userId, messageId, message.room, isGroup, options);
                         }
                     }
                 } else if(event === "groupchat_members_added" || event === "groupchat_members_removed") {
-                    if(control.groupMemberCallback) {
+                    if(this.groupMemberCallback) {
                         var data = message.id;
-                        control.groupMemberCallback(message.room, event === "groupchat_members_added", data.user_id, data.users);
+                        this.groupMemberCallback(message.room, event === "groupchat_members_added", data.user_id, data.users);
                     }
                 } else if(event === "groupchat_subscribed" || event === "groupchat_unsubscribed") {
-                    if(control.groupSubscribedCallback) {
-                        control.groupSubscribedCallback(message.id, event === "groupchat_subscribed");
+                    if(this.groupSubscribedCallback) {
+                        this.groupSubscribedCallback(message.id, event === "groupchat_subscribed");
                     }
                 }
-                if(control.catchTopics) {
+                if(this.catchTopics) {
                     return;
                 }
             } else if(className === "TextMessage" || message instanceof TextMessage) {
                 Logger.debug("Control::receive() TextMessage: \"" + message.text + "\"");
                 // Check for listeners waiting for a message
-                if (control.hasListener(message)) {
-                    var listener = control.removeListener(message);
+                if (this.hasListener(message)) {
+                    var listener = this.removeListener(message);
                     listener.call(message);
                     return;
                 }
@@ -223,8 +220,8 @@ class Control {
                 var commandString = message.text.toLowerCase();
 
                 var isMentioned;
-                if(control.robotMentionRegex != null) {
-                    var mentionMatch = commandString.match(control.robotMentionRegex);
+                if(this.robotMentionRegex != null) {
+                    var mentionMatch = commandString.match(this.robotMentionRegex);
                     if(mentionMatch) {
                         commandString = commandString.replace(mentionMatch[0], "");
                     }
@@ -234,23 +231,23 @@ class Control {
                 }
 
                 // Only listen for messages in groups when mentioned
-                if(isGroup && !isMentioned && control.needMentionInGroup) {
+                if(isGroup && !isMentioned && this.needMentionInGroup) {
                     // Ignoring message, not mentioned and no listeners for user in room
                     Logger.debug("Control::receive() Ignoring message, not mentioned when needed and no listeners for user in room");
                     return;
                 }
 
                 // Check if the user has sent the help command
-                if(control.catchHelpCommand && commandString.match(control.helpRegex) != null) {
+                if(this.catchHelpCommand && commandString.match(this.helpRegex) != null) {
                     Logger.debug("Control::receive() Help detected");
-                    control.sendHelpMessage(message);
+                    this.sendHelpMessage(message);
                     return;
                 }
 
                 // Check if an accepted command was sent
                 var unknownCommand = true;
-                for(let index in control.acceptedRegex) {
-                    var match = commandString.match(control.acceptedRegex[index]);
+                for(let index in this.acceptedRegex) {
+                    var match = commandString.match(this.acceptedRegex[index]);
                     if(match != null) {
                         unknownCommand = false;
                         Logger.debug("Control::receive() Command detected: \"" + match + "\"");
@@ -259,15 +256,15 @@ class Control {
                 }
 
                 // Stop if catch all is enabled and an unknown command was sent
-                if(control.catchAllCommands && unknownCommand) {
-                    if(control.catchAllStartCommand && (!isGroup || isMentioned) && control.acceptedCommands.length === 1) {
-                        var accepted = control.acceptedCommands[0];
+                if(this.catchAllCommands && unknownCommand) {
+                    if(this.catchAllStartCommand && (!isGroup || isMentioned) && this.acceptedCommands.length === 1) {
+                        var accepted = this.acceptedCommands[0];
                         Logger.debug("Control::receive() Catched unknown command, changed to \"" + accepted + "\"");
                         message.text = accepted;
                     } else {
                         if(!isGroup || isMentioned) {
                             Logger.debug("Control::receive() Catched unknown command");
-                            control.sendCatchAllMessage(message);
+                            this.sendCatchAllMessage(message);
                         } else {
                             Logger.debug("Control::receive() Ignoring unknown command in group");
                         }
@@ -277,12 +274,12 @@ class Control {
 
             } else if(className === "LeaveMessage" || message instanceof LeaveMessage) {
                 Logger.debug("Control::receive() Leave detected: " + message.user.id);
-                if(control.removeListenerOnLeave) {
-                    if(control.hasListener(message)) {
-                        control.removeListener(message);
+                if(this.removeListenerOnLeave) {
+                    if(this.hasListener(message)) {
+                        this.removeListener(message);
                     }
-                    if(control.hasPendingRequest(message)) {
-                        control.removePendingRequest(message);
+                    if(this.hasPendingRequest(message)) {
+                        this.removePendingRequest(message);
                     }
                 }
             }
