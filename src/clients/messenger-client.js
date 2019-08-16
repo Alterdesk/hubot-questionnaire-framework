@@ -46,7 +46,7 @@ class MessengerClient extends JsonRestClient {
     downloadAttachment(attachment, chatId, isGroup, isAux, overrideToken) {
         return new Promise(async (resolve) => {
             try {
-                logger.debug("Api::downloadAttachment() ", attachment);
+                logger.debug("MessengerClient::downloadAttachment() ", attachment);
                 var attachmentId = attachment["id"];
                 var filename = attachment["name"];
                 var mime = attachment["mime_type"];
@@ -65,14 +65,14 @@ class MessengerClient extends JsonRestClient {
                 var getUrl = methodPrefix + encodeURIComponent(chatId) + "/attachments/" + attachmentId + this.toGetParameters(getData);
                 var urlJson = await this.get(getUrl, overrideToken);
                 if(!urlJson) {
-                    logger.error("Api::downloadAttachment() Unable to retrieve download url:", attachment);
+                    logger.error("MessengerClient::downloadAttachment() Unable to retrieve download url:", attachment);
                     resolve(null);
                     return;
                 }
                 var url = urlJson["link"];
                 var downloadPath = await this.download(url, filename, mime, overrideToken);
                 if(!downloadPath) {
-                    logger.error("Api::downloadAttachment() Unable to download attachment:", url, attachment);
+                    logger.error("MessengerClient::downloadAttachment() Unable to download attachment:", url, attachment);
                     resolve(null);
                     return;
                 }
