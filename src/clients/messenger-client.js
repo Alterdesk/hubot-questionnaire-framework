@@ -1,7 +1,6 @@
 const DateTools = require('./../utils/date-tools.js');
 const JsonRestClient = require('./json-rest-client.js');
 const Logger = require('./../logger.js');
-const SendMessageData = require('./../containers/send-message-data.js');
 
 class MessengerClient extends JsonRestClient {
     constructor() {
@@ -344,10 +343,6 @@ class MessengerClient extends JsonRestClient {
     // Format a date to a timestamp
     dateToString(date) {
         return DateTools.formatToUTC(date, "YYYY-MM-DDTHH:mm:ss") + "Z+00:00";
-    }
-
-    createSendMessageData() {   // TODO Check if can be deleted
-        return new SendMessageData()
     }
 
 }
