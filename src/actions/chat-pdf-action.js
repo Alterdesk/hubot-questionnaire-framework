@@ -97,8 +97,10 @@ class ChatPdfAction extends Action {
         var json = await messengerClient.sendMessage(sendMessageData);
         var messageSuccess = json != null;
         if(this.answerKey) {
-            answers.add(this.answerKey + "_file_path", filePath);
             answers.add(this.answerKey, messageSuccess);
+            if(messageSuccess) {
+                answers.add(this.answerKey + "_file_path", filePath);
+            }
         }
         if(messageSuccess) {
             Logger.debug("ChatPdfAction::start() PDF message sent successfully");
