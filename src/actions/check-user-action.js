@@ -1,4 +1,5 @@
 const Action = require('./action.js');
+const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
 
 class CheckUserAction extends Action {
@@ -18,7 +19,7 @@ class CheckUserAction extends Action {
             return;
         }
 
-        var userId = this.flow.control.getUserId(this.flow.msg.message.user);
+        var userId = ChatTools.getUserId(this.flow.msg.message.user);
         if(!userId || userId.length == 0) {
             Logger.error("CheckUserAction::start() Invalid user id:", userId);
             this.done(null);

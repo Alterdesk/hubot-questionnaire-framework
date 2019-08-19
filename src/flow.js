@@ -907,7 +907,7 @@ class Flow {
                     response.send(flow.backText)
                 }
                 if(flow.control.questionnaireBackCallback) {
-                    var userId = flow.control.getUserId(flow.msg.message.user);
+                    var userId = ChatTools.getUserId(flow.msg.message.user);
                     flow.control.questionnaireBackCallback(userId, false, flow.answers);
                 }
                 // Try to go back
@@ -926,7 +926,7 @@ class Flow {
                     response.send(flow.checkpointText)
                 }
                 if(flow.control.questionnaireBackCallback) {
-                    var userId = flow.control.getUserId(flow.msg.message.user);
+                    var userId = ChatTools.getUserId(flow.msg.message.user);
                     this.control.questionnaireBackCallback(userId, true, flow.answers);
                 }
                 // Try to go to last checkpoint
@@ -943,7 +943,7 @@ class Flow {
                 Logger.debug("Flow::callback() No valid answer value from listener, resetting listener");
                 if(question.resendOnInvalid) {
                     if(flow.control.questionAnswerRejectedCallback) {
-                        var userId = flow.control.getUserId(response.message.user);
+                        var userId = ChatTools.getUserId(response.message.user);
                         var useKey;
                         if(question.originalAnswerKey) {
                             useKey = question.originalAnswerKey;
@@ -1003,7 +1003,7 @@ class Flow {
                 multiAnswers = new Answers();
                 this.answers.add(question.answerKey, multiAnswers);
             }
-            var userId = this.control.getUserId(response.message.user);
+            var userId = ChatTools.getUserId(response.message.user);
             multiAnswers.add(userId, answerValue);
             Logger.debug("Flow::onAnswer() Added multi-user answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
 
@@ -1101,7 +1101,7 @@ class Flow {
 
             // Call question answered callback if set
             if(this.control.questionAnsweredCallback) {
-                var userId = this.control.getUserId(this.msg.message.user);
+                var userId = ChatTools.getUserId(this.msg.message.user);
                 var useKey;
                 if(question.originalAnswerKey) {
                     useKey = question.originalAnswerKey;
@@ -1198,7 +1198,7 @@ class Flow {
             return;
         }
         if(this.control.actionDoneCallback) {
-            var userId = this.control.getUserId(this.msg.message.user);
+            var userId = ChatTools.getUserId(this.msg.message.user);
             this.control.actionDoneCallback(userId, action, this.answers);
         }
         var className = "";
@@ -1317,7 +1317,7 @@ class Flow {
                 this.stoppedCallback(this.msg, error, this.answers);
             }
             if(this.control.questionnaireStoppedCallback) {
-                var userId = this.control.getUserId(this.msg.message.user);
+                var userId = ChatTools.getUserId(this.msg.message.user);
                 this.control.questionnaireStoppedCallback(userId, error, this.answers);
             }
         }
@@ -1422,7 +1422,7 @@ class Flow {
                     }
                 } else {
                     // Check and parse pre-filled answer
-                    var userId = this.control.getUserId(this.msg.message.user);
+                    var userId = ChatTools.getUserId(this.msg.message.user);
                     var matches;
                     if(answerValue && answerValue.match) {
                         matches = answerValue.match(question.regex);
