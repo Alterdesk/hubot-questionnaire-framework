@@ -4,10 +4,10 @@ const Logger = require('./../logger.js');
 
 class MessengerClient extends JsonRestClient {
     constructor() {
-        var url = process.env.NODE_ALTERDESK_URL || "https://api.alterdesk.com/v1/";
-        var port = process.env.NODE_ALTERDESK_PORT || 443;
+        var url = process.env.HUBOT_ALTERDESK_URL || process.env.NODE_ALTERDESK_URL || "https://api.alterdesk.com/v1/";
+        var port = process.env.HUBOT_ALTERDESK_PORT || process.env.NODE_ALTERDESK_PORT || 443;
         super(url, port);
-        var token = process.env.NODE_ALTERDESK_TOKEN;
+        var token = process.env.HUBOT_ALTERDESK_TOKEN || process.env.NODE_ALTERDESK_TOKEN;
         if(token) {
             this.setApiToken(token);
         }
