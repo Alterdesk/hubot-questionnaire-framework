@@ -23,7 +23,7 @@ class StringTools {
         if(typeof string !== "string" || string == "" || search == null || replace == null) {
             return string;
         }
-        return string.replace(new RegExp(escapeRegex(search), 'g'), replace);
+        return string.replace(new RegExp(StringTools.escapeRegex(search), 'g'), replace);
     }
 
     static safeName(string, maxLength, lowerCase, collapseBlocked) {
@@ -109,7 +109,7 @@ class StringTools {
             if(nextIndex < words.length) {
                 result += word;
             } else {
-                result += capitalizeFirstLetter(word);
+                result += StringTools.capitalizeFirstLetter(word);
             }
         }
         return result;
