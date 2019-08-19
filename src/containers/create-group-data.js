@@ -55,9 +55,9 @@ class CreateGroupData {
 
     getPostUrl() {
         if(this.auxId != null) {
-            postUrl = "aux/groupchats";
+            return "aux/groupchats";
         } else {
-            postUrl = "groupchats";
+            return "groupchats";
         }
     }
 
