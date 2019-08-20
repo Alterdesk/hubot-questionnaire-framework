@@ -5,18 +5,19 @@ const Logger = require('./../logger.js');
 
 class CloseGroupAction extends Action {
     constructor() {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
         this.isAux = false;
     }
 
-    async start(response, answers, flowCallback) {
+    async start(flowCallback) {
         if(!this.flow || !this.flow.msg || !this.flow.control) {
             Logger.error("CloseGroupAction::start() Invalid Flow or Control");
             flowCallback();
             return;
         }
+        var answers = this.flow.answers;
         var chatId;
         var isAux;
         if(this.chatId) {
@@ -25,6 +26,7 @@ class CloseGroupAction extends Action {
         } else {
             var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
+                Logger.error("CloseGroupAction::start() Not a group chat");
                 flowCallback();
                 return;
             }

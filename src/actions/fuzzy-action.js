@@ -5,10 +5,10 @@ const Logger = require('./../logger.js');
 const RegexTools = require('./../utils/regex-tools.js');
 const StringTools = require('./../utils/string-tools.js');
 
-class FuzzyAction extends Action {  // TODO This class may be subject to change
+class FuzzyAction extends Action {
     constructor(answerKey, questionText, invalidText, waitMs) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, waitMs);
 
         this.answerKey = answerKey;
@@ -24,24 +24,23 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         this.indexOptions = ["abc","def","ghi","jkl","mno","pqrs","tuv","wxyz"];
     }
 
-    start(response, answers, flowCallback) {
-        Logger.debug("FuzzyAction::start() \"" + this.answerKey + "\"");
-        this.answers = answers;
+    start(flowCallback) {
+        var answerKey = this.getAnswerKey();
+        Logger.debug("FuzzyAction::start() \"" + answerKey + "\"");
         this.flowCallback = flowCallback;
-
-        this.reset(answers);
-
+        this.reset();
         this.askText(this.questionText);
     }
 
     askText(text) {
         Logger.debug("FuzzyAction::askText()", text);
-        var textAnswerKey = this.answerKey + "_text_" + this.textAttempts;
+        var answerKey = this.getAnswerKey();
+        var textAnswerKey = answerKey + "_text_" + this.textAttempts;
         this.steps.push(textAnswerKey);
         this.textAttempts++;
         var askTextFlow = this.flow.createInstance()
         .text(textAnswerKey, text, this.invalidText)
-        .action((response, answers, subFlowCallback) => {
+        .action((subFlowCallback) => {
             this.askedQuestions = true;
             this.checkText(textAnswerKey);
             subFlowCallback();
@@ -51,7 +50,8 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
 
     showCandidates(candidates, text, askAgainOnDidNot) {
         Logger.debug("FuzzyAction::showCandidates() Candidates: " + candidates.length);
-        var candidateAnswerKey = this.answerKey + "_candidate_" + this.candidateAttempts;
+        var answerKey = this.getAnswerKey();
+        var candidateAnswerKey = answerKey + "_candidate_" + this.candidateAttempts;
         var candidateText = text || "";
         this.steps.push(candidateAnswerKey);
         this.candidateAttempts++;
@@ -67,8 +67,8 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         }
         askDidMeanFlow.option(this.didNotRegex)
         .button(this.didNotButtonName, this.didNotButtonLabel, this.didNotButtonStyle)
-        .action((response, answers, subFlowCallback) => {
-            var answerValue = answers.get(candidateAnswerKey);
+        .action((subFlowCallback) => {
+            var answerValue = this.flow.answers.get(candidateAnswerKey);
             if(!answerValue || !answerValue.match || answerValue.match(this.didNotRegex)) {
                 if(this.maxAttempts > 0 && this.textAttempts >= this.maxAttempts
                         && (this.failFlow || !this.indexText || !this.indexOptionText)) {
@@ -131,7 +131,8 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
             this.askText(this.reformulateText || this.questionText);
             return;
         }
-        var indexAnswerKey = this.answerKey + "_index_" + this.indexAttempts;
+        var answerKey = this.getAnswerKey();
+        var indexAnswerKey = answerKey + "_index_" + this.indexAttempts;
         this.steps.push(indexAnswerKey);
         this.indexAttempts++;
         var indexFlow = this.flow.createInstance()
@@ -143,8 +144,8 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
             indexFlow.option(RegexTools.getOptionRegex(option))
             .button(option, label, style);
         }
-        indexFlow.action((response, answers, subFlowCallback) => {
-            var answerValue = answers.get(indexAnswerKey);
+        indexFlow.action((subFlowCallback) => {
+            var answerValue = this.flow.answers.get(indexAnswerKey);
             this.showIndexOption(answerValue);
             subFlowCallback();
         });
@@ -169,7 +170,7 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
     }
 
     checkText(textAnswerKey) {
-        var answerValue = this.answers.get(textAnswerKey);
+        var answerValue = this.flow.answers.get(textAnswerKey);
         Logger.debug("FuzzyAction::checkText() Checking: attempt: key: " + textAnswerKey + " value: " + answerValue);
 
         this.lastText = answerValue;
@@ -234,8 +235,8 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
             }
         }
 
-        this.answers.add(textAnswerKey + "_matches", matches);
-        this.answers.add(textAnswerKey + "_possible", possible);
+        this.flow.answers.add(textAnswerKey + "_matches", matches);
+        this.flow.answers.add(textAnswerKey + "_possible", possible);
 
         if(!this.alwaysConfirm && matchedCandidates.length === 1 && possibleCandidates.length === 0) {
             this.done(matchedCandidates[0]);
@@ -273,18 +274,19 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
     }
 
     done(candidate) {
-        Logger.debug("FuzzyAction::done() Answer key: \"" + this.answerKey + "\" candidate:", candidate);
+        var answerKey = this.getAnswerKey();
+        Logger.debug("FuzzyAction::done() Answer key: \"" + answerKey + "\" candidate:", candidate);
         if(candidate) {
             if(candidate.name) {
-                this.answers.add(this.answerKey, candidate.name);
+                this.flow.answers.add(answerKey, candidate.name);
                 if(candidate.label) {
-                    this.answers.add(this.answerKey + "_label", candidate.label);
+                    this.flow.answers.add(answerKey + "_label", candidate.label);
                 }
             }
         } else if(this.failName) {
-            this.answers.add(this.answerKey, this.failName);
+            this.flow.answers.add(answerKey, this.failName);
             if(this.failLabel) {
-                this.answers.add(this.answerKey + "_label", this.failLabel);
+                this.flow.answers.add(answerKey + "_label", this.failLabel);
             }
         }
         if(candidate) {
@@ -295,29 +297,29 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
             this.setSubFlow(this.failFlow);
         }
         if(this.textAttempts && this.textAttempts > 0) {
-            var attemptsKey = this.answerKey + "_attempts";
+            var attemptsKey = answerKey + "_attempts";
             Logger.debug("FuzzyAction::done() Adding key: " + attemptsKey + " value: " + this.textAttempts);
-            this.answers.add(attemptsKey, this.textAttempts);
+            this.flow.answers.add(attemptsKey, this.textAttempts);
         }
         if(this.steps && this.steps.length > 0) {
-            var stepsKey = this.answerKey + "_steps";
+            var stepsKey = answerKey + "_steps";
             Logger.debug("FuzzyAction::done() Adding key: " + stepsKey + " value: " + this.steps);
-            this.answers.add(stepsKey, this.steps);
+            this.flow.answers.add(stepsKey, this.steps);
         }
         if(this.lastText && this.lastText !== "") {
-            var textKey = this.answerKey + "_text";
+            var textKey = answerKey + "_text";
             Logger.debug("FuzzyAction::done() Adding key: " + textKey + " value: " + this.lastText);
-            this.answers.add(textKey, this.lastText);
+            this.flow.answers.add(textKey, this.lastText);
         }
-        var successKey = this.answerKey + "_success";
+        var successKey = answerKey + "_success";
         var successValue = candidate != null;
         Logger.debug("FuzzyAction::done() Adding key: " + successKey + " value: " + successValue);
-        this.answers.add(successKey, successValue);
+        this.flow.answers.add(successKey, successValue);
 
-//        var keys = this.answers.getKeysWithPrefix(this.answerKey);
+//        var keys = this.flow.answers.getKeysWithPrefix(answerKey);
 //        for(let i in keys) {
 //            var key = keys[i];
-//            var value = this.answers.get(key);
+//            var value = this.flow.answers.get(key);
 //            Logger.debug("FuzzyAction::done() Key: \"" + key + "\" Value: \"" + value + "\"");
 //        }
 
@@ -385,15 +387,17 @@ class FuzzyAction extends Action {  // TODO This class may be subject to change
         this.combineMatches = combineMatches;
     }
 
-    reset(answers) {
-        super.reset(answers);
+    reset() {
+        super.reset();
         this.steps = [];
         this.textAttempts = 0;
         this.candidateAttempts = 0;
         this.indexAttempts = 0;
         this.lastText = null;
 
-        var keys = this.answers.getKeysWithPrefix(this.answerKey);
+        var answers = this.flow.answers;
+        var answerKey = this.getAnswerKey();
+        var keys = answers.getKeysWithPrefix(answerKey);
         for(let i in keys) {
             var key = keys[i];
             answers.remove(key);

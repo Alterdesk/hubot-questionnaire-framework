@@ -6,13 +6,13 @@ const Logger = require('./../logger.js');
 
 class ChangeGroupSettingsAction extends Action {
     constructor() {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
     }
 
-    async start(response, answers, flowCallback) {
-        this.answers = answers;
+    async start(flowCallback) {
+        this.answers = this.flow.answers;
         this.flowCallback = flowCallback;
         if(!this.flow || !this.flow.msg || !this.flow.control) {
             Logger.error("ChangeGroupSettingsAction::start() Invalid Flow or Control");
@@ -106,13 +106,6 @@ class ChangeGroupSettingsAction extends Action {
 
     setOverrideToken(overrideToken) {
         this.overrideToken = overrideToken;
-    }
-
-    reset(answers) {
-        super.reset(answers);
-        if(this.answerKey) {
-            answers.remove(this.answerKey);
-        }
     }
 }
 

@@ -5,8 +5,8 @@ const Logger = require('./../logger.js');
 
 class InviteAction extends Action {
     constructor(inviteType, firstName, lastName, email, auxId) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
         this.inviteType = inviteType;
         this.firstName = firstName;
@@ -15,8 +15,8 @@ class InviteAction extends Action {
         this.inviteFormatters = [];
     }
 
-    async start(response, answers, flowCallback) {
-        this.answers = answers;
+    async start(flowCallback) {
+        var answers = this.flow.answers;
         this.flowCallback = flowCallback;
         if(!this.flow || !this.flow.msg || !this.flow.control) {
             Logger.error("InviteAction::start() Invalid Flow or Control");
@@ -43,7 +43,7 @@ class InviteAction extends Action {
         var inviteTextValue = AnswerOrFixed.get(this.inviteText, answers);
         for(let i in this.inviteFormatters) {
             var formatter = this.inviteFormatters[i];
-            inviteTextValue = formatter.execute(inviteTextValue, answers, this.flow);
+            inviteTextValue = formatter.execute(inviteTextValue, this.flow);
         }
         if(inviteTextValue && inviteTextValue !== "") {
             inviteUserData.set(inviteTextValue);    // Only used when creating conversation
@@ -60,9 +60,10 @@ class InviteAction extends Action {
     }
 
     done(value) {
-        if(this.answerKey && value != null) {
-            this.answers.add(this.answerKey, value);
-            this.answers.addObject(this.answerKey, value);
+        var answerKey = this.getAnswerKey();
+        if(answerKey && value != null) {
+            this.flow.answers.add(answerKey, value);
+            this.flow.answers.addObject(answerKey, value);
         }
         if(value) {
             if(this.positiveSubFlow) {
@@ -106,13 +107,6 @@ class InviteAction extends Action {
 
     setOverrideToken(overrideToken) {
         this.overrideToken = overrideToken;
-    }
-
-    reset(answers) {
-        super.reset(answers);
-        if(this.answerKey) {
-            answers.remove(this.answerKey);
-        }
     }
 }
 

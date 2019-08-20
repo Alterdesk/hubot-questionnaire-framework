@@ -5,8 +5,8 @@ const Logger = require('./../logger.js');
 
 class RepeatFlowAction extends Action {
     constructor(repeatFlow) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
         this.repeatFlow = repeatFlow;
         this.conditions = [];
@@ -14,7 +14,7 @@ class RepeatFlowAction extends Action {
         this.minIterations = 1;
 
         if(this.repeatFlow) {
-            this.repeatFlow.finish((response, answers) => {
+            this.repeatFlow.finish(() => {
                 Logger.debug("RepeatFlowAction::finish() Iteration finished:", this.iteration);
                 this.askedQuestions = true;
                 this.checkRepeat();
@@ -22,8 +22,7 @@ class RepeatFlowAction extends Action {
         }
     }
 
-    start(response, answers, flowCallback) {
-        this.answers = answers;
+    start(flowCallback) {
         this.flowCallback = flowCallback;
 
         if(!this.repeatFlow) {
@@ -40,15 +39,16 @@ class RepeatFlowAction extends Action {
 
         for(let i in this.conditions) {
             var condition = this.conditions[i];
-            if(!condition.check(this.answers)) {
+            if(!condition.check(this.flow)) {
                 Logger.debug("RepeatFlowAction::checkRepeat() Condition not met: ", condition);
                 this.flowCallback();
                 return;
             }
         }
+        var answers = this.flow.answers;
         var checkIteration = this.iteration;
         checkIteration++;
-        var minIterations = AnswerOrFixed.get(this.minIterations, this.answers);
+        var minIterations = AnswerOrFixed.get(this.minIterations, answers);
         if(!minIterations) {
             Logger.error("RepeatFlowAction::checkRepeat() Invalid minimal iterations given:", minIterations);
             minIterations = 1;
@@ -61,7 +61,7 @@ class RepeatFlowAction extends Action {
 
         if(this.iteration > -1 && this.repeatKey && this.repeatKey !== "") {
             var key = this.repeatKey + "_" + this.iteration;
-            var value = this.answers.get(key);
+            var value = answers.get(key);
             if(value == null) {
                 Logger.debug("RepeatFlowAction::checkRepeat() Repeat answer not given:", key, value);
                 this.flowCallback();
@@ -82,7 +82,7 @@ class RepeatFlowAction extends Action {
         this.iteration++;
         Logger.debug("RepeatFlowAction::nextIteration() Iteration:", this.iteration);
         if(this.repeatKey && this.repeatKey !== "") {
-            this.answers.add(this.repeatKey + "_iteration", this.iteration);
+            this.flow.answers.add(this.repeatKey + "_iteration", this.iteration);
         }
         this.repeatFlow.setRepeatIteration(this.iteration);
         this.flow.startSubFlow(this.repeatFlow, false);
@@ -101,8 +101,8 @@ class RepeatFlowAction extends Action {
         this.minIterations = minIterations;
     }
 
-    reset(answers) {
-        super.reset(answers);
+    reset() {
+        super.reset();
         this.iteration = -1;
     }
 }

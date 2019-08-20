@@ -14,7 +14,7 @@ class ReplaceAnswerFormatter extends Formatter {
         this.bulletStyle = " • ";
     }
 
-    execute(text, answers, flow) {
+    execute(text, flow) {
         var answerKey = this.answerKey;
         if(!answerKey) {
             Logger.error("ReplaceAnswerFormatter::execute() Invalid answerKey: \"" + answerKey + "\"");
@@ -25,14 +25,12 @@ class ReplaceAnswerFormatter extends Formatter {
             return text;
         }
         Logger.debug("ReplaceAnswerFormatter::execute() Using from: \"" + this.from + "\" answerKey: \"" + answerKey + "\"");
-        if(!this.checkConditions(answers)) {
+        if(!this.checkConditions(flow)) {
             Logger.debug("ReplaceAnswerFormatter::execute() Condition not met");
             return text;
         }
-        if(this.repeatIteration > -1) {
-            answerKey = answerKey + "_" + this.repeatIteration;
-        }
-        if(!answers.has(answerKey)) {
+        var answerKey = this.getAnswerKey(flow);
+        if(!flow.answers.has(answerKey)) {
             Logger.debug("ReplaceAnswerFormatter::execute() Answer not found: \"" + answerKey + "\"");
             if(this.fallbackText != null) {
                 Logger.debug("ReplaceAnswerFormatter::execute() Using fallback: \"" + this.fallbackText + "\" answerKey: \"" + answerKey + "\"");
@@ -44,7 +42,7 @@ class ReplaceAnswerFormatter extends Formatter {
             }
             return text;
         }
-        var answerValue = answers.get(answerKey);
+        var answerValue = flow.answers.get(answerKey);
         if(answerValue == null) {
             Logger.error("ReplaceAnswerFormatter::execute() Invalid answer: \"" + answerKey + "\"");
             return text;

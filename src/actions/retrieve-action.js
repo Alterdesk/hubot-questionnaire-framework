@@ -4,13 +4,12 @@ const Logger = require('./../logger.js');
 
 class RetrieveAction extends Action {
     constructor() {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
     }
 
-    async start(response, answers, flowCallback) {
-        this.answers = answers;
+    async start(flowCallback) {
         this.flowCallback = flowCallback;
         if(!this.flow || !this.flow.msg || !this.flow.control) {
             Logger.error("RetrieveAction::start() Invalid Flow or Control");
@@ -18,6 +17,7 @@ class RetrieveAction extends Action {
             return;
         }
 
+        var answers = this.flow.answers;
         if(this.chatId) {
             var chatIdValue = AnswerOrFixed.get(this.chatId, answers);
             if(!chatIdValue) {
@@ -49,16 +49,18 @@ class RetrieveAction extends Action {
     }
 
     done(value) {
-        if(this.answerKey && value != null) {
-            this.answers.add(this.answerKey, value);
+        var answerKey = this.getAnswerKey();
+        if(answerKey && value != null) {
+            var answers = this.flow.answers;
+            answers.add(answerKey, value);
             if(this.chatId) {
                 var subject = value["subject"];
                 if(subject) {
-                    this.answers.add(this.answerKey + "_subject", subject);
+                    answers.add(answerKey + "_subject", subject);
                 }
                 var closed = value["closed"];
                 if(closed != null) {
-                    this.answers.add(this.answerKey + "_closed", closed);
+                    answers.add(answerKey + "_closed", closed);
                 }
                 var members = value["members"];
                 if(members) {
@@ -66,18 +68,18 @@ class RetrieveAction extends Action {
                         var member = members[i];
                         var firstName = member["first_name"];
                         if(firstName) {
-                            this.answers.add(this.answerKey + "_member_first_name_" + i, firstName);
+                            answers.add(answerKey + "_member_first_name_" + i, firstName);
                         }
                         var lastName = member["last_name"];
                         if(lastName) {
-                            this.answers.add(this.answerKey + "_member_last_name_" + i, lastName);
+                            answers.add(answerKey + "_member_last_name_" + i, lastName);
                         }
-                        this.answers.add(this.answerKey + "_member_" + i, member);
+                        answers.add(answerKey + "_member_" + i, member);
                     }
-                    this.answers.add(this.answerKey + "_members", members.length);
+                    answers.add(answerKey + "_members", members.length);
                 }
             } else if(this.userId) {
-                this.answers.addObject(this.answerKey, value);
+                answers.addObject(answerKey, value);
             }
         }
         if(value) {
@@ -117,13 +119,6 @@ class RetrieveAction extends Action {
 
     setOverrideToken(overrideToken) {
         this.overrideToken = overrideToken;
-    }
-
-    reset(answers) {
-        super.reset(answers);
-        if(this.answerKey) {
-            answers.remove(this.answerKey);
-        }
     }
 }
 

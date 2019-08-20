@@ -5,20 +5,19 @@ const Logger = require('./../logger.js');
 
 class RetrieveMembersAction extends Action {
     constructor() {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
     }
 
-    async start(response, answers, flowCallback) {
-        this.answers = answers;
+    async start(flowCallback) {
         this.flowCallback = flowCallback;
         if(!this.flow || !this.flow.msg || !this.flow.control) {
             Logger.error("RetrieveMembersAction::start() Invalid Flow or Control");
             this.done(null);
             return;
         }
-
+        var answers = this.flow.answers;
         var chatId;
         var isAux;
         if(this.chatId) {
@@ -45,9 +44,10 @@ class RetrieveMembersAction extends Action {
     }
 
     done(value) {
-        if(this.answerKey && value != null) {
-            this.answers.add(this.answerKey, value);
-            this.answers.addObject(this.answerKey, value);
+        var answerKey = this.getAnswerKey();
+        if(answerKey && value != null) {
+            this.flow.answers.add(answerKey, value);
+            this.flow.answers.addObject(answerKey, value);
         }
         if(value) {
             if(this.positiveSubFlow) {
@@ -83,13 +83,6 @@ class RetrieveMembersAction extends Action {
 
     setOverrideToken(overrideToken) {
         this.overrideToken = overrideToken;
-    }
-
-    reset(answers) {
-        super.reset(answers);
-        if(this.answerKey) {
-            answers.remove(this.answerKey);
-        }
     }
 }
 

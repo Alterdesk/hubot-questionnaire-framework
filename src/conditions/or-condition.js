@@ -8,15 +8,12 @@ class OrCondition extends Condition {
         this.conditions = [];
     }
 
-    check(answers) {
+    check(flow) {
         Logger.debug("OrCondition::check() Condition count:", this.conditions.length);
-        var inverse = AnswerOrFixed.get(this.inverse, answers, false);
+        var inverse = AnswerOrFixed.get(this.inverse, flow.answers, false);
         for(let i in this.conditions) {
             var condition = this.conditions[i];
-            if(this.repeatIteration > -1) {
-                condition.setRepeatIteration(this.repeatIteration);
-            }
-            if(condition.check(answers)) {
+            if(condition.check(flow)) {
                 Logger.debug("OrCondition::check() Condition met: inverse: " + inverse + " condition:", condition);
                 return !inverse;
             }

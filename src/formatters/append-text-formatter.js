@@ -10,13 +10,13 @@ class AppendTextFormatter extends Formatter {
         this.formatters = [];
     }
 
-    execute(text, answers, flow) {
+    execute(text, flow) {
         if(typeof this.appendText !== "string") {
             Logger.error("AppendTextFormatter::execute() Invalid text:", this.appendText);
             return text;
         }
         Logger.debug("AppendTextFormatter::execute() Using text: \"" + this.appendText + "\"");
-        if(!this.checkConditions(answers)) {
+        if(!this.checkConditions(flow)) {
             Logger.debug("AppendTextFormatter::execute() Condition not met");
             return text;
         }
@@ -31,10 +31,7 @@ class AppendTextFormatter extends Formatter {
         for(let i in this.formatters) {
             var formatter = this.formatters[i];
             formatter.setEscapeHtml(this.escapeHtml);
-            if(this.repeatIteration > -1) {
-                formatter.setRepeatIteration(this.repeatIteration);
-            }
-            result = formatter.execute(result, answers, flow);
+            result = formatter.execute(result, flow);
         }
         if(this.escapeHtml) {
             result = StringTools.escapeHtml(result);

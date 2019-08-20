@@ -1,4 +1,5 @@
 const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
+const ChatTools = require('./../utils/chat-tools.js');
 const Condition = require('./condition.js');
 const Logger = require('./../logger.js');
 
@@ -39,21 +40,16 @@ class AnswerCondition extends Condition {
         this.answerRanges[answerKey] = new AnswerRange(min, max);
     }
 
-    check(answers) {
-        var inverse = AnswerOrFixed.get(this.inverse, answers, false);
+    check(flow) {
+        var inverse = AnswerOrFixed.get(this.inverse, flow.answers, false);
         for(let i in this.answerKeys) {
-            var answerKey = this.answerKeys[i];
-            var retrieveKey = answerKey;
-            if(this.repeatIteration > -1) {
-                retrieveKey = retrieveKey + "_" + this.repeatIteration;
-                Logger.debug("AnswerCondition::check() Using repeat key: " + retrieveKey);
-            }
-            if(!answers.has(retrieveKey)) {
-                Logger.debug("AnswerCondition::check() Key not available: " + retrieveKey);
+            var answerKey = ChatTools.getAnswerKey(this.answerKeys[i], flow, this.forceRepeatIteration);
+            if(!flow.answers.has(answerKey)) {
+                Logger.debug("AnswerCondition::check() Key not available: " + answerKey);
                 continue;
             }
-            var answerValue = answers.get(retrieveKey);
-            Logger.debug("AnswerCondition::check() Checking key: " + retrieveKey + " value: ", answerValue);
+            var answerValue = flow.answers.get(answerKey);
+            Logger.debug("AnswerCondition::check() Checking key: " + answerKey + " value: ", answerValue);
             if(typeof answerValue === "object") {
                 if(answerValue.length === 0) {
                     if(this.checkAnswer(answerKey, null)) {

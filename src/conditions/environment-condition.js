@@ -27,8 +27,8 @@ class EnvironmentCondition extends Condition {
         }
     }
 
-    check(answers) {
-        var inverse = AnswerOrFixed.get(this.inverse, answers, false);
+    check(flow) {
+        var inverse = AnswerOrFixed.get(this.inverse, flow.answers, false);
         for(let i in this.checkKeys) {
             var checkKey = this.checkKeys[i];
             var value = process.env[checkKey];

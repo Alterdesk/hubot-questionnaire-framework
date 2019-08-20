@@ -1,24 +1,24 @@
+const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
 
 class Formatter {
 
     constructor() {
         this.conditions = [];
-        this.repeatIteration = -1;
         this.escapeHtml = false;
     }
 
-    execute(text, answers, flow) {
+    execute(text, flow) {
 
     }
 
-    checkConditions(answers) {
+    checkConditions(flow) {
         for(let i in this.conditions) {
             var condition = this.conditions[i];
-            if(this.repeatIteration > -1) {
-                condition.setRepeatIteration(this.repeatIteration);
+            if(this.forceRepeatIteration > -1) {
+                condition.setForceRepeatIteration(this.forceRepeatIteration);
             }
-            if(!condition.check(answers)) {
+            if(!condition.check(flow)) {
                 Logger.debug("Formatter::checkConditions() Condition not met: ", condition);
                 return false;
             }
@@ -26,12 +26,17 @@ class Formatter {
         return true;
     }
 
+    getAnswerKey(flow) {
+        return ChatTools.getAnswerKey(this.answerKey, flow, this.forceRepeatIteration);
+    }
+
     addCondition(condition) {
         this.conditions.push(condition);
     }
 
-    setRepeatIteration(repeatIteration) {
-        this.repeatIteration = repeatIteration;
+    setForceRepeatIteration(forceRepeatIteration) {
+        Logger.debug("Formatter::setForceRepeatIteration():", forceRepeatIteration);
+        this.forceRepeatIteration = forceRepeatIteration;
     }
 
     setEscapeHtml(escapeHtml) {

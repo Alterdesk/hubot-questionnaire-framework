@@ -57,14 +57,11 @@ class PolarQuestion extends Question {
         return this.requestMessageId;
     }
 
-    async send(control, msg, callback) {
+    async send(callback) {
         if(this.useButtons) {
-            var answers;
-            if(this.flow) {
-                answers = this.flow.answers;
-            }
+            var msg = this.flow.msg;
             var sendMessageData = new SendMessageData();
-            var messageText =  this.getQuestionText(answers);
+            var messageText =  this.getQuestionText();
             sendMessageData.setMessage(messageText);
             sendMessageData.setHubotMessage(msg.message);
             var requestStyle = this.questionStyle || "horizontal";
@@ -109,12 +106,12 @@ class PolarQuestion extends Question {
             }
 
             this.usePendingRequests = true;
-            this.setListenersAndPendingRequests(control, msg, callback);
+            this.setListenersAndPendingRequests(callback);
 
-            control.sendComposing(msg);
+            this.flow.control.sendComposing(msg);
 
             // Send the message and parse result in callback
-            var json = await control.messengerClient.sendMessage(sendMessageData);
+            var json = await this.flow.control.messengerClient.sendMessage(sendMessageData);
             var success = json != null;
             Logger.debug("PolarQuestion:send() Successful: " + success);
             if(json != null) {
@@ -123,12 +120,12 @@ class PolarQuestion extends Question {
                 this.requestMessageId = messageId;
             } else {
                 var fallbackText = messageText;
-                fallbackText += "\n • \"" + positiveName + "\" - " + positiveLabel;
-                fallbackText += "\n • \"" + negativeName + "\" - " + negativeLabel;
+                fallbackText += "\n • \"" + this.positiveName + "\" - " + this.positiveLabel;
+                fallbackText += "\n • \"" + this.negativeName + "\" - " + this.negativeLabel;
                 msg.send(fallbackText);
             }
         } else {
-            this.setListenersAndPendingRequests(control, msg, callback);
+            this.setListenersAndPendingRequests(callback);
             msg.send(messageText);
         }
     }

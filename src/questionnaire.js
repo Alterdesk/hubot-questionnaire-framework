@@ -76,6 +76,7 @@ module.exports = {
     SendMessageAction : require('./actions/send-message-action.js'),
     SendMessageData : require('./containers/send-message-data.js'),
     SetAnswerAction : require('./actions/set-answer-action.js'),
+    Step : require('./step.js'),
     StopConditionAction : require('./actions/stop-condition-action.js'),
     StringTools : require('./utils/string-tools.js'),
     SummaryAction : require('./actions/summary-action.js'),

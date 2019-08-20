@@ -5,24 +5,24 @@ const Logger = require('./../logger.js');
 
 class ChangeSubjectAction extends Action {
     constructor(subject) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
         this.subject = subject;
         this.subjectFormatters = [];
     }
 
-    async start(response, answers, flowCallback) {
+    async start(flowCallback) {
         if(!this.flow || !this.flow.msg || !this.flow.control) {
             Logger.error("ChangeSubjectAction::start() Invalid Flow or Control");
             flowCallback();
             return;
         }
-
+        var answers = this.flow.answers;
         var subjectValue = AnswerOrFixed.get(this.subject, answers, "");
         for(let i in this.subjectFormatters) {
             var formatter = this.subjectFormatters[i];
-            subjectValue = formatter.execute(subjectValue, answers, this.flow);
+            subjectValue = formatter.execute(subjectValue, this.flow);
         }
         if(!subjectValue || subjectValue === "") {
             Logger.error("ChangeSubjectAction::start() Invalid subject:" + subjectValue);
@@ -68,13 +68,6 @@ class ChangeSubjectAction extends Action {
 
     addSubjectFormatter(formatter) {
         this.subjectFormatters.push(formatter);
-    }
-
-    reset(answers) {
-        super.reset(answers);
-        if(this.answerKey) {
-            answers.remove(this.answerKey);
-        }
     }
 }
 

@@ -35,27 +35,28 @@ class VerificationQuestion extends Question {
         return this.requests[userId];
     }
 
-    send(control, msg, callback) {
-        this.control = control;
+    send(callback) {
+        var msg = this.flow.msg;
         this.chatId = msg.message.room;
-        this.isGroup = control.isUserInGroup(msg.message.user);
+        this.isGroup = ChatTools.isUserInGroup(msg.message.user);
 
         if(this.isMultiUser && this.userIds && this.userIds.length > 0) {
             let remainingUserIds = this.getRemainingUserIds();
             if(remainingUserIds && remainingUserIds.length > 0) {
                 for(let index in remainingUserIds) {
-                    this.sendForUserId(control, msg, callback, remainingUserIds[index]);
+                    this.sendForUserId(callback, remainingUserIds[index]);
                 }
             } else {
                 Logger.error("VerificationQuestion:send() Got no remaining user ids for multi-user question: " + this.answerKey);
-                this.sendForUserId(control, msg, callback, ChatTools.getUserId(msg.message.user));
+                this.sendForUserId(callback, ChatTools.getUserId(msg.message.user));
             }
         } else {
-            this.sendForUserId(control, msg, callback, ChatTools.getUserId(msg.message.user));
+            this.sendForUserId(callback, ChatTools.getUserId(msg.message.user));
         }
     }
 
-    async sendForUserId(control, msg, callback, userId) {
+    async sendForUserId(callback, userId) {
+        var control = this.flow.control;
         // Try to retrieve provider for user
         var providerJson = await control.messengerClient.getUserProviders(userId);
         if(!providerJson) {
@@ -73,9 +74,9 @@ class VerificationQuestion extends Question {
         }
         if(providerId) {
             // Got provider, send verification request
-            this.setListenersAndPendingRequests(control, msg, callback);
+            this.setListenersAndPendingRequests(callback);
 
-            control.sendComposing(msg);
+            control.sendComposing(this.flow.msg);
 
             var askJson = await control.messengerClient.askUserVerification(userId, providerId, this.chatId, this.isGroup, false);
             if(!askJson) {
@@ -132,7 +133,7 @@ class VerificationQuestion extends Question {
     retrieveAttributes(requestMessageId) {
         return new Promise(async (resolve) => {
             try {
-                var json = await this.control.messengerClient.getMessage(requestMessageId, this.chatId, this.isGroup, false);
+                var json = await this.flow.control.messengerClient.getMessage(requestMessageId, this.chatId, this.isGroup, false);
                 if(!json) {
                     Logger.error("VerificationQuestion:retrieveAttributes() Unable to retrieve message");
                     resolve(null);
@@ -160,7 +161,7 @@ class VerificationQuestion extends Question {
 
     // Asynchronously retrieve verification attributes
     async finalize(answers, callback) {
-        if(!this.control || this.requests.length === 0) {
+        if(this.requests.length === 0) {
             Logger.error("VerificationQuestion:finalize() Data incomplete");
             callback();
             return;

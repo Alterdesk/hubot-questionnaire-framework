@@ -10,9 +10,9 @@ class ReplaceTextFormatter extends Formatter {
         this.to = to;
     }
 
-    execute(text, answers, flow) {
+    execute(text, flow) {
         Logger.debug("ReplaceTextFormatter::execute() Using from: \"" + this.from + "\" to: \"" + this.to + "\"");
-        if(!this.checkConditions(answers)) {
+        if(!this.checkConditions(flow)) {
             Logger.debug("ReplaceTextFormatter::execute() Condition not met");
             return text;
         }

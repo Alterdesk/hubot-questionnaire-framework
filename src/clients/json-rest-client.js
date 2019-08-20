@@ -303,11 +303,11 @@ class JsonRestClient {
         });
     }
 
-    delete(deleteUrl, overrideToken) {
+    delete(deleteUrl, deleteJson, overrideToken) {
         return new Promise(async (resolve) => {
             try {
                 Logger.debug("JsonRestClient::delete() >> " + deleteUrl);
-                this.http(this.apiUrl + deleteUrl, overrideToken).delete()((err, resp, body) => {
+                this.http(this.apiUrl + deleteUrl, overrideToken).delete(deleteJson)((err, resp, body) => {
                     if(!resp) {
                         Logger.error("JsonRestClient::delete() << " + deleteUrl + ":", err);
                         resolve(null);

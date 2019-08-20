@@ -6,8 +6,8 @@ const NumberTools = require('./../utils/number-tools.js');
 
 class GenerateNumberAction extends Action {
     constructor(answerKey, min, max) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
         this.answerKey = answerKey;
         this.min = min;
@@ -17,8 +17,8 @@ class GenerateNumberAction extends Action {
         this.maxFailOperations = 1000;
     }
 
-    start(response, answers, flowCallback) {
-        this.answers = answers;
+    start(flowCallback) {
+        var answers = this.flow.answers;
         var min = AnswerOrFixed.get(this.min, answers, 0);
         var max = AnswerOrFixed.get(this.max, answers, Number.MAX_SAFE_INTEGER);
         if(min >= max) {
@@ -46,10 +46,7 @@ class GenerateNumberAction extends Action {
     checkNumberConditions() {
         for(let i in this.numberConditions) {
             var condition = this.numberConditions[i];
-            if(this.repeatIteration > -1) {
-                condition.setRepeatIteration(this.repeatIteration);
-            }
-            if(!condition.check(answers)) {
+            if(!condition.check(this.flow)) {
                 Logger.debug("GenerateNumberAction::checkNumberConditions() Condition not met: ", condition);
                 return false;
             }
@@ -60,7 +57,8 @@ class GenerateNumberAction extends Action {
     generate(min, max) {
         var num = NumberTools.generate(min, max);
         Logger.debug("GenerateNumberAction::start() Generated number: " + num);
-        this.answers.add(this.answerKey, num);
+        var answerKey = this.getAnswerKey();
+        this.flow.answers.add(answerKey, num);
     }
 
     setMaxFailOperations(maxFailOperations) {

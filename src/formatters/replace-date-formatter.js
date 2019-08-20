@@ -1,4 +1,5 @@
 const Formatter = require('./formatter.js');
+const ChatTools = require('./../utils/chat-tools.js');
 const DateTools = require('./../utils/date-tools.js');
 const Logger = require('./../logger.js');
 const StringTools = require('./../utils/string-tools.js');
@@ -11,9 +12,9 @@ class ReplaceDateFormatter extends Formatter {
         this.format = format;
     }
 
-    execute(text, answers, flow) {
+    execute(text, flow) {
         var date;
-        if(!this.checkConditions(answers)) {
+        if(!this.checkConditions(flow)) {
             Logger.debug("ReplaceDateFormatter::execute() Condition not met");
             return text;
         }
@@ -25,12 +26,9 @@ class ReplaceDateFormatter extends Formatter {
             Logger.error("ReplaceDateFormatter::execute() Invalid format: \"" + this.format + "\"");
             return text;
         }
-        var answerKey = this.answerKey;
-        if(answerKey && this.repeatIteration > -1) {
-            answerKey = answerKey + "_" + this.repeatIteration;
-        }
-        if(answerKey && answers.has(answerKey)) {
-            date = answers.get(answerKey);
+        var answerKey = ChatTools.getAnswerKey(this.answerKey, flow);
+        if(answerKey && flow.answers.has(answerKey)) {
+            date = flow.answers.get(answerKey);
         } else {
             date = DateTools.utcDate();
         }

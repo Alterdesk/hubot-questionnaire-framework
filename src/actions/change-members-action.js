@@ -5,20 +5,21 @@ const Logger = require('./../logger.js');
 
 class ChangeMembersAction extends Action {
     constructor(add, memberIds) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
         this.add = add;
         this.memberIds = memberIds;
         this.isAux = false;
     }
 
-    async start(response, answers, flowCallback) {
+    async start(flowCallback) {
         if(!this.flow || !this.flow.msg || !this.flow.control) {
             Logger.error("ChangeMembersAction::start() Invalid Flow or Control");
             flowCallback();
             return;
         }
+        var answers = this.flow.answers;
         var chatId;
         var isAux;
         if(this.chatId) {

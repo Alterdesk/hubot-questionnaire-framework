@@ -6,8 +6,8 @@ const SendMessageData = require('./../containers/send-message-data.js');
 
 class SendMessageAction extends Action {
     constructor(messageText) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
         this.messageText = messageText;
         this.messageFormatters = [];
@@ -15,7 +15,7 @@ class SendMessageAction extends Action {
         this.isAux = false;
     }
 
-    async start(response, answers, flowCallback) {
+    async start(flowCallback) {
         if(!this.flow || !this.flow.msg || !this.flow.control) {
             flowCallback();
             return;
@@ -25,6 +25,7 @@ class SendMessageAction extends Action {
 
         var sendMessageData = new SendMessageData();
 
+        var answers = this.flow.answers;
         var chatId;
         var isGroup;
         var isAux;
@@ -40,7 +41,7 @@ class SendMessageAction extends Action {
         var messageText = AnswerOrFixed.get(this.messageText, answers, "");
         for(let i in this.messageFormatters) {
             var formatter = this.messageFormatters[i];
-            messageText = formatter.execute(messageText, answers, this.flow);
+            messageText = formatter.execute(messageText, this.flow);
         }
         if(!messageText || messageText === "") {
             Logger.error("SendMessageAction::start() Invalid message text:", messageText);

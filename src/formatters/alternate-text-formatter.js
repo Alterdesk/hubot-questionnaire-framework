@@ -10,14 +10,14 @@ class AlternateTextFormatter extends Formatter {
         this.alternateText = alternateText;
     }
 
-    execute(text, answers, flow) {
+    execute(text, flow) {
         var alternateText = this.alternateText;
         if(!alternateText || alternateText.length === 0) {
             Logger.debug("AlternateTextFormatter::execute() Invalid alternate text: \"" + this.alternateText + "\"");
             return text;
         }
         Logger.debug("AlternateTextFormatter::execute() Alternate text: \"" + this.alternateText + "\"");
-        if(!this.checkConditions(answers)) {
+        if(!this.checkConditions(flow)) {
             Logger.debug("AlternateTextFormatter::execute() Condition not met");
             return text;
         }

@@ -7,8 +7,8 @@ const Logger = require('./../logger.js');
 
 class CreateGroupAction extends Action {
     constructor(subject) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
         this.subject = subject;
         this.memberIds = [];
@@ -16,19 +16,18 @@ class CreateGroupAction extends Action {
         this.subjectFormatters = [];
     }
 
-    async start(response, answers, flowCallback) {
-        this.answers = answers;
+    async start(flowCallback) {
         this.flowCallback = flowCallback;
         if(!this.flow || !this.flow.msg || !this.flow.control) {
             Logger.error("CreateGroupAction::start() Invalid Flow or Control");
             this.done(null);
             return;
         }
-
+        var answers = this.flow.answers;
         var subjectValue = AnswerOrFixed.get(this.subject, answers, "");
         for(let i in this.subjectFormatters) {
             var formatter = this.subjectFormatters[i];
-            subjectValue = formatter.execute(subjectValue, answers, this.flow);
+            subjectValue = formatter.execute(subjectValue, this.flow);
         }
         if(!subjectValue || subjectValue === "") {
             Logger.error("CreateGroupAction::start() Invalid subject:" + subjectValue);
@@ -95,9 +94,10 @@ class CreateGroupAction extends Action {
     }
 
     done(value) {
-        if(this.answerKey && value != null) {
-            this.answers.add(this.answerKey, value);
-            this.answers.addObject(this.answerKey, value);
+        var answerKey = this.getAnswerKey();
+        if(answerKey && value != null) {
+            this.flow.answers.add(answerKey, value);
+            this.flow.answers.addObject(answerKey, value);
         }
         if(value) {
             if(this.positiveSubFlow) {
@@ -168,12 +168,6 @@ class CreateGroupAction extends Action {
         this.subjectFormatters.push(formatter);
     }
 
-    reset(answers) {
-        super.reset(answers);
-        if(this.answerKey) {
-            answers.remove(this.answerKey);
-        }
-    }
 }
 
 class MemberInvite {

@@ -1,4 +1,4 @@
-const {Response, User, Message, TextMessage, LeaveMessage, TopicMessage} = require('hubot');
+const {TextMessage, LeaveMessage, TopicMessage} = require('hubot');
 
 const BotApi = require('./bot-api.js');
 const ChatTools = require('./utils/chat-tools.js');
@@ -71,16 +71,9 @@ class Control {
         this.removeListenerOnLeave = process.env.HUBOT_QUESTIONNAIRE_REMOVE_ON_LEAVE || false;
 
         // Milliseconds to show hubot as "Typing..."
-        this.typingDelayMs = parseInt(process.env.HUBOT_ALTERDESK_TYPING_DELAY || 2500);
+        this.typingDelayMs = parseInt(process.env.HUBOT_ALTERDESK_TYPING_DELAY || 500);
 
-        this.messengerClient = new MessengerClient();
-//        var url = process.env.NODE_ALTERDESK_URL || "https://api.alterdesk.com/v1/";
-//        var port = process.env.NODE_ALTERDESK_PORT || 443;
-//        this.messengerClient = JsonRestClient(url, port)
-//        var token = process.env.NODE_ALTERDESK_TOKEN;
-//        if(token) {
-//            this.messengerClient.setApiToken(token);
-//        }
+        this.messengerClient = new MessengerClient(this);
     }
 
     // Override the default receiver
@@ -210,12 +203,11 @@ class Control {
                 }
 
                 if(this.hasActiveQuestionnaire(message)) {
-                    Logger.debug("Control::receive() Ignoring message, has active questionnaire for user in room");
+                    Logger.debug("Control::receive() Ignoring message, has active questionnaire for user in chat");
                     return;
                 }
 
                 var userId = ChatTools.getUserId(message.user);
-                var roomId = message.room;
                 var isGroup = ChatTools.isUserInGroup(message.user);
                 var commandString = message.text.toLowerCase();
 
@@ -232,8 +224,8 @@ class Control {
 
                 // Only listen for messages in groups when mentioned
                 if(isGroup && !isMentioned && this.needMentionInGroup) {
-                    // Ignoring message, not mentioned and no listeners for user in room
-                    Logger.debug("Control::receive() Ignoring message, not mentioned when needed and no listeners for user in room");
+                    // Ignoring message, not mentioned and no listeners for user in chat
+                    Logger.debug("Control::receive() Ignoring message, not mentioned when needed and no listeners for user in chat");
                     return;
                 }
 
@@ -294,8 +286,10 @@ class Control {
     addListener(message, listener) {
         listener.configure(this);
         var userId = ChatTools.getUserId(message.user);
-        Logger.debug("Control::addListener() userId: " + userId + " room: " + message.room);
-        this.pendingListeners[message.room + "/" + userId] = listener;
+        var chatId = message.room;
+        var chatUserKey = ChatTools.getChatUserKey(chatId, userId);
+        Logger.debug("Control::addListener() userId: " + userId + " chat: " + chatId);
+        this.pendingListeners[chatUserKey] = listener;
         if(!this.hasTimeoutTimer(message)) {
             this.addTimeoutTimer(message, listener.msg, listener.question);
         }
@@ -304,27 +298,30 @@ class Control {
     // Remove a listener that was added before
     removeListener(message) {
         var userId = ChatTools.getUserId(message.user);
-        if(this.pendingListeners[message.room + "/" + userId] == null) {
+        var chatId = message.room;
+        var chatUserKey = ChatTools.getChatUserKey(chatId, userId);
+        if(this.pendingListeners[chatUserKey] == null) {
             return null;
         }
-        Logger.debug("Control::removeListener() userId: " + userId + " room: " + message.room);
-        var listener = this.pendingListeners[message.room + "/" + userId];
-        delete this.pendingListeners[message.room + "/" + userId];
+        Logger.debug("Control::removeListener() userId: " + userId + " chat: " + chatId);
+        var listener = this.pendingListeners[chatUserKey];
+        delete this.pendingListeners[chatUserKey];
         if(this.hasTimeoutTimer(message)) {
             this.removeTimeoutTimer(message, listener.question);
         }
         return listener;
     }
 
-    // Check if a listener is present for a user in a room
+    // Check if a listener is present for a user in a chat
     hasListener(message) {
-        return this.pendingListeners[message.room + "/" + ChatTools.getUserId(message.user)] != null;
+        var chatUserKey = ChatTools.getChatUserKey(message.room, ChatTools.getUserId(message.user));
+        return this.pendingListeners[chatUserKey] != null;
     }
 
     // Add a pending request for a user
     addPendingRequest(message, pendingRequest) {
         var userId = ChatTools.getUserId(message.user);
-        Logger.debug("Control::addPendingRequest() userId: " + userId + " room: " + message.room);
+        Logger.debug("Control::addPendingRequest() userId: " + userId + " chat: " + message.room);
         this.pendingRequests[message.room + "/" + userId] = pendingRequest;
         if(!this.hasTimeoutTimer(message)) {
             this.addTimeoutTimer(message, pendingRequest.msg, pendingRequest.question);
@@ -334,19 +331,21 @@ class Control {
     // Remove a pending request for a user
     removePendingRequest(message) {
         var userId = ChatTools.getUserId(message.user);
-        if(this.pendingRequests[message.room + "/" + userId] == null) {
+        var chatId = message.room;
+        var chatUserKey = ChatTools.getChatUserKey(chatId, userId);
+        if(this.pendingRequests[chatUserKey] == null) {
             return null;
         }
-        Logger.debug("Control::removePendingRequest() userId: " + userId + " room: " + message.room);
-        var pendingRequest = this.pendingRequests[message.room + "/" + userId];
-        delete this.pendingRequests[message.room + "/" + userId];
+        Logger.debug("Control::removePendingRequest() userId: " + userId + " chat: " + chatId);
+        var pendingRequest = this.pendingRequests[chatUserKey];
+        delete this.pendingRequests[chatUserKey];
         if(this.hasTimeoutTimer(message)) {
             this.removeTimeoutTimer(message, pendingRequest.question);
         }
         return pendingRequest;
     }
 
-    // Check if a pending request is present for a user in a room
+    // Check if a pending request is present for a user in a chat
     hasPendingRequest(message) {
         return this.pendingRequests[message.room + "/" + ChatTools.getUserId(message.user)] != null;
     }
@@ -354,7 +353,9 @@ class Control {
     // Add a timeout timer for a user
     addTimeoutTimer(message, msg, question) {
         var userId = ChatTools.getUserId(message.user);
-        Logger.debug("Control::addTimeoutTimer() userId: " + userId + " room: " + message.room);
+        var chatId = message.room;
+        var chatUserKey = ChatTools.getChatUserKey(chatId, userId);
+        Logger.debug("Control::addTimeoutTimer() userId: " + userId + " chat: " + chatId);
         // Timeout milliseconds and callback
         var useTimeoutMs = question.timeoutMs || this.responseTimeoutMs;
         var useTimeoutText = question.timeoutText;
@@ -373,7 +374,7 @@ class Control {
 
         var timer = setTimeout(() => {
             var userId = ChatTools.getUserId(msg.message.user);
-            Logger.debug("Timer timeout from user " + userId + " in room " + message.room);
+            Logger.debug("Timer timeout from user " + userId + " in chat " + chatId);
             question.cleanup(message);
 
             question.flow.stop(false);
@@ -389,39 +390,45 @@ class Control {
             }
         }, useTimeoutMs);
 
-        this.timeoutTimers[message.room + "/" + userId] = timer;
+        this.timeoutTimers[chatUserKey] = timer;
     }
 
     // Remove a timeout timer for a user
     removeTimeoutTimer(message) {
         var userId = ChatTools.getUserId(message.user);
-        if(this.timeoutTimers[message.room + "/" + userId] == null) {
+        var chatId = message.room;
+        var chatUserKey = ChatTools.getChatUserKey(chatId, userId);
+        if(this.timeoutTimers[chatUserKey] == null) {
             return;
         }
-        Logger.debug("Control::removeTimeoutTimer() userId: " + userId + " room: " + message.room);
-        var timer = this.timeoutTimers[message.room + "/" + userId];
-        delete this.timeoutTimers[message.room + "/" + userId];
+        Logger.debug("Control::removeTimeoutTimer() userId: " + userId + " chat: " + chatId);
+        var timer = this.timeoutTimers[chatUserKey];
+        delete this.timeoutTimers[chatUserKey];
         clearTimeout(timer);
     }
 
-    // Check if a timeout timer is present for a user in a room
+    // Check if a timeout timer is present for a user in a chat
     hasTimeoutTimer(message) {
-        return this.timeoutTimers[message.room + "/" + ChatTools.getUserId(message.user)] != null;
+        var chatUserKey = ChatTools.getChatUserKey(message.room, ChatTools.getUserId(message.user));
+        return this.timeoutTimers[chatUserKey] != null;
     }
 
     addActiveQuestionnaire(message, flow) {
         var userId = ChatTools.getUserId(message.user);
-        if(this.activeQuestionnaires[message.room + "/" + userId]) {
-            Logger.error("Control::addActiveQuestionnaire() Already have an active questionnaire for userId: " + userId + " room: " + message.room);
+        var chatId = message.room;
+        var chatUserKey = ChatTools.getChatUserKey(chatId, userId);
+        if(this.activeQuestionnaires[chatUserKey]) {
+            Logger.error("Control::addActiveQuestionnaire() Already have an active questionnaire for userId: " + userId + " chat: " + chatId);
             return;
         }
-        Logger.debug("Control::addActiveQuestionnaire() userId: " + userId + " room: " + message.room + " flow: " + flow.name);
-        this.activeQuestionnaires[message.room + "/" + userId] = flow;
+        Logger.debug("Control::addActiveQuestionnaire() userId: " + userId + " chat: " + chatId + " flow: " + flow.name);
+        this.activeQuestionnaires[chatUserKey] = flow;
         Logger.debug("Control::addActiveQuestionnaire() Active questionnaires: " + this.getActiveQuestionnaireCount());
     }
 
     getActiveQuestionnaire(message) {
-        return this.activeQuestionnaires[message.room + "/" + ChatTools.getUserId(message.user)];
+        var chatUserKey = ChatTools.getChatUserKey(message.room, ChatTools.getUserId(message.user));
+        return this.activeQuestionnaires[chatUserKey];
     }
 
     hasActiveQuestionnaire(message) {
@@ -436,15 +443,17 @@ class Control {
         return this.getActiveQuestionnaires().length;
     }
 
-    removeActiveQuestionnaire(message) {
+    removeActiveQuestionnaire(message) {    // TODO Clean up Listeners, PendingRequests and Timers
         var userId = ChatTools.getUserId(message.user);
-        var flow = this.activeQuestionnaires[message.room + "/" + userId];
+        var chatId = message.room;
+        var chatUserKey = ChatTools.getChatUserKey(chatId, userId);
+        var flow = this.activeQuestionnaires[chatUserKey];
         if(!flow) {
-            Logger.error("Control::removeActiveQuestionnaire() No active questionnaire for userId: " + userId + " room: " + message.room);
+            Logger.error("Control::removeActiveQuestionnaire() No active questionnaire for userId: " + userId + " room: " + chatId);
             return null;
         }
-        Logger.debug("Control::removeActiveQuestionnaire() userId: " + userId + " room: " + message.room + " flow: " + flow.name);
-        delete this.activeQuestionnaires[message.room + "/" + userId];
+        Logger.debug("Control::removeActiveQuestionnaire() userId: " + userId + " chat: " + chatId + " flow: " + flow.name);
+        delete this.activeQuestionnaires[chatUserKey];
         var count = this.getActiveQuestionnaireCount();
         Logger.debug("Control::removeActiveQuestionnaire() Active questionnaires: " + count);
         if(count === 0 && this.exitOnIdle) {
@@ -724,17 +733,11 @@ class Control {
             return;
         }
         if(helpCommand) {
-            Logger.error("Control:checkCommandButton() Sending help message");
+            Logger.debug("Control:checkCommandButton() Sending help message");
             this.sendHelpMessage(message);
         } else {
             Logger.debug("Control:checkCommandButton() Accepted command: " + optionText);
-            var messageUser = new User(userId);
-            messageUser.user_id = userId;
-            messageUser.room = chatId;
-            messageUser.name = chatId;
-            messageUser.is_groupchat = isGroup;
-            var textMessage = new TextMessage(messageUser, optionText, "dummy_id");
-            textMessage.room = chatId;
+            var textMessage = ChatTools.createHubotTextMessage(userId, chatId, isGroup, optionText);
             this.robot.receive(textMessage);
         }
     }
@@ -775,8 +778,8 @@ class Control {
 
     // Send a request message
     async sendRequestMessage(sendMessageData) {
+        var response = ChatTools.hubotMessageToResponse(this.robot, sendMessageData.getHubotMessage());
         if(sendMessageData.usePostCall()) {
-            var response = new Response(this.robot, sendMessageData.getHubotMessage(), true);
             this.sendComposing(response);
 
             var result = await this.messengerClient.sendMessage(sendMessageData);
@@ -784,18 +787,25 @@ class Control {
                 response.send(sendMessageData.getMessage());
             }
         } else {
-            var response = new Response(this.robot, sendMessageData.getHubotMessage(), true);
             response.send(sendMessageData.getMessage());
         }
     }
 
-    sendComposing(msg) {    // TODO Check if able to move to MessengerClient
-        if(this.typingDelayMs) {
-            msg.topic("typing");
-            setTimeout(() => {
-                msg.topic("stop_typing");
-            }, this.typingDelayMs);
+    sendComposing(msg) {
+        if(!this.typingDelayMs || this.typingDelayMs < 1) {
+            return;
         }
+        if(!msg) {
+            Logger.error("Control:sendComposing() Invalid message:", msg);
+            return;
+        }
+        if(!msg.topic) {
+            msg = ChatTools.hubotMessageToResponse(this.robot, msg);
+        }
+        msg.topic("typing");
+        setTimeout(() => {
+            msg.topic("stop_typing");
+        }, this.typingDelayMs);
     }
 
     armExitOnIdle(arm) {

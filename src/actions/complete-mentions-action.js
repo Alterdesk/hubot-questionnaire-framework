@@ -4,19 +4,20 @@ const Logger = require('./../logger.js');
 
 class CompleteMentionsAction extends Action {
     constructor(answerKey, onlyCompleteAll) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
         this.answerKey = answerKey;
         this.onlyCompleteAll = onlyCompleteAll;
     }
 
-    async start(response, answers, flowCallback) {
+    async start(flowCallback) {
         if(!this.flow.msg || !this.flow.control) {
             Logger.error("CompleteMentionsAction::start() Invalid Flow or Control");
             flowCallback();
             return;
         }
+        var answers = this.flow.answers;
         var mentions = answers.get(this.answerKey);
         if(this.onlyCompleteAll && (mentions.length > 1 || mentions[0]["id"] !== "@all")) {
             Logger.debug("CompleteMentionsAction::start() Set to only complete all and all tag is not used");

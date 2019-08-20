@@ -5,8 +5,8 @@ const Logger = require('./../logger.js');
 
 class CalculateNumberAction extends Action {
     constructor(startValue, answerKey, operation) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
         this.startValue = startValue;
         this.answerKey = answerKey;
@@ -14,8 +14,8 @@ class CalculateNumberAction extends Action {
         this.values = [];
     }
 
-    start(response, answers, flowCallback) {
-        this.answers = answers;
+    start(flowCallback) {
+        var answers = this.flow.answers;
         var result = AnswerOrFixed.get(this.startValue, answers);
         if(!result) {
             result = 0;
@@ -46,7 +46,8 @@ class CalculateNumberAction extends Action {
         }
 
         Logger.debug("CalculateNumberAction::start() Result:", result);
-        answers.add(this.answerKey, result);
+        var answerKey = this.getAnswerKey();
+        answers.add(answerKey, result);
         flowCallback();
     }
 

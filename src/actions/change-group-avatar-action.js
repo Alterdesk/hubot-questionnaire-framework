@@ -6,14 +6,14 @@ const RegexTools = require('./../utils/regex-tools.js');
 
 class ChangeGroupAvatarAction extends Action {
     constructor(avatarPath) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
         this.avatarPath = avatarPath;
     }
 
-    async start(response, answers, flowCallback) {
-        this.answers = answers;
+    async start(flowCallback) {
+        var answers = this.flow.answers;
         this.flowCallback = flowCallback;
         if(!this.flow || !this.flow.msg || !this.flow.control) {
             Logger.error("ChangeGroupAvatarAction::start() Invalid Flow or Control");
@@ -68,13 +68,6 @@ class ChangeGroupAvatarAction extends Action {
 
     setOverrideToken(overrideToken) {
         this.overrideToken = overrideToken;
-    }
-
-    reset(answers) {
-        super.reset(answers);
-        if(this.answerKey) {
-            answers.remove(this.answerKey);
-        }
     }
 }
 

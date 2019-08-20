@@ -115,14 +115,11 @@ class MultipleChoiceQuestion extends Question {
         return this.requestMessageId;
     }
 
-    async send(control, msg, callback) {
+    async send(callback) {
         if(this.useButtons) {
-            var answers;
-            if(this.flow) {
-                answers = this.flow.answers;
-            }
+            var msg = this.flow.msg;
             var sendMessageData = new SendMessageData();
-            var messageText =  this.getQuestionText(answers);
+            var messageText =  this.getQuestionText();
             sendMessageData.setMessage(messageText);
             sendMessageData.setHubotMessage(msg.message);
             var requestStyle = this.questionStyle || "horizontal";
@@ -131,7 +128,7 @@ class MultipleChoiceQuestion extends Question {
             for(let i in this.options) {
                 var option = this.options[i];
 
-                if(!option.isAvailable(answers)) {
+                if(!option.isAvailable(this.flow)) {
                     continue;
                 }
 
@@ -163,11 +160,11 @@ class MultipleChoiceQuestion extends Question {
             }
 
             this.usePendingRequests = true;
-            this.setListenersAndPendingRequests(control, msg, callback);
+            this.setListenersAndPendingRequests(callback);
 
-            control.sendComposing(msg);
+            this.flow.control.sendComposing(msg);
 
-            var json = await control.messengerClient.sendMessage(sendMessageData);
+            var json = await this.flow.control.messengerClient.sendMessage(sendMessageData);
             var success = json != null;
             Logger.debug("MultipleChoiceQuestion::send() Successful: " + success);
             if(json != null) {
@@ -183,7 +180,7 @@ class MultipleChoiceQuestion extends Question {
                 msg.send(fallbackText);
             }
         } else {
-            this.setListenersAndPendingRequests(control, msg, callback);
+            this.setListenersAndPendingRequests(callback);
             msg.send(messageText);
         }
     }
@@ -214,15 +211,11 @@ class MultipleChoiceQuestion extends Question {
     }
 
     checkAndParseChoice(choice) {
-        var answers;
-        if(this.flow) {
-            answers = this.flow.answers;
-        }
         var optionMatch = null;
         var longestMatch = null;
         for(let index in this.options) {
             var option = this.options[index];
-            if(!option.isAvailable(answers)) {
+            if(!option.isAvailable(this.flow)) {
                 continue;
             }
             var match = choice.match(option.regex);
@@ -257,15 +250,15 @@ class MultipleChoiceOption {
         this.conditions = conditions;
     }
 
-    isAvailable(answers) {
+    isAvailable(flow) {
         if(typeof this.available === "boolean") {
             return this.available;
         }
         this.available = true;
-        if(this.conditions && this.conditions.length > 0 && answers) {
+        if(this.conditions && this.conditions.length > 0) {
             for(let i in this.conditions) {
                 var condition = this.conditions[i];
-                if(!condition.check(answers)) {
+                if(!condition.check(flow)) {
                     Logger.debug("MultipleChoiceOption::isAvailable() Condition not met: ", condition);
                     this.available = false;
                     break;

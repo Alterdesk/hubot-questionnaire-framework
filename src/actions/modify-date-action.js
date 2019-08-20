@@ -5,8 +5,8 @@ const Logger = require('./../logger.js');
 
 class ModifyDateAction extends Action {
     constructor(useDate, answerKey, operation, timeScale, timeValue) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
         this.useDate = useDate;
         this.answerKey = answerKey;
@@ -18,8 +18,8 @@ class ModifyDateAction extends Action {
         this.maxFailOperations = 1000;
     }
 
-    start(response, answers, flowCallback) {
-        this.answers = answers;
+    start(flowCallback) {
+        var answers = this.flow.answers;
         var date = AnswerOrFixed.get(this.useDate, answers);
         if(!date) {
             date = DateTools.utcDate();
@@ -94,15 +94,16 @@ class ModifyDateAction extends Action {
             }
         }
         var date = moment.toDate();
-        Logger.debug("ModifyDateAction::doOperation() Saving modified date:", this.answerKey, date);
-        this.answers.add(this.answerKey, date);
+        var answerKey = this.getAnswerKey();
+        Logger.debug("ModifyDateAction::doOperation() Saving modified date:", answerKey, date);
+        this.flow.answers.add(answerKey, date);
         return true;
     }
 
     checkDateConditions() {
         for(let i in this.dateConditions) {
             var condition = this.dateConditions[i];
-            if(!condition.check(this.answers)) {
+            if(!condition.check(this.flow)) {
                 Logger.debug("ModifyDateAction::checkDateConditions() Condition not met: ", condition);
                 return false;
             }
@@ -128,8 +129,8 @@ class ModifyDateAction extends Action {
         this.dateConditions.push(condition);
     }
 
-    reset(answers) {
-        super.reset(answers);
+    reset() {
+        super.reset();
         this.failOperations = 0;
     }
 }

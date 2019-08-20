@@ -6,8 +6,8 @@ const SendMessageData = require('./../containers/send-message-data.js');
 
 class ChatPdfAction extends Action {
     constructor(filename) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
         this.filenameFormatters = [];
         this.messageFormatters = [];
@@ -15,20 +15,21 @@ class ChatPdfAction extends Action {
         this.isAux = false;
     }
 
-    async start(response, answers, flowCallback) {
+    async start(flowCallback) {
         if(!this.flow || !this.flow.msg || !this.flow.control) {
             flowCallback();
             return;
         }
+        var answers = this.flow.answers;
         var filename = AnswerOrFixed.get(this.filename, answers, "");
         for(let i in this.filenameFormatters) {
             var formatter = this.filenameFormatters[i];
-            filename = formatter.execute(filename, answers, this.flow);
+            filename = formatter.execute(filename, this.flow);
         }
         if(!filename || filename.length === 0) {
             Logger.error("ChatPdfAction::start() Invalid filename:", this.filename);
             if(this.errorMessage && this.errorMessage.length > 0) {
-                response.send(this.errorMessage);
+                this.flow.msg.send(this.errorMessage);
             }
             flowCallback();
             return;
@@ -66,7 +67,7 @@ class ChatPdfAction extends Action {
         var messageText = AnswerOrFixed.get(this.messageText, answers, "");
         for(let i in this.messageFormatters) {
             var formatter = this.messageFormatters[i];
-            messageText = formatter.execute(messageText, answers, this.flow);
+            messageText = formatter.execute(messageText, this.flow);
         }
 
         var startDate = AnswerOrFixed.get(this.startDate, answers);
@@ -79,7 +80,7 @@ class ChatPdfAction extends Action {
                 answers.add(this.answerKey, false);
             }
             if(this.errorMessage && this.errorMessage.length > 0) {
-                response.send(this.errorMessage);
+                this.flow.msg.send(this.errorMessage);
             }
             flowCallback();
             return;
@@ -107,7 +108,7 @@ class ChatPdfAction extends Action {
         } else {
             Logger.error("ChatPdfAction::start() Unable to send PDF");
             if(this.errorMessage && this.errorMessage.length > 0) {
-                response.send(this.errorMessage);
+                this.flow.msg.send(this.errorMessage);
             }
         }
         flowCallback();

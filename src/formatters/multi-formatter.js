@@ -9,7 +9,7 @@ class MultiFormatter extends Formatter {
         this.formatters = formatters;
     }
 
-    execute(text, answers, flow) {
+    execute(text, flow) {
         if(!this.formatters || this.formatters.length === 0) {
             Logger.error("MultiFormatter::execute() Invalid formatters:", this.formatters);
             return text;
@@ -18,7 +18,7 @@ class MultiFormatter extends Formatter {
             Logger.debug("MultiFormatter::execute() No from regex match:", this.from, text);
             return text;
         }
-        if(!this.checkConditions(answers)) {
+        if(!this.checkConditions(flow)) {
             Logger.debug("MultiFormatter::execute() Condition not met");
             return text;
         }
@@ -27,10 +27,7 @@ class MultiFormatter extends Formatter {
         for(let i in this.formatters) {
             var formatter = this.formatters[i];
             formatter.setEscapeHtml(this.escapeHtml);
-            if(this.repeatIteration > -1) {
-                formatter.setRepeatIteration(this.repeatIteration);
-            }
-            result = formatter.execute(result, answers, flow);
+            result = formatter.execute(result, flow);
         }
         return text.replace(this.from, result);
     }

@@ -3,7 +3,7 @@ const JsonRestClient = require('./json-rest-client.js');
 const Logger = require('./../logger.js');
 
 class MessengerClient extends JsonRestClient {
-    constructor() {
+    constructor(control) {
         var url = process.env.HUBOT_ALTERDESK_URL || process.env.NODE_ALTERDESK_URL || "https://api.alterdesk.com/v1/";
         var port = process.env.HUBOT_ALTERDESK_PORT || process.env.NODE_ALTERDESK_PORT || 443;
         super(url, port);
@@ -11,6 +11,7 @@ class MessengerClient extends JsonRestClient {
         if(token) {
             this.setApiToken(token);
         }
+        this.control = control;
     }
 
     sendMessage(sendMessageData) {
@@ -19,6 +20,11 @@ class MessengerClient extends JsonRestClient {
         var postUrl = sendMessageData.getPostUrl();
         var postData = sendMessageData.getPostData();
         var overrideToken = sendMessageData.getOverrideToken();
+
+        var hubotMessage = sendMessageData.getHubotMessage();
+        if(hubotMessage) {
+            this.control.sendComposing(hubotMessage);
+        }
 
         if(sendMessageData.hasAttachments()) {
             var filePaths = sendMessageData.getAttachmentPaths();
@@ -45,7 +51,7 @@ class MessengerClient extends JsonRestClient {
     downloadAttachment(attachment, chatId, isGroup, isAux, overrideToken) {
         return new Promise(async (resolve) => {
             try {
-                logger.debug("MessengerClient::downloadAttachment() ", attachment);
+                Logger.debug("MessengerClient::downloadAttachment() ", attachment);
                 var attachmentId = attachment["id"];
                 var filename = attachment["name"];
                 var mime = attachment["mime_type"];
@@ -64,21 +70,21 @@ class MessengerClient extends JsonRestClient {
                 var getUrl = methodPrefix + encodeURIComponent(chatId) + "/attachments/" + attachmentId + this.toGetParameters(getData);
                 var urlJson = await this.get(getUrl, overrideToken);
                 if(!urlJson) {
-                    logger.error("MessengerClient::downloadAttachment() Unable to retrieve download url:", attachment);
+                    Logger.error("MessengerClient::downloadAttachment() Unable to retrieve download url:", attachment);
                     resolve(null);
                     return;
                 }
                 var url = urlJson["link"];
                 var downloadPath = await this.download(url, filename, mime, overrideToken);
                 if(!downloadPath) {
-                    logger.error("MessengerClient::downloadAttachment() Unable to download attachment:", url, attachment);
+                    Logger.error("MessengerClient::downloadAttachment() Unable to download attachment:", url, attachment);
                     resolve(null);
                     return;
                 }
-                logger.debug("Api:downloadAttachment() Downloaded at " + downloadPath);
+                Logger.debug("Api:downloadAttachment() Downloaded at " + downloadPath);
                 resolve(downloadPath);
             } catch(err) {
-                logger.error(err);
+                Logger.error(err);
                 resolve(null);
             }
         });
@@ -317,7 +323,7 @@ class MessengerClient extends JsonRestClient {
                                     }
                                 }
                                 if(exclude) {
-                                    logger.debug("MessengerClient::completeMentions() Ignored message user member as mention");
+                                    Logger.debug("MessengerClient::completeMentions() Ignored message user member as mention");
                                     continue;
                                 }
                             }

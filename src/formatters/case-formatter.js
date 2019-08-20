@@ -8,9 +8,9 @@ class CaseFormatter extends Formatter {
         this.toUppercase = toUppercase;
     }
 
-    execute(text, answers, flow) {
+    execute(text, flow) {
         Logger.debug("CaseFormatter::execute() toUppercase:", this.toUppercase);
-        if(!this.checkConditions(answers)) {
+        if(!this.checkConditions(flow)) {
             Logger.debug("CaseFormatter::execute() Condition not met");
             return text;
         }

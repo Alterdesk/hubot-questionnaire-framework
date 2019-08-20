@@ -4,14 +4,13 @@ const Logger = require('./../logger.js');
 
 class CheckUserAction extends Action {
     constructor(check) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
         this.check = check;
     }
 
-    async start(response, answers, flowCallback) {
-        this.answers = answers;
+    async start(flowCallback) {
         this.flowCallback = flowCallback;
         if(!this.flow || !this.flow.msg || !this.flow.control) {
             Logger.error("CheckUserAction::start() Invalid Flow or Control");
@@ -85,8 +84,9 @@ class CheckUserAction extends Action {
     }
 
     done(value) {
-        if(this.answerKey && value != null) {
-            this.answers.add(this.answerKey, value);
+        var answerKey = this.getAnswerKey();
+        if(answerKey && value != null) {
+            this.flow.answers.add(answerKey, value);
         }
         if(value) {
             if(this.positiveSubFlow) {
@@ -118,13 +118,6 @@ class CheckUserAction extends Action {
 
     setOverrideToken(overrideToken) {
         this.overrideToken = overrideToken;
-    }
-
-    reset(answers) {
-        super.reset(answers);
-        if(this.answerKey) {
-            answers.remove(this.answerKey);
-        }
     }
 }
 

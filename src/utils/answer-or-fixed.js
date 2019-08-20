@@ -4,6 +4,7 @@ class AnswerOrFixed {
     }
 
     getValue(answers) {
+//        var answerKey = ChatTools.getAnswerKey(this.answerKey, flow); // TODO Repeat iteration
         if(this.answerKey) {
             return answers.get(this.answerKey);
         } else {
@@ -19,7 +20,7 @@ class AnswerOrFixed {
         this.value = value;
     }
 
-    static get(data, answers, defaultValue) {   // TODO Repeat iteration
+    static get(data, answers, defaultValue) {
         var result = null;
         if(data instanceof AnswerOrFixed) {
             result = AnswerOrFixed.get(data.getValue(answers), answers);
