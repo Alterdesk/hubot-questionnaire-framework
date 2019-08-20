@@ -1,5 +1,4 @@
 const Action = require('./action.js');
-const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
 
@@ -21,8 +20,8 @@ class CloseGroupAction extends Action {
         var chatId;
         var isAux;
         if(this.chatId) {
-            chatId = AnswerOrFixed.get(this.chatId, answers);
-            isAux = AnswerOrFixed.get(this.isAux, answers);
+            chatId = this.getAnswerValue(this.chatId, answers);
+            isAux = this.getAnswerValue(this.isAux, answers);
         } else {
             var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
@@ -39,7 +38,7 @@ class CloseGroupAction extends Action {
             return;
         }
 
-        var sendEmail = AnswerOrFixed.get(this.sendEmail, answers, true);
+        var sendEmail = this.getAnswerValue(this.sendEmail, answers, true);
 
         await this.flow.control.messengerClient.closeGroupChat(chatId, isAux, sendEmail, this.overrideToken);
         flowCallback();

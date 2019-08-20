@@ -15,7 +15,7 @@ module.exports = {
     AlternateTextFormatter : require('./formatters/alternate-text-formatter.js'),
     AndCondition : require('./conditions/and-condition.js'),
     AnswerCondition : require('./conditions/answer-condition.js'),
-    AnswerOrFixed : require('./utils/answer-or-fixed.js'),
+    AnswerValue : require('./utils/answer-value.js'),
     Answers : require('./answers.js'),
     AppendAnswerAction : require('./actions/append-answer-action.js'),
     AppendTextFormatter : require('./formatters/append-text-formatter.js'),

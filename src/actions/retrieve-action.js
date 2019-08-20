@@ -1,5 +1,4 @@
 const Action = require('./action.js');
-const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const Logger = require('./../logger.js');
 
 class RetrieveAction extends Action {
@@ -19,25 +18,25 @@ class RetrieveAction extends Action {
 
         var answers = this.flow.answers;
         if(this.chatId) {
-            var chatIdValue = AnswerOrFixed.get(this.chatId, answers);
+            var chatIdValue = this.getAnswerValue(this.chatId, answers);
             if(!chatIdValue) {
                 Logger.error("RetrieveAction::start() Invalid chat id");
                 this.done(null);
                 return;
             }
-            var isGroupValue = AnswerOrFixed.get(this.isGroup, answers);
-            var isAuxValue = AnswerOrFixed.get(this.isAux, answers);
+            var isGroupValue = this.getAnswerValue(this.isGroup, answers);
+            var isAuxValue = this.getAnswerValue(this.isAux, answers);
             var json = await this.flow.control.messengerClient.getChat(chatIdValue, isGroupValue, isAuxValue, this.overrideToken);
             this.done(json);
             return;
         } else if(this.userId) {
-            var userIdValue = AnswerOrFixed.get(this.userId, answers);
+            var userIdValue = this.getAnswerValue(this.userId, answers);
             if(!userIdValue) {
                 Logger.error("RetrieveAction::start() Invalid user id");
                 this.done(null);
                 return;
             }
-            var isAuxValue = AnswerOrFixed.get(this.isAux, answers);
+            var isAuxValue = this.getAnswerValue(this.isAux, answers);
             var json = await this.flow.control.messengerClient.getUser(userIdValue, isAuxValue, this.overrideToken);
             this.done(json);
             return;

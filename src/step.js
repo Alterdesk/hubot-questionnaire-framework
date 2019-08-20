@@ -1,3 +1,4 @@
+const AnswerValue = require('./utils/answer-value.js');
 const ChatTools = require('./utils/chat-tools.js');
 
 class Step {
@@ -24,6 +25,10 @@ class Step {
 
     getValueAnswerKey() {
         return ChatTools.getAnswerKey(this.answerKey + "_value", this.flow);
+    }
+
+    getAnswerValue(data, answers, defaultValue) {
+        return AnswerValue.get(data, answers, defaultValue, this.flow);
     }
 
     reset() {

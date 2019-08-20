@@ -1,5 +1,4 @@
 const Action = require('./action.js');
-const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const DateTools = require('./../utils/date-tools.js');
 const Logger = require('./../logger.js');
 
@@ -16,20 +15,20 @@ class CalculateNumberAction extends Action {
 
     start(flowCallback) {
         var answers = this.flow.answers;
-        var result = AnswerOrFixed.get(this.startValue, answers);
+        var result = this.getAnswerValue(this.startValue, answers);
         if(!result) {
             result = 0;
         }
-        var timeValue = AnswerOrFixed.get(this.timeValue, answers);
+        var timeValue = this.getAnswerValue(this.timeValue, answers);
         if(timeValue < 0) {
             Logger.error("CalculateNumberAction::start() Invalid time value:", timeValue);
             flowCallback();
             return;
         }
-        var operation = AnswerOrFixed.get(this.operation, answers);
+        var operation = this.getAnswerValue(this.operation, answers);
         Logger.debug("CalculateNumberAction::start() Starting with value:", result);
         for(let index in this.values) {
-            var value = AnswerOrFixed.get(this.values[index], answers);
+            var value = this.getAnswerValue(this.values[index], answers);
             if(typeof value !== "number") {
                 Logger.debug("CalculateNumberAction::start() Invalid value: " + value);
                 continue;

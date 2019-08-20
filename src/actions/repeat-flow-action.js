@@ -1,6 +1,5 @@
 const Action = require('./action.js');
 const AnswerCondition = require('./../conditions/answer-condition.js');
-const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const Logger = require('./../logger.js');
 
 class RepeatFlowAction extends Action {
@@ -48,7 +47,7 @@ class RepeatFlowAction extends Action {
         var answers = this.flow.answers;
         var checkIteration = this.iteration;
         checkIteration++;
-        var minIterations = AnswerOrFixed.get(this.minIterations, answers);
+        var minIterations = this.getAnswerValue(this.minIterations, answers);
         if(!minIterations) {
             Logger.error("RepeatFlowAction::checkRepeat() Invalid minimal iterations given:", minIterations);
             minIterations = 1;

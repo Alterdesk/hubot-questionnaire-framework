@@ -1,5 +1,4 @@
 const Action = require('./action.js');
-const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
 
@@ -19,7 +18,7 @@ class ChangeSubjectAction extends Action {
             return;
         }
         var answers = this.flow.answers;
-        var subjectValue = AnswerOrFixed.get(this.subject, answers, "");
+        var subjectValue = this.getAnswerValue(this.subject, answers, "");
         for(let i in this.subjectFormatters) {
             var formatter = this.subjectFormatters[i];
             subjectValue = formatter.execute(subjectValue, this.flow);
@@ -33,8 +32,8 @@ class ChangeSubjectAction extends Action {
         var chatId;
         var isAux;
         if(this.chatId) {
-            chatId = AnswerOrFixed.get(this.chatId, answers);
-            isAux = AnswerOrFixed.get(this.isAux, answers);
+            chatId = this.getAnswerValue(this.chatId, answers);
+            isAux = this.getAnswerValue(this.isAux, answers);
         } else {
             var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {

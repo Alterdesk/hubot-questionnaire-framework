@@ -1,5 +1,4 @@
 const Action = require('./action.js');
-const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
 const RegexTools = require('./../utils/regex-tools.js');
@@ -21,7 +20,7 @@ class ChangeGroupAvatarAction extends Action {
             return;
         }
 
-        var avatarPath = AnswerOrFixed.get(this.avatarPath, answers);
+        var avatarPath = this.getAnswerValue(this.avatarPath, answers);
 
         if(!avatarPath || avatarPath === "") {
             Logger.error("ChangeGroupAvatarAction::start() Invalid avatar path:", avatarPath);
@@ -37,8 +36,8 @@ class ChangeGroupAvatarAction extends Action {
         var chatId;
         var isAux;
         if(this.chatId) {
-            chatId = AnswerOrFixed.get(this.chatId, answers);
-            isAux = AnswerOrFixed.get(this.isAux, answers);
+            chatId = this.getAnswerValue(this.chatId, answers);
+            isAux = this.getAnswerValue(this.isAux, answers);
         } else {
             var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {

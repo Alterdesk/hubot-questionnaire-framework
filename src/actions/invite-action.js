@@ -1,5 +1,4 @@
 const Action = require('./action.js');
-const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const InviteUserData = require('./../containers/invite-user-data.js');
 const Logger = require('./../logger.js');
 
@@ -24,9 +23,9 @@ class InviteAction extends Action {
             return;
         }
 
-        var emailValue = AnswerOrFixed.get(this.email, answers);
-        var firstNameValue = AnswerOrFixed.get(this.firstName, answers);
-        var lastNameValue = AnswerOrFixed.get(this.lastName, answers);
+        var emailValue = this.getAnswerValue(this.email, answers);
+        var firstNameValue = this.getAnswerValue(this.firstName, answers);
+        var lastNameValue = this.getAnswerValue(this.lastName, answers);
         if(!emailValue || emailValue === ""
             || !firstNameValue || firstNameValue === ""
             || !lastNameValue || lastNameValue === "") {
@@ -40,7 +39,7 @@ class InviteAction extends Action {
         inviteUserData.setFirstName(firstNameValue);
         inviteUserData.setLastName(lastNameValue);
 
-        var inviteTextValue = AnswerOrFixed.get(this.inviteText, answers);
+        var inviteTextValue = this.getAnswerValue(this.inviteText, answers);
         for(let i in this.inviteFormatters) {
             var formatter = this.inviteFormatters[i];
             inviteTextValue = formatter.execute(inviteTextValue, this.flow);
@@ -48,11 +47,11 @@ class InviteAction extends Action {
         if(inviteTextValue && inviteTextValue !== "") {
             inviteUserData.set(inviteTextValue);    // Only used when creating conversation
         }
-        var auxId = AnswerOrFixed.get(this.auxId, answers);
+        var auxId = this.getAnswerValue(this.auxId, answers);
         if(auxId) {
             inviteUserData.setAuxId(auxId);
         }
-        var sendEmailValue = AnswerOrFixed.get(this.sendEmail, answers, true);
+        var sendEmailValue = this.getAnswerValue(this.sendEmail, answers, true);
         inviteUserData.setSendEmail(sendEmailValue);
 
         var result = await this.flow.control.messengerClient.inviteUser(inviteUserData);

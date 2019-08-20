@@ -1,5 +1,4 @@
 const Action = require('./action.js');
-const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const DateTools = require('./../utils/date-tools.js');
 const Logger = require('./../logger.js');
 
@@ -20,24 +19,24 @@ class ModifyDateAction extends Action {
 
     start(flowCallback) {
         var answers = this.flow.answers;
-        var date = AnswerOrFixed.get(this.useDate, answers);
+        var date = this.getAnswerValue(this.useDate, answers);
         if(!date) {
             date = DateTools.utcDate();
         }
-        var timeValue = AnswerOrFixed.get(this.timeValue, answers);
+        var timeValue = this.getAnswerValue(this.timeValue, answers);
         if(timeValue < 0) {
             Logger.error("ModifyDateAction::start() Invalid time value:", timeValue);
             flowCallback();
             return;
         }
-        var timeScale = AnswerOrFixed.get(this.timeScale, answers);
+        var timeScale = this.getAnswerValue(this.timeScale, answers);
         var useScale = DateTools.getTimeScale(timeScale);
         if(!useScale) {
             Logger.error("ModifyDateAction::start() Invalid time scale:", timeScale);
             flowCallback();
             return;
         }
-        var operation = AnswerOrFixed.get(this.operation, answers);
+        var operation = this.getAnswerValue(this.operation, answers);
         Logger.debug("ModifyDateAction::start() Modifying date:", date);
         var moment = DateTools.getUTCMoment(date);
         if(!this.doOperation(operation, moment, useScale, timeValue)) {
@@ -46,20 +45,20 @@ class ModifyDateAction extends Action {
         }
 
         if(this.dateConditions.length > 0) {
-            var failTimeValue = AnswerOrFixed.get(this.failTimeValue, answers);
+            var failTimeValue = this.getAnswerValue(this.failTimeValue, answers);
             if(failTimeValue < 1) {
                 Logger.error("ModifyDateAction::start() Invalid fail time value:", failTimeValue);
                 flowCallback();
                 return;
             }
-            var failTimeScale = AnswerOrFixed.get(this.failTimeScale, answers);
+            var failTimeScale = this.getAnswerValue(this.failTimeScale, answers);
             var useFailScale = DateTools.getTimeScale(failTimeScale);
             if(!useFailScale) {
                 Logger.error("ModifyDateAction::start() Invalid fail time scale:", failTimeScale);
                 flowCallback();
                 return;
             }
-            var failOperation = AnswerOrFixed.get(this.failOperation, answers);
+            var failOperation = this.getAnswerValue(this.failOperation, answers);
             while(!this.checkDateConditions()) {
                 this.failOperations++;
                 if(this.failOperations >= this.maxFailOperations) {

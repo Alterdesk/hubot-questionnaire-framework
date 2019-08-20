@@ -1,4 +1,3 @@
-const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const ChatTools = require('./../utils/chat-tools.js');
 const Condition = require('./condition.js');
 const Logger = require('./../logger.js');
@@ -41,7 +40,7 @@ class AnswerCondition extends Condition {
     }
 
     check(flow) {
-        var inverse = AnswerOrFixed.get(this.inverse, flow.answers, false);
+        var inverse = this.getAnswerValue(this.inverse, flow.answers, false);
         for(let i in this.answerKeys) {
             var answerKey = ChatTools.getAnswerKey(this.answerKeys[i], flow, this.forceRepeatIteration);
             if(!flow.answers.has(answerKey)) {

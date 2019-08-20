@@ -1,5 +1,4 @@
 const Action = require('./action.js');
-const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const Logger = require('./../logger.js');
 const RegexTools = require('./../utils/regex-tools.js');
 const SendMessageData = require('./../containers/send-message-data.js');
@@ -30,15 +29,15 @@ class SendMessageAction extends Action {
         var isGroup;
         var isAux;
         if(this.chatId) {
-            chatId = AnswerOrFixed.get(this.chatId, answers);
-            isGroup = AnswerOrFixed.get(this.isGroup, answers);
-            isAux = AnswerOrFixed.get(this.isAux, answers);
+            chatId = this.getAnswerValue(this.chatId, answers);
+            isGroup = this.getAnswerValue(this.isGroup, answers);
+            isAux = this.getAnswerValue(this.isAux, answers);
             sendMessageData.setChat(chatId, isGroup, isAux);
         } else {
             sendMessageData.setHubotMessage(this.flow.msg.message);
         }
 
-        var messageText = AnswerOrFixed.get(this.messageText, answers, "");
+        var messageText = this.getAnswerValue(this.messageText, answers, "");
         for(let i in this.messageFormatters) {
             var formatter = this.messageFormatters[i];
             messageText = formatter.execute(messageText, this.flow);
@@ -57,7 +56,7 @@ class SendMessageAction extends Action {
             var filePathRegex = RegexTools.getFilePathRegex();
             Logger.debug("SendMessageAction::start() Using file path regex:", filePathRegex);
             for(let index in this.attachmentPaths) {
-                var attachmentPath = AnswerOrFixed.get(this.attachmentPaths[index], answers);
+                var attachmentPath = this.getAnswerValue(this.attachmentPaths[index], answers);
                 Logger.debug("SendMessageAction::start() Got attachment path:", attachmentPath);
                 if(typeof attachmentPath !== "string") {
                     Logger.error("SendMessageAction::start() Invalid attachment path:", attachmentPath);

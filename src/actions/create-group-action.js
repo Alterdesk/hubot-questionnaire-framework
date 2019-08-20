@@ -1,5 +1,4 @@
 const Action = require('./action.js');
-const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const CreateGroupData = require('./../containers/create-group-data.js');
 const GroupSettingsData = require('./../containers/group-settings-data.js');
 const InviteUserData = require('./../containers/invite-user-data.js');
@@ -24,7 +23,7 @@ class CreateGroupAction extends Action {
             return;
         }
         var answers = this.flow.answers;
-        var subjectValue = AnswerOrFixed.get(this.subject, answers, "");
+        var subjectValue = this.getAnswerValue(this.subject, answers, "");
         for(let i in this.subjectFormatters) {
             var formatter = this.subjectFormatters[i];
             subjectValue = formatter.execute(subjectValue, this.flow);
@@ -39,23 +38,23 @@ class CreateGroupAction extends Action {
         createGroupData.setSubject(subjectValue);
 
         var groupSettingsData = new GroupSettingsData();
-        var allowContactsValue = AnswerOrFixed.get(this.allowContacts, answers);
+        var allowContactsValue = this.getAnswerValue(this.allowContacts, answers);
         if(allowContactsValue != null) {
             groupSettingsData.setAllowContacts(allowContactsValue);
         }
-        var autoCloseAfterValue = AnswerOrFixed.get(this.autoCloseAfter, answers);
+        var autoCloseAfterValue = this.getAnswerValue(this.autoCloseAfter, answers);
         if(autoCloseAfterValue != null) {
             groupSettingsData.setCloseAfter(autoCloseAfterValue);
         }
-        var autoExpireAfterValue = AnswerOrFixed.get(this.autoExpireAfter, answers);
+        var autoExpireAfterValue = this.getAnswerValue(this.autoExpireAfter, answers);
         if(autoCloseAfterValue != null) {
             groupSettingsData.setExpireAfter(autoExpireAfterValue);
         }
-        var hybridMessagingValue = AnswerOrFixed.get(this.hybridMessaging, answers);
+        var hybridMessagingValue = this.getAnswerValue(this.hybridMessaging, answers);
         if(hybridMessagingValue != null) {
             groupSettingsData.setHybridMessaging(hybridMessagingValue);
         }
-        var membersCanInviteValue = AnswerOrFixed.get(this.membersCanInvite, answers);
+        var membersCanInviteValue = this.getAnswerValue(this.membersCanInvite, answers);
         if(membersCanInviteValue != null) {
             groupSettingsData.setMembersCanInvite(membersCanInviteValue);
         }
@@ -63,7 +62,7 @@ class CreateGroupAction extends Action {
 
         for(let index in this.memberIds) {
             var member = this.memberIds[index];
-            var id = AnswerOrFixed.get(member, answers);
+            var id = this.getAnswerValue(member, answers);
             if(id && id.length > 0) {
                 createGroupData.addMemberId(id);
             }
@@ -74,18 +73,18 @@ class CreateGroupAction extends Action {
         for(let index in this.invites) {
             var invite = this.invites[index];
             var inviteUserData = new InviteUserData();
-            inviteUserData.setCreateConversation(AnswerOrFixed.get(invite.createConversation, answers, false));
-            inviteUserData.setEmail(AnswerOrFixed.get(invite.email, answers));
-            inviteUserData.setFirstName(AnswerOrFixed.get(invite.firstName, answers));
-            inviteUserData.setLastName(AnswerOrFixed.get(invite.lastName, answers));
-            inviteUserData.setInviteMessage(AnswerOrFixed.get(invite.inviteText, answers))
-            inviteUserData.setAuxId(AnswerOrFixed.get(invite.auxId, answers));
+            inviteUserData.setCreateConversation(this.getAnswerValue(invite.createConversation, answers, false));
+            inviteUserData.setEmail(this.getAnswerValue(invite.email, answers));
+            inviteUserData.setFirstName(this.getAnswerValue(invite.firstName, answers));
+            inviteUserData.setLastName(this.getAnswerValue(invite.lastName, answers));
+            inviteUserData.setInviteMessage(this.getAnswerValue(invite.inviteText, answers))
+            inviteUserData.setAuxId(this.getAnswerValue(invite.auxId, answers));
             inviteUserData.setInviteType(invite.inviteType);
             createGroupData.addInvite(inviteUserData);
         }
 
-        createGroupData.setSendEmail(AnswerOrFixed.get(this.sendEmail, answers, true));
-        createGroupData.setAuxId(AnswerOrFixed.get(this.auxId, answers));
+        createGroupData.setSendEmail(this.getAnswerValue(this.sendEmail, answers, true));
+        createGroupData.setAuxId(this.getAnswerValue(this.auxId, answers));
         if(this.overrideToken) {
             createGroupData.setOverrideToken(this.overrideToken);
         }

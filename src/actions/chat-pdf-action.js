@@ -1,5 +1,4 @@
 const Action = require('./action.js');
-const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
 const SendMessageData = require('./../containers/send-message-data.js');
@@ -21,7 +20,7 @@ class ChatPdfAction extends Action {
             return;
         }
         var answers = this.flow.answers;
-        var filename = AnswerOrFixed.get(this.filename, answers, "");
+        var filename = this.getAnswerValue(this.filename, answers, "");
         for(let i in this.filenameFormatters) {
             var formatter = this.filenameFormatters[i];
             filename = formatter.execute(filename, this.flow);
@@ -50,9 +49,9 @@ class ChatPdfAction extends Action {
         var destinationIsGroup;
         var destinationIsAux;
         if(this.chatId) {
-            destinationChatId = AnswerOrFixed.get(this.chatId, answers);
-            destinationIsGroup = AnswerOrFixed.get(this.isGroup, answers);
-            destinationIsAux = AnswerOrFixed.get(this.isAux, answers);
+            destinationChatId = this.getAnswerValue(this.chatId, answers);
+            destinationIsGroup = this.getAnswerValue(this.isGroup, answers);
+            destinationIsAux = this.getAnswerValue(this.isAux, answers);
         } else {
             destinationChatId = sourceChatId;
             destinationIsGroup = sourceIsGroup;
@@ -64,14 +63,14 @@ class ChatPdfAction extends Action {
             return;
         }
 
-        var messageText = AnswerOrFixed.get(this.messageText, answers, "");
+        var messageText = this.getAnswerValue(this.messageText, answers, "");
         for(let i in this.messageFormatters) {
             var formatter = this.messageFormatters[i];
             messageText = formatter.execute(messageText, this.flow);
         }
 
-        var startDate = AnswerOrFixed.get(this.startDate, answers);
-        var endDate = AnswerOrFixed.get(this.endDate, answers);
+        var startDate = this.getAnswerValue(this.startDate, answers);
+        var endDate = this.getAnswerValue(this.endDate, answers);
 
         var filePath = await messengerClient.downloadChatPdf(filename, startDate, endDate, sourceChatId, sourceIsGroup, false);
         if(!filePath) {

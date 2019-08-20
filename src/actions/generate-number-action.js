@@ -1,5 +1,4 @@
 const Action = require('./action.js');
-const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const Answers = require('./../answers.js');
 const Logger = require('./../logger.js');
 const NumberTools = require('./../utils/number-tools.js');
@@ -19,8 +18,8 @@ class GenerateNumberAction extends Action {
 
     start(flowCallback) {
         var answers = this.flow.answers;
-        var min = AnswerOrFixed.get(this.min, answers, 0);
-        var max = AnswerOrFixed.get(this.max, answers, Number.MAX_SAFE_INTEGER);
+        var min = this.getAnswerValue(this.min, answers, 0);
+        var max = this.getAnswerValue(this.max, answers, Number.MAX_SAFE_INTEGER);
         if(min >= max) {
             Logger.error("GenerateNumberAction::start() Invalid range: min: " + min + " max: " + max);
             flowCallback();

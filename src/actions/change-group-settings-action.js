@@ -1,5 +1,4 @@
 const Action = require('./action.js');
-const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const ChatTools = require('./../utils/chat-tools.js');
 const GroupSettingsData = require('./../containers/group-settings-data.js');
 const Logger = require('./../logger.js');
@@ -23,8 +22,8 @@ class ChangeGroupSettingsAction extends Action {
         var chatId;
         var isAux;
         if(this.chatId) {
-            chatId = AnswerOrFixed.get(this.chatId, answers);
-            isAux = AnswerOrFixed.get(this.isAux, answers);
+            chatId = this.getAnswerValue(this.chatId, answers);
+            isAux = this.getAnswerValue(this.isAux, answers);
         } else {
             var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
@@ -47,23 +46,23 @@ class ChangeGroupSettingsAction extends Action {
 
         groupSettingsData.setChat(chatId, isAux);
 
-        var allowContactsValue = AnswerOrFixed.get(this.allowContacts, answers);
+        var allowContactsValue = this.getAnswerValue(this.allowContacts, answers);
         if(allowContactsValue != null) {
             groupSettingsData.setAllowContacts(allowContactsValue);
         }
-        var autoCloseAfterValue = AnswerOrFixed.get(this.autoCloseAfter, answers);
+        var autoCloseAfterValue = this.getAnswerValue(this.autoCloseAfter, answers);
         if(autoCloseAfterValue != null) {
             groupSettingsData.setCloseAfter(autoCloseAfterValue);
         }
-        var autoExpireAfterValue = AnswerOrFixed.get(this.autoExpireAfter, answers);
+        var autoExpireAfterValue = this.getAnswerValue(this.autoExpireAfter, answers);
         if(autoCloseAfterValue != null) {
             groupSettingsData.setExpireAfter(autoExpireAfterValue);
         }
-        var hybridMessagingValue = AnswerOrFixed.get(this.hybridMessaging, answers);
+        var hybridMessagingValue = this.getAnswerValue(this.hybridMessaging, answers);
         if(hybridMessagingValue != null) {
             groupSettingsData.setHybridMessaging(hybridMessagingValue);
         }
-        var membersCanInviteValue = AnswerOrFixed.get(this.membersCanInvite, answers);
+        var membersCanInviteValue = this.getAnswerValue(this.membersCanInvite, answers);
         if(membersCanInviteValue != null) {
             groupSettingsData.setMembersCanInvite(membersCanInviteValue);
         }

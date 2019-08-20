@@ -1,4 +1,3 @@
-const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const Condition = require('./condition.js');
 const Logger = require('./../logger.js');
 
@@ -10,7 +9,7 @@ class OrCondition extends Condition {
 
     check(flow) {
         Logger.debug("OrCondition::check() Condition count:", this.conditions.length);
-        var inverse = AnswerOrFixed.get(this.inverse, flow.answers, false);
+        var inverse = this.getAnswerValue(this.inverse, flow.answers, false);
         for(let i in this.conditions) {
             var condition = this.conditions[i];
             if(condition.check(flow)) {

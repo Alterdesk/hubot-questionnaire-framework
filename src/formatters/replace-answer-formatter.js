@@ -15,7 +15,7 @@ class ReplaceAnswerFormatter extends Formatter {
     }
 
     execute(text, flow) {
-        var answerKey = this.answerKey;
+        var answerKey = this.getAnswerKey(flow);
         if(!answerKey) {
             Logger.error("ReplaceAnswerFormatter::execute() Invalid answerKey: \"" + answerKey + "\"");
             return text;
@@ -29,7 +29,6 @@ class ReplaceAnswerFormatter extends Formatter {
             Logger.debug("ReplaceAnswerFormatter::execute() Condition not met");
             return text;
         }
-        var answerKey = this.getAnswerKey(flow);
         if(!flow.answers.has(answerKey)) {
             Logger.debug("ReplaceAnswerFormatter::execute() Answer not found: \"" + answerKey + "\"");
             if(this.fallbackText != null) {
@@ -50,7 +49,7 @@ class ReplaceAnswerFormatter extends Formatter {
         if(typeof answerValue === "object") {
             var result = this.getTextForArray(answerValue);
             if(!result || result.length === 0) {
-                Logger.debug("ReplaceAnswerFormatter::execute() Answer is empty or invalid: key:\"" + answerKey + "\" value:", this.answerValue);
+                Logger.debug("ReplaceAnswerFormatter::execute() Answer is empty or invalid: key:\"" + answerKey + "\" value:", answerValue);
                 if(this.fallbackText != null) {
                     Logger.debug("ReplaceAnswerFormatter::execute() Using fallback: \"" + this.fallbackText + "\" answerKey: \"" + answerKey + "\"");
                     var fallback = this.fallbackText;
