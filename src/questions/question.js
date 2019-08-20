@@ -251,30 +251,29 @@ class Question extends Step {
             let remainingUserIds = this.getRemainingUserIds();
             // Check if user id list is available and not empty
             if(remainingUserIds && remainingUserIds.length > 0) {
-                var question = this;
-                question.timedOut = false;
-                question.multiUserMessages = [];
+                this.timedOut = false;
+                this.multiUserMessages = [];
 
-                var configuredTimeoutCallback = question.timeoutCallback;
+                var configuredTimeoutCallback = this.timeoutCallback;
 
-                question.timeoutCallback = () => {
+                this.timeoutCallback = () => {
                     // Check if question was already timed out
-                    if(question.timedOut) {
+                    if(this.timedOut) {
                         return;
                     }
                     // Mark question as timed out
-                    question.timedOut = true;
+                    this.timedOut = true;
                     // Clean up remaining listeners
-                    question.cleanup(msg.message);
+                    this.cleanup(msg.message);
                     // Trigger timeout callback
                     if(configuredTimeoutCallback) {
                         configuredTimeoutCallback();
                     } else {
-                        var timeoutText = question.timeoutText || control.responseTimeoutText;
+                        var timeoutText = this.timeoutText || control.responseTimeoutText;
                         if(timeoutText && timeoutText.length > 0) {
-                            question.flow.sendRestartMessage(timeoutText);
+                            this.flow.sendRestartMessage(timeoutText);
                         }
-                        question.flow.stop(false);
+                        this.flow.stop(false);
                     }
                 };
 
@@ -288,17 +287,17 @@ class Question extends Step {
                     userMessage.room = msg.message.room;
 
                     // Store for cleanup if needed
-                    question.multiUserMessages.push(userMessage);
+                    this.multiUserMessages.push(userMessage);
 
                     if(control.questionAskedCallback) {
                         control.questionAskedCallback(userId, this.answerKey, this.flow.answers);
                     }
 
-                    if(question.useListeners) {
+                    if(this.useListeners) {
                         // Add listener for user and wait for answer
                         control.addListener(userMessage, new Listener(msg, this.flow.callback, this));
                     }
-                    if(question.usePendingRequests) {
+                    if(this.usePendingRequests) {
                         // Add listener for user and wait for answer
                         control.addPendingRequest(userMessage, new PendingRequest(msg, this.flow.callback, this));
                     }
@@ -312,7 +311,7 @@ class Question extends Step {
 
         if(control.questionAskedCallback) {
             var userId = ChatTools.getUserId(msg.message.user);
-            var answerKey = question.getAnswerKey();
+            var answerKey = this.getAnswerKey();
             control.questionAskedCallback(userId, answerKey, this.flow.answers);
         }
 
