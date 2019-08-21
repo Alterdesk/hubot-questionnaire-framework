@@ -73,19 +73,18 @@ class InviteUserData {
     getPostData(isGroupInvite) {
         var data = {};
 
-        var inviteData = {};
-        if(this.email != null) {
-            inviteData["email"] = this.email;
-        } else if(this.phoneNumber != null) {
-            inviteData["phone_number"] = this.phoneNumber;
+        if(this.email && this.email.length > 0) {
+            data["email"] = this.email;
+        } else if(this.phoneNumber && this.phoneNumber.length > 0) {
+            data["phone_number"] = this.phoneNumber;
         }
-        inviteData["first_name"] = this.firstName;
-        inviteData["last_name"] = this.lastName;
+        data["first_name"] = this.firstName;
+        data["last_name"] = this.lastName;
         if(this.inviteMessage != null) {
-            inviteData["invite_text"] = this.inviteMessage;  // Only used when creating conversation
+            data["invite_text"] = this.inviteMessage;  // Only used when creating conversation
         }
         if(!isGroupInvite) {
-            inviteData["send_email"] = this.sendEmail;
+            data["send_email"] = this.sendEmail;
         }
         if(this.auxId) {
             data["aux_id"] = this.auxId;
