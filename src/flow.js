@@ -787,6 +787,10 @@ class Flow {
         this.currentStep = 0;
     }
 
+    setName(name) {
+        this.name = name;
+    }
+
     // Set a restart button for error, stop and timeout messages
     restartButton(name, label, style) {
         this.restartButtonName = name;
@@ -829,7 +833,7 @@ class Flow {
 
     // Start the flow
     start(msg, answers) {
-        Logger.info("Flow::start()");
+        Logger.info("Flow::start()", this.name);
         if(!this.superFlow) {
             this.control.addActiveQuestionnaire(msg.message, this);
         }
