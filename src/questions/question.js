@@ -352,12 +352,13 @@ class Question extends Step {
 
     // Reset the question to be asked again
     reset() {
+        super.reset();
         this.subFlow = null;
         this.formattedQuestionText = null;
         var labelKey = this.getLabelAnswerKey();
-        this.answers.remove(labelKey);
+        this.flow.answers.remove(labelKey);
         var valueKey = this.getValueAnswerKey();
-        this.answers.remove(valueKey);
+        this.flow.answers.remove(valueKey);
     }
 }
 

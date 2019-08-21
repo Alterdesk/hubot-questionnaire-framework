@@ -32,7 +32,7 @@ class Step {
     }
 
     reset() {
-        var answerKey = getAnswerKey();
+        var answerKey = this.getAnswerKey();
         if(answerKey) {
             this.flow.answers.remove(answerKey);
         }

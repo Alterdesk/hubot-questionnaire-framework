@@ -34,6 +34,7 @@ class Action extends Step {
     }
 
     reset() {
+        super.reset();
         this.subFlow = null;
     }
 }
