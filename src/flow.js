@@ -927,12 +927,12 @@ class Flow {
             var answerValue = question.checkAndParseAnswer(listener.matches, response.message);
             if(answerValue == null) {
                 Logger.debug("Flow::callback() No valid answer value from listener, resetting listener");
+                if(flow.control.questionAnswerRejectedCallback) {
+                    var userId = ChatTools.getUserId(response.message.user);
+                    var answerKey = question.getAnswerKey();
+                    flow.control.questionAnswerRejectedCallback(userId, answerKey, response.message, flow.answers, question);
+                }
                 if(question.resendOnInvalid) {
-                    if(flow.control.questionAnswerRejectedCallback) {
-                        var userId = ChatTools.getUserId(response.message.user);
-                        var answerKey = question.getAnswerKey();
-                        flow.control.questionAnswerRejectedCallback(userId, answerKey, response.message, flow.answers);
-                    }
                     response.send(question.invalidText);
                     question.send(flow.control, response, this.callback);
                 } else {
@@ -1018,7 +1018,7 @@ class Flow {
 
             // Call question answered callback if set
             if(this.control.questionAnsweredCallback) {
-                this.control.questionAnsweredCallback(userId, answerKey, answerValue, this.answers);
+                this.control.questionAnsweredCallback(userId, answerKey, answerValue, this.answers, question);
             }
 
             // Check if a value was set to break multi user question on and use it
@@ -1076,14 +1076,14 @@ class Flow {
             if(this.control.questionAnsweredCallback) {
                 var userId = ChatTools.getUserId(this.msg.message.user);
                 var answerKey = question.getAnswerKey();
-                this.control.questionAnsweredCallback(userId, answerKey, answerValue, this.answers);
+                this.control.questionAnsweredCallback(userId, answerKey, answerValue, this.answers, question);
                 if(choiceLabel != null) {
                     var labelKey = question.getLabelAnswerKey();
-                    this.control.questionAnsweredCallback(userId, labelKey, choiceLabel, this.answers);
+                    this.control.questionAnsweredCallback(userId, labelKey, choiceLabel, this.answers, question);
                 }
                 if(choiceValue != null) {
                     var valueKey = question.getValueAnswerKey();
-                    this.control.questionAnsweredCallback(userId, valueKey, choiceValue, this.answers);
+                    this.control.questionAnsweredCallback(userId, valueKey, choiceValue, this.answers, question);
                 }
             }
         }

@@ -290,7 +290,7 @@ class Question extends Step {
                     this.multiUserMessages.push(userMessage);
 
                     if(control.questionAskedCallback) {
-                        control.questionAskedCallback(userId, this.answerKey, this.flow.answers);
+                        control.questionAskedCallback(userId, this.answerKey, this.flow.answers, this);
                     }
 
                     if(this.useListeners) {
@@ -312,7 +312,7 @@ class Question extends Step {
         if(control.questionAskedCallback) {
             var userId = ChatTools.getUserId(msg.message.user);
             var answerKey = this.getAnswerKey();
-            control.questionAskedCallback(userId, answerKey, this.flow.answers);
+            control.questionAskedCallback(userId, answerKey, this.flow.answers, this);
         }
 
         if(this.useListeners) {
