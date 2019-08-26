@@ -90,6 +90,7 @@ class InviteUserData {
             data["aux_id"] = this.auxId;
         }
         if(isGroupInvite) {
+            data["invite_type"] = this.inviteType;
             data["create_conversation"] = this.createConversation;
         }
 
