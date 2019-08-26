@@ -1,4 +1,5 @@
 const Formatter = require('./formatter.js');
+const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
 const StringTools = require('./../utils/string-tools.js');
 
