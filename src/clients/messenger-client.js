@@ -269,7 +269,7 @@ class MessengerClient extends JsonRestClient {
         } else {
             methodPrefix += "conversations/";
         }
-        var postUrl = methodPrefix + chatId + "/verification";
+        var postUrl = methodPrefix + encodeURIComponent(chatId) + "/verification";
         var postData = {};
         postData["user_id"] = userId;
         postData["provider_id"] = providerId;
