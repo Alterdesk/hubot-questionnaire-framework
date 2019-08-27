@@ -93,7 +93,7 @@ class SendMessageData {
     }
 
     getOverrideToken() {
-        this.overrideToken;
+        return this.overrideToken;
     }
 
     hasAttachments() {

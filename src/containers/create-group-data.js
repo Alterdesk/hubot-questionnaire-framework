@@ -50,7 +50,7 @@ class CreateGroupData {
     }
 
     getOverrideToken() {
-        this.overrideToken;
+        return this.overrideToken;
     }
 
     getPostUrl() {

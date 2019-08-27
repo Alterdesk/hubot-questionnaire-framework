@@ -37,7 +37,7 @@ class GroupSettingsData {
     }
 
     getOverrideToken() {
-        this.overrideToken;
+        return this.overrideToken;
     }
 
     getPutUrl() {
