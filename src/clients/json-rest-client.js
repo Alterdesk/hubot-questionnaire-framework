@@ -72,7 +72,11 @@ class JsonRestClient {
     get(getUrl, overrideToken) {
         return new Promise(async (resolve) => {
             try {
-                Logger.debug("JsonRestClient::get() >> " + getUrl);
+                if(overrideToken) {
+                    Logger.debug("JsonRestClient::get() Using override token >> " + getUrl);
+                } else {
+                    Logger.debug("JsonRestClient::get() >> " + getUrl);
+                }
                 this.http(this.apiUrl + getUrl, overrideToken).get()((err, resp, body) => {
                     if(!resp) {
                         Logger.error("JsonRestClient::get() << " + getUrl + ":", err);
@@ -127,7 +131,11 @@ class JsonRestClient {
     put(putUrl, overrideToken) {
         return new Promise(async (resolve) => {
             try {
-                Logger.debug("JsonRestClient::put() >> " + putUrl);
+                if(overrideToken) {
+                    Logger.debug("JsonRestClient::put() Using override token >> " + putUrl);
+                } else {
+                    Logger.debug("JsonRestClient::put() >> " + putUrl);
+                }
                 this.http(this.apiUrl + putUrl, overrideToken).put()((err, resp, body) => {
                     if(!resp) {
                         Logger.error("JsonRestClient::put() << " + putUrl + ":", err);
@@ -168,7 +176,11 @@ class JsonRestClient {
     post(postUrl, postJson, overrideToken) {
         return new Promise(async (resolve) => {
             try {
-                Logger.debug("JsonRestClient::post() >> " + postUrl + ": " + postJson);
+                if(overrideToken) {
+                    Logger.debug("JsonRestClient::post() Using override token >> " + postUrl + ": " + postJson);
+                } else {
+                    Logger.debug("JsonRestClient::post() >> " + postUrl + ": " + postJson);
+                }
                 this.http(this.apiUrl + postUrl, overrideToken).post(postJson)((err, resp, body) => {
                     if(!resp) {
                         Logger.error("JsonRestClient::post() << " + postUrl + ":", err);
@@ -210,7 +222,11 @@ class JsonRestClient {
         return new Promise(async (resolve) => {
             try {
                 var postJson = JSON.stringify(postData);
-                Logger.debug("JsonRestClient::postMultipart() >> " + postUrl + " formData: " + postJson + " filePaths: ", filePaths);
+                if(overrideToken) {
+                    Logger.debug("JsonRestClient::postMultipart() Using override token >> " + postUrl + " formData: " + postJson + " filePaths: ", filePaths);
+                } else {
+                    Logger.debug("JsonRestClient::postMultipart() >> " + postUrl + " formData: " + postJson + " filePaths: ", filePaths);
+                }
                 var formData = new FormData();
                 if(postData) {
                     for(var propName in postData) {
@@ -306,7 +322,11 @@ class JsonRestClient {
     delete(deleteUrl, deleteJson, overrideToken) {
         return new Promise(async (resolve) => {
             try {
-                Logger.debug("JsonRestClient::delete() >> " + deleteUrl);
+                if(overrideToken) {
+                    Logger.debug("JsonRestClient::delete() Using override token >> " + deleteUrl);
+                } else {
+                    Logger.debug("JsonRestClient::delete() >> " + deleteUrl);
+                }
                 this.http(this.apiUrl + deleteUrl, overrideToken).delete(deleteJson)((err, resp, body) => {
                     if(!resp) {
                         Logger.error("JsonRestClient::delete() << " + deleteUrl + ":", err);
@@ -348,8 +368,11 @@ class JsonRestClient {
         return new Promise(async (resolve) => {
             try {
                 var cookie = this.urlCookies[url];
-                Logger.debug("JsonRestClient::download() >> " + url + " name: " + name + " mime: " + mime + " cookie: " + cookie);
-
+                if(overrideToken) {
+                    Logger.debug("JsonRestClient::download() Using override token >> " + url + " name: " + name + " mime: " + mime + " cookie: " + cookie);
+                } else {
+                    Logger.debug("JsonRestClient::download() >> " + url + " name: " + name + " mime: " + mime + " cookie: " + cookie);
+                }
                 var tmpDownloadPath = await this.getTmpDownloadPath();
                 if(!tmpDownloadPath) {
                     Logger.error("JsonRestClient::download() Unable to create temporary folder: " + tmpDownloadPath)
