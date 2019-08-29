@@ -1,15 +1,14 @@
-const Extra = require('node-messenger-extra');
-
 const LocaleTools = require('./../utils/locale-tools.js');
 const Logger = require('./../logger.js');
 const Question = require('./question.js');
+const RegexTools = require('./../utils/regex-tools.js');
 
 // Phone Number Question, accepts phone numbers, able to limit to country codes
 class PhoneNumberQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
-        this.regex = Extra.getTextRegex();
-        this.phoneRegex = Extra.getPhoneRegex();
+        this.regex = RegexTools.getTextRegex();
+        this.phoneRegex = RegexTools.getPhoneRegex();
         this.allowedCountryCodes = [];
         this.replaceLeadingZero = true;
     }

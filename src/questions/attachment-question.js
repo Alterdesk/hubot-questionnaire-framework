@@ -1,13 +1,12 @@
-const Extra = require('node-messenger-extra');
-
 const Logger = require('./../logger.js');
 const Question = require('./question.js');
+const RegexTools = require('./../utils/regex-tools.js');
 
 // Attachment question, request files from a user
 class AttachmentQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
-        this.regex = Extra.getTextRegex();
+        this.regex = RegexTools.getTextRegex();
         this.allowedExtensions = [];
         this.allowedMimeTypes = [];
     }
@@ -15,9 +14,11 @@ class AttachmentQuestion extends Question {
     // Get attachments that were sent with the message
     checkAndParseAnswer(matches, message) {
         if(typeof message.text === "object" && message.text.length > 0) {
+            Logger.debug("AttachmentQuestion::checkAndParseAnswer():", message.text);
             return message.text;
         }
-        if(message.attachments === null) {
+        if(!message.attachments || message.attachments.length === 0) {
+            Logger.error("AttachmentQuestion::checkAndParseAnswer() Invalid attachments: ", message.attachments);
             return null;
         }
         var value = [];
@@ -26,13 +27,19 @@ class AttachmentQuestion extends Question {
             var attachment = message.attachments[index];
             if(this.minSize !== null || this.maxSize !== null) {
                 var size = parseFloat(attachment["size"]);
+                if(typeof size !== "number") {
+                    Logger.error("AttachmentQuestion::checkAndParseAnswer() Unable to parse size: ", attachment);
+                    continue;
+                }
                 if(!this.inSizeRange(size)) {
+                    Logger.debug("AttachmentQuestion::checkAndParseAnswer() Size not in range:", attachment);
                     continue;
                 }
             }
             if(this.allowedExtensions.length > 0) {
                 var name = attachment["name"];
                 if(typeof name !== "string") {
+                    Logger.debug("AttachmentQuestion::checkAndParseAnswer() Invalid attachment name:", attachment);
                     continue;
                 }
                 name = name.toUpperCase();
@@ -44,12 +51,14 @@ class AttachmentQuestion extends Question {
                     }
                 }
                 if(!allowed) {
+                    Logger.debug("AttachmentQuestion::checkAndParseAnswer() Extension not allowed:", attachment);
                     continue;
                 }
             }
             if(this.allowedMimeTypes.length > 0) {
                 var mime = attachment["mime_type"];
                 if(typeof mime !== "string") {
+                    Logger.debug("AttachmentQuestion::checkAndParseAnswer() Invalid attachment mime:", attachment);
                     continue;
                 }
                 mime = mime.toUpperCase();
@@ -61,25 +70,35 @@ class AttachmentQuestion extends Question {
                     }
                 }
                 if(!allowed) {
+                    Logger.debug("AttachmentQuestion::checkAndParseAnswer() Mime not allowed:", attachment);
                     continue;
                 }
             }
             value.push(attachment);
         }
-
-        if(value.length > 0 && this.inCountRange(value.length)) {
-            return value;
+        if(value.length === 0) {
+            Logger.error("AttachmentQuestion::checkAndParseAnswer() Unable to parse attachments: ", message.attachments);
+            return null;
         }
-        return null;
+
+        if(!this.inCountRange(value.length)) {
+            Logger.debug("AttachmentQuestion::checkAndParseAnswer() Count not in range: " + value.length);
+            return null;
+        }
+        Logger.debug("AttachmentQuestion::checkAndParseAnswer() Parsed " + value.length + " attachments");
+        return value;
     }
 
     // Check if the value is in range
     inCountRange(value) {
-        if(this.minCount != null && this.maxCount != null) {
+        Logger.debug("AttachmentQuestion::inCountRange() Value: " + value + " min: " + this.minCount + " max: " + this.maxCount);
+        var minValid = typeof this.minCount === "number" && this.minCount > 0;
+        var maxValid = typeof this.maxCount === "number" && this.maxCount > 0;
+        if(minValid && maxValid) {
             return value >= this.minCount && value <= this.maxCount;
-        } else if(this.minCount != null) {
+        } else if(minValid) {
             return value >= this.minCount;
-        } else if(this.maxCount != null) {
+        } else if(maxValid) {
             return value <= this.maxCount;
         }
         return true;
@@ -87,11 +106,14 @@ class AttachmentQuestion extends Question {
 
     // Check if the value is in range
     inSizeRange(value) {
-        if(this.minSize != null && this.maxSize != null) {
+        Logger.debug("AttachmentQuestion::inSizeRange() Value: " + value + " min: " + this.minSize + " max: " + this.maxSize);
+        var minValid = typeof this.minSize === "number" && this.minSize > 0;
+        var maxValid = typeof this.maxSize === "number" && this.maxSize > 0;
+        if(minValid && maxValid) {
             return value >= this.minSize && value <= this.maxSize;
-        } else if(this.minSize != null) {
+        } else if(minValid) {
             return value >= this.minSize;
-        } else if(this.maxSize != null) {
+        } else if(maxValid) {
             return value <= this.maxSize;
         }
         return true;

@@ -1,7 +1,6 @@
-const Extra = require('node-messenger-extra');
-
 const Formatter = require('./formatter.js');
 const Logger = require('./../logger.js');
+const StringTools = require('./../utils/string-tools.js');
 
 class ReplaceAnswerFormatter extends Formatter {
 
@@ -15,8 +14,8 @@ class ReplaceAnswerFormatter extends Formatter {
         this.bulletStyle = " • ";
     }
 
-    execute(text, answers, flow) {
-        var answerKey = this.answerKey;
+    execute(text, flow) {
+        var answerKey = this.getAnswerKey(flow);
         if(!answerKey) {
             Logger.error("ReplaceAnswerFormatter::execute() Invalid answerKey: \"" + answerKey + "\"");
             return text;
@@ -26,26 +25,23 @@ class ReplaceAnswerFormatter extends Formatter {
             return text;
         }
         Logger.debug("ReplaceAnswerFormatter::execute() Using from: \"" + this.from + "\" answerKey: \"" + answerKey + "\"");
-        if(!this.checkConditions(answers)) {
+        if(!this.checkConditions(flow)) {
             Logger.debug("ReplaceAnswerFormatter::execute() Condition not met");
             return text;
         }
-        if(this.repeatIteration > -1) {
-            answerKey = answerKey + "_" + this.repeatIteration;
-        }
-        if(!answers.has(answerKey)) {
+        if(!flow.answers.has(answerKey)) {
             Logger.debug("ReplaceAnswerFormatter::execute() Answer not found: \"" + answerKey + "\"");
             if(this.fallbackText != null) {
                 Logger.debug("ReplaceAnswerFormatter::execute() Using fallback: \"" + this.fallbackText + "\" answerKey: \"" + answerKey + "\"");
                 var fallback = this.fallbackText;
                 if(this.escapeHtml) {
-                    fallback = Extra.escapeHtml(fallback);
+                    fallback = StringTools.escapeHtml(fallback);
                 }
                 return text.replace(this.from, fallback);
             }
             return text;
         }
-        var answerValue = answers.get(answerKey);
+        var answerValue = flow.answers.get(answerKey);
         if(answerValue == null) {
             Logger.error("ReplaceAnswerFormatter::execute() Invalid answer: \"" + answerKey + "\"");
             return text;
@@ -53,19 +49,19 @@ class ReplaceAnswerFormatter extends Formatter {
         if(typeof answerValue === "object") {
             var result = this.getTextForArray(answerValue);
             if(!result || result.length === 0) {
-                Logger.debug("ReplaceAnswerFormatter::execute() Answer is empty or invalid: key:\"" + answerKey + "\" value:", this.answerValue);
+                Logger.debug("ReplaceAnswerFormatter::execute() Answer is empty or invalid: key:\"" + answerKey + "\" value:", answerValue);
                 if(this.fallbackText != null) {
                     Logger.debug("ReplaceAnswerFormatter::execute() Using fallback: \"" + this.fallbackText + "\" answerKey: \"" + answerKey + "\"");
                     var fallback = this.fallbackText;
                     if(this.escapeHtml) {
-                        fallback = Extra.escapeHtml(fallback);
+                        fallback = StringTools.escapeHtml(fallback);
                     }
                     return text.replace(this.from, fallback);
                 }
                 return text;
             }
             if(this.escapeHtml) {
-                result = Extra.escapeHtml(result);
+                result = StringTools.escapeHtml(result);
             }
             return text.replace(this.from, result);
         }
@@ -77,7 +73,7 @@ class ReplaceAnswerFormatter extends Formatter {
             result = result + this.suffixText;
         }
         if(this.escapeHtml) {
-            result = Extra.escapeHtml(result);
+            result = StringTools.escapeHtml(result);
         }
         return text.replace(this.from, result);
     }

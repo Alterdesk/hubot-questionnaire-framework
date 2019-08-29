@@ -1,11 +1,13 @@
 const Action = require('./action.js');
-const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
+const CreateGroupData = require('./../containers/create-group-data.js');
+const GroupSettingsData = require('./../containers/group-settings-data.js');
+const InviteUserData = require('./../containers/invite-user-data.js');
 const Logger = require('./../logger.js');
 
 class CreateGroupAction extends Action {
     constructor(subject) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
         this.subject = subject;
         this.memberIds = [];
@@ -13,19 +15,18 @@ class CreateGroupAction extends Action {
         this.subjectFormatters = [];
     }
 
-    start(response, answers, flowCallback) {
-        this.answers = answers;
+    async start(flowCallback) {
         this.flowCallback = flowCallback;
-        if(!this.flow || !this.flow.msg || !this.flow.control || !this.flow.control.messengerApi) {
-            Logger.error("CreateGroupAction::start() Invalid Flow, Control or MessengerApi");
+        if(!this.flow || !this.flow.msg || !this.flow.control) {
+            Logger.error("CreateGroupAction::start() Invalid Flow or Control");
             this.done(null);
             return;
         }
-
-        var subjectValue = AnswerOrFixed.get(this.subject, answers, "");
+        var answers = this.flow.answers;
+        var subjectValue = this.getAnswerValue(this.subject, answers, "");
         for(let i in this.subjectFormatters) {
             var formatter = this.subjectFormatters[i];
-            subjectValue = formatter.execute(subjectValue, answers, this.flow);
+            subjectValue = formatter.execute(subjectValue, this.flow);
         }
         if(!subjectValue || subjectValue === "") {
             Logger.error("CreateGroupAction::start() Invalid subject:" + subjectValue);
@@ -33,35 +34,37 @@ class CreateGroupAction extends Action {
             return;
         }
 
-        // Group chat settings
-        var settingsPostData = {};
-        var allowContactsValue = AnswerOrFixed.get(this.allowContacts, answers);
-        if(allowContactsValue != null) {
-            settingsPostData["allow_contacts"] = allowContactsValue;
-        }
-        var autoCloseAfterValue = AnswerOrFixed.get(this.autoCloseAfter, answers);
-        if(autoCloseAfterValue != null) {
-            settingsPostData["auto_close_after"] = autoCloseAfterValue;
-        }
-        var autoExpireAfterValue = AnswerOrFixed.get(this.autoExpireAfter, answers);
-        if(autoCloseAfterValue != null) {
-            settingsPostData["auto_expire_after"] = autoExpireAfterValue;
-        }
-        var hybridMessagingValue = AnswerOrFixed.get(this.hybridMessaging, answers);
-        if(hybridMessagingValue != null) {
-            settingsPostData["hybrid_messaging"] = hybridMessagingValue;
-        }
-        var membersCanInviteValue = AnswerOrFixed.get(this.membersCanInvite, answers);
-        if(membersCanInviteValue != null) {
-            settingsPostData["members_can_invite"] = membersCanInviteValue;
-        }
+        var createGroupData = new CreateGroupData();
+        createGroupData.setSubject(subjectValue);
 
-        var memberData = [];
+        var groupSettingsData = new GroupSettingsData();
+        var allowContactsValue = this.getAnswerValue(this.allowContacts, answers);
+        if(allowContactsValue != null) {
+            groupSettingsData.setAllowContacts(allowContactsValue);
+        }
+        var autoCloseAfterValue = this.getAnswerValue(this.autoCloseAfter, answers);
+        if(autoCloseAfterValue != null) {
+            groupSettingsData.setCloseAfter(autoCloseAfterValue);
+        }
+        var autoExpireAfterValue = this.getAnswerValue(this.autoExpireAfter, answers);
+        if(autoCloseAfterValue != null) {
+            groupSettingsData.setExpireAfter(autoExpireAfterValue);
+        }
+        var hybridMessagingValue = this.getAnswerValue(this.hybridMessaging, answers);
+        if(hybridMessagingValue != null) {
+            groupSettingsData.setHybridMessaging(hybridMessagingValue);
+        }
+        var membersCanInviteValue = this.getAnswerValue(this.membersCanInvite, answers);
+        if(membersCanInviteValue != null) {
+            groupSettingsData.setMembersCanInvite(membersCanInviteValue);
+        }
+        createGroupData.setGroupSettings(groupSettingsData);
+
         for(let index in this.memberIds) {
             var member = this.memberIds[index];
-            var id = AnswerOrFixed.get(member, answers);
+            var id = this.getAnswerValue(member, answers);
             if(id && id.length > 0) {
-                memberData.push(id);
+                createGroupData.addMemberId(id);
             }
         }
 
@@ -69,61 +72,31 @@ class CreateGroupAction extends Action {
         var inviteUsersData = [];
         for(let index in this.invites) {
             var invite = this.invites[index];
-            var inviteData = {};
-            inviteData["create_conversation"] = AnswerOrFixed.get(invite.createConversation, answers, false);
-            inviteData["email"] = AnswerOrFixed.get(invite.email, answers);
-            inviteData["first_name"] = AnswerOrFixed.get(invite.firstName, answers);
-            inviteData["last_name"] = AnswerOrFixed.get(invite.lastName, answers);
-            var inviteText = AnswerOrFixed.get(invite.inviteText, answers);
-            if(inviteText != null) {
-                inviteData["invite_text"] = inviteText;  // Only used when creating conversation
-            }
-            var inviteAuxId = AnswerOrFixed.get(invite.auxId, answers);
-            if(inviteAuxId != null) {
-                inviteData["aux_id"] = inviteAuxId;
-            }
-            if(invite.inviteType === "COWORKER") {
-                inviteData["invite_type"] = "coworker";
-            } else if(invite.inviteType === "CONTACT") {
-                inviteData["invite_type"] = "contact";
-            } else if(invite.inviteType === "PRIVATE") {
-                inviteData["invite_type"] = "private_user";
-            } else {
-                Logger.error("CreateGroupAction::start() Invalid invite:" + invite);
-            }
-            inviteUsersData.push(inviteData);
+            var inviteUserData = new InviteUserData();
+            inviteUserData.setCreateConversation(this.getAnswerValue(invite.createConversation, answers, false));
+            inviteUserData.setEmail(this.getAnswerValue(invite.email, answers));
+            inviteUserData.setFirstName(this.getAnswerValue(invite.firstName, answers));
+            inviteUserData.setLastName(this.getAnswerValue(invite.lastName, answers));
+            inviteUserData.setInviteMessage(this.getAnswerValue(invite.inviteText, answers))
+            inviteUserData.setAuxId(this.getAnswerValue(invite.auxId, answers));
+            inviteUserData.setInviteType(this.getAnswerValue(invite.inviteType, answers));
+            createGroupData.addInvite(inviteUserData);
         }
 
-        // Group data
-        var groupPostData = {};
-        groupPostData["invite_users"] = inviteUsersData;
-        groupPostData["members"] = memberData;
-        groupPostData["settings"] = settingsPostData;
-        groupPostData["subject"] = subjectValue;
-        groupPostData["send_email"] = AnswerOrFixed.get(this.sendEmail, answers, true);
-
-        var auxId = AnswerOrFixed.get(this.auxId, answers);
-        if(auxId) {
-            groupPostData["aux_id"] = auxId;
-            groupPostData["aux_members"] = false;   // TODO All member ids should be aux or not aux
+        createGroupData.setSendEmail(this.getAnswerValue(this.sendEmail, answers, true));
+        createGroupData.setAuxId(this.getAnswerValue(this.auxId, answers));
+        if(this.overrideToken) {
+            createGroupData.setOverrideToken(this.overrideToken);
         }
-
-        var groupPostJson = JSON.stringify(groupPostData);
-        var postUrl;
-        if(auxId != null) {
-            postUrl = "aux/groupchats";
-        } else {
-            postUrl = "groupchats";
-        }
-        this.flow.control.messengerApi.post(postUrl, groupPostJson, (success, json) => {
-            this.done(json);
-        }, this.overrideToken);
+        var json = await this.flow.control.messengerClient.createGroup(createGroupData);
+        this.done(json);
     }
 
     done(value) {
-        if(this.answerKey && value != null) {
-            this.answers.add(this.answerKey, value);
-            this.answers.addObject(this.answerKey, value);
+        var answerKey = this.getAnswerKey();
+        if(answerKey && value != null) {
+            this.flow.answers.add(answerKey, value);
+            this.flow.answers.addObject(answerKey, value);
         }
         if(value) {
             if(this.positiveSubFlow) {
@@ -194,12 +167,6 @@ class CreateGroupAction extends Action {
         this.subjectFormatters.push(formatter);
     }
 
-    reset(answers) {
-        super.reset(answers);
-        if(this.answerKey) {
-            answers.remove(this.answerKey);
-        }
-    }
 }
 
 class MemberInvite {

@@ -1,24 +1,24 @@
 const Action = require('./action.js');
+const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
 
 class CheckUserAction extends Action {
     constructor(check) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
         this.check = check;
     }
 
-    start(response, answers, flowCallback) {
-        this.answers = answers;
+    async start(flowCallback) {
         this.flowCallback = flowCallback;
-        if(!this.flow || !this.flow.msg || !this.flow.control || !this.flow.control.messengerApi) {
-            Logger.error("CheckUserAction::start() Invalid Flow, Control or MessengerApi");
+        if(!this.flow || !this.flow.msg || !this.flow.control) {
+            Logger.error("CheckUserAction::start() Invalid Flow or Control");
             this.done(null);
             return;
         }
 
-        var userId = this.flow.control.getUserId(this.flow.msg.message.user);
+        var userId = ChatTools.getUserId(this.flow.msg.message.user);
         if(!userId || userId.length == 0) {
             Logger.error("CheckUserAction::start() Invalid user id:", userId);
             this.done(null);
@@ -26,15 +26,13 @@ class CheckUserAction extends Action {
         }
 
         if(this.check === "BUSINESS") {
-            this.flow.control.messengerApi.getUser(userId, false, (success, json) => {
-                if(!success || !json) {
-                    this.done(null);
-                    return;
-                }
-                var business = json["private_user"] === false;
-                this.done(business);
-
-            }, this.overrideToken);
+            var json = await this.flow.control.messengerClient.getUser(userId, false, this.overrideToken);
+            if(!json) {
+                this.done(null);
+                return;
+            }
+            var business = json["private_user"] === false;
+            this.done(business);
         } else if(this.check === "COWORKER") {
             var robotUser = this.flow.control.robotUser;
             if(!robotUser) {
@@ -48,39 +46,37 @@ class CheckUserAction extends Action {
                 this.done(null);
                 return;
             }
-            this.flow.control.messengerApi.getUser(userId, false, (success, json) => {
-                if(!success || !json) {
-                    this.done(null);
-                    return;
-                }
-                var coworker = json["company_id"] === robotCompany;
-                this.done(coworker);
-            }, this.overrideToken);
+            var json = await this.flow.control.messengerClient.getUser(userId, false, this.overrideToken);
+            if(!json) {
+                this.done(null);
+                return;
+            }
+            var coworker = json["company_id"] === robotCompany;
+            this.done(coworker);
         } else if(this.check === "VERIFIED") {
-            this.flow.control.messengerApi.getUserVerifications(userId, (success, json) => {
-                if(!success || !json) {
-                    this.done(null);
-                    return;
-                }
-                var userVerifications = json["user"];
-                if(!userVerifications || userVerifications.length === 0) {
-                    this.done(false);
-                    return;
-                }
-                if(!this.provider || this.provider === "") {
+            var json = await this.flow.control.messengerClient.getUserVerifications(userId, this.overrideToken);
+            if(!json) {
+                this.done(null);
+                return;
+            }
+            var userVerifications = json["user"];
+            if(!userVerifications || userVerifications.length === 0) {
+                this.done(false);
+                return;
+            }
+            if(!this.provider || this.provider === "") {
+                this.done(true);
+                return;
+            }
+            for(let i in userVerifications) {
+                var userVerification = userVerifications[i];
+                if(this.provider === userVerification["name"]) {
                     this.done(true);
                     return;
                 }
-                for(let i in userVerifications) {
-                    var userVerification = userVerifications[i];
-                    if(this.provider === userVerification["name"]) {
-                        this.done(true);
-                        return;
-                    }
-                }
-                this.done(null);
-                return;
-            }, this.overrideToken);
+            }
+            this.done(null);
+            return;
         } else {
             Logger.error("CheckUserAction::start() Unknown check:", this.check);
             this.done(null);
@@ -88,8 +84,9 @@ class CheckUserAction extends Action {
     }
 
     done(value) {
-        if(this.answerKey && value != null) {
-            this.answers.add(this.answerKey, value);
+        var answerKey = this.getAnswerKey();
+        if(answerKey && value != null) {
+            this.flow.answers.add(answerKey, value);
         }
         if(value) {
             if(this.positiveSubFlow) {
@@ -121,13 +118,6 @@ class CheckUserAction extends Action {
 
     setOverrideToken(overrideToken) {
         this.overrideToken = overrideToken;
-    }
-
-    reset(answers) {
-        super.reset(answers);
-        if(this.answerKey) {
-            answers.remove(this.answerKey);
-        }
     }
 }
 

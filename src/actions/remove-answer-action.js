@@ -2,14 +2,15 @@ const Action = require('./action.js');
 
 class RemoveAnswerAction extends Action {
     constructor(answerKey) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
         this.answerKey = answerKey;
     }
 
-    start(response, answers, flowCallback) {
-        answers.remove(this.answerKey);
+    start(flowCallback) {
+        var answerKey = this.getAnswerKey();
+        this.flow.answers.remove(answerKey);
         flowCallback();
     }
 }

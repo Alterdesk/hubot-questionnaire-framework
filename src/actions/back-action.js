@@ -2,14 +2,14 @@ const Action = require('./action.js');
 
 class BackAction extends Action {
     constructor(checkpoint) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
         this.checkpoint = checkpoint;
         this.controlsFlow = true;
     }
 
-    start(response, answers, flowCallback) {
+    start(flowCallback) {
         this.flow.previous(this.checkpoint);
         flowCallback();
     }

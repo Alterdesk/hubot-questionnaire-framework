@@ -1,7 +1,7 @@
-const Extra = require('node-messenger-extra');
-
 const Formatter = require('./formatter.js');
+const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
+const StringTools = require('./../utils/string-tools.js');
 
 class RepeatFormatter extends Formatter {
 
@@ -17,9 +17,8 @@ class RepeatFormatter extends Formatter {
         this.iteration = -1;
     }
 
-    execute(text, answers, flow) {
+    execute(text, flow) {
         Logger.debug("RepeatFormatter::execute()");
-        this.answers = answers;
         this.flow = flow;
 
         if(!this.to || this.to.length === 0) {
@@ -31,7 +30,7 @@ class RepeatFormatter extends Formatter {
             return text;
         }
         
-        this.repeatCount = this.getRepeatCount();
+        this.repeatCount = this.getRepeatCount(flow);
         Logger.debug("RepeatFormatter::execute() Repeat count:", this.repeatCount);
 
         var result = "";
@@ -41,7 +40,7 @@ class RepeatFormatter extends Formatter {
             for(let i in this.startFormatters) {
                 var formatter = this.startFormatters[i];
                 formatter.setEscapeHtml(this.escapeHtml);
-                result = formatter.execute(result, this.answers, this.flow);
+                result = formatter.execute(result, this.flow);
             }
         }
 
@@ -54,18 +53,18 @@ class RepeatFormatter extends Formatter {
             for(let i in this.endFormatters) {
                 var formatter = this.endFormatters[i];
                 formatter.setEscapeHtml(this.escapeHtml);
-                result = formatter.execute(result, this.answers, this.flow);
+                result = formatter.execute(result, this.flow);
             }
         }
 
         if(this.escapeHtml) {
-            result = Extra.escapeHtml(result);
+            result = StringTools.escapeHtml(result);
         }
 
         return text.replace(this.from, result);
     }
 
-    getRepeatCount() {
+    getRepeatCount(flow) {
         Logger.debug("RepeatFormatter::getRepeatCount()");
         if(!this.repeatKey || this.repeatKey === "") {
             Logger.error("RepeatFormatter::getRepeatCount() Repeat answer key not set:", this.repeatKey);
@@ -73,8 +72,8 @@ class RepeatFormatter extends Formatter {
         }
         var count = 0;
         while(true) {
-            var key = this.repeatKey + "_" + count;
-            var value = this.answers.get(key);
+            var key = ChatTools.getAnswerKey(this.repeatKey, flow, count);
+            var value = flow.answers.get(key);
             if(value == null) {
                 Logger.debug("RepeatFormatter::getRepeatCount() Repeat answer not given:", key, value);
                 break;
@@ -99,8 +98,8 @@ class RepeatFormatter extends Formatter {
             for(let i in this.dividerFormatters) {
                 var formatter = this.dividerFormatters[i];
                 formatter.setEscapeHtml(this.escapeHtml);
-                formatter.setRepeatIteration(iteration);
-                result = formatter.execute(result, this.answers, this.flow);
+                formatter.setForceRepeatIteration(iteration);
+                result = formatter.execute(result, this.flow);
             }
         }
 
@@ -108,8 +107,8 @@ class RepeatFormatter extends Formatter {
         for(let i in this.formatters) {
             var formatter = this.formatters[i];
             formatter.setEscapeHtml(this.escapeHtml);
-            formatter.setRepeatIteration(iteration);
-            result = formatter.execute(result, this.answers, this.flow);
+            formatter.setForceRepeatIteration(iteration);
+            result = formatter.execute(result, this.flow);
         }
         return result;
     }

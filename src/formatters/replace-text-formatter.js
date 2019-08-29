@@ -1,7 +1,6 @@
-const Extra = require('node-messenger-extra');
-
 const Formatter = require('./formatter.js');
 const Logger = require('./../logger.js');
+const StringTools = require('./../utils/string-tools.js');
 
 class ReplaceTextFormatter extends Formatter {
 
@@ -11,9 +10,9 @@ class ReplaceTextFormatter extends Formatter {
         this.to = to;
     }
 
-    execute(text, answers, flow) {
+    execute(text, flow) {
         Logger.debug("ReplaceTextFormatter::execute() Using from: \"" + this.from + "\" to: \"" + this.to + "\"");
-        if(!this.checkConditions(answers)) {
+        if(!this.checkConditions(flow)) {
             Logger.debug("ReplaceTextFormatter::execute() Condition not met");
             return text;
         }
@@ -33,7 +32,7 @@ class ReplaceTextFormatter extends Formatter {
             to = to + this.suffixText;
         }
         if(this.escapeHtml) {
-            to = Extra.escapeHtml(to);
+            to = StringTools.escapeHtml(to);
         }
         return text.replace(this.from, to);
     }

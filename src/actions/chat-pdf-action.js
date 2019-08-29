@@ -1,11 +1,12 @@
 const Action = require('./action.js');
-const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
+const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
+const SendMessageData = require('./../containers/send-message-data.js');
 
 class ChatPdfAction extends Action {
     constructor(filename) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
         this.filenameFormatters = [];
         this.messageFormatters = [];
@@ -13,30 +14,31 @@ class ChatPdfAction extends Action {
         this.isAux = false;
     }
 
-    async start(response, answers, flowCallback) {
-        if(!this.flow || !this.flow.msg || !this.flow.control || !this.flow.control.messengerApi) {
+    async start(flowCallback) {
+        if(!this.flow || !this.flow.msg || !this.flow.control) {
             flowCallback();
             return;
         }
-        var filename = AnswerOrFixed.get(this.filename, answers, "");
+        var answers = this.flow.answers;
+        var filename = this.getAnswerValue(this.filename, answers, "");
         for(let i in this.filenameFormatters) {
             var formatter = this.filenameFormatters[i];
-            filename = formatter.execute(filename, answers, this.flow);
+            filename = formatter.execute(filename, this.flow);
         }
         if(!filename || filename.length === 0) {
             Logger.error("ChatPdfAction::start() Invalid filename:", this.filename);
             if(this.errorMessage && this.errorMessage.length > 0) {
-                response.send(this.errorMessage);
+                this.flow.msg.send(this.errorMessage);
             }
             flowCallback();
             return;
         }
         var msg = this.flow.msg;
         var control = this.flow.control;
-        var messengerApi = control.messengerApi;
+        var messengerClient = control.messengerClient;
 
         var sourceChatId = msg.message.room;
-        var sourceIsGroup = control.isUserInGroup(msg.message.user);
+        var sourceIsGroup = ChatTools.isUserInGroup(msg.message.user);
         if(!sourceChatId) {
             Logger.error("ChatPdfAction::start() Invalid source chat id");
             flowCallback();
@@ -47,9 +49,9 @@ class ChatPdfAction extends Action {
         var destinationIsGroup;
         var destinationIsAux;
         if(this.chatId) {
-            destinationChatId = AnswerOrFixed.get(this.chatId, answers);
-            destinationIsGroup = AnswerOrFixed.get(this.isGroup, answers);
-            destinationIsAux = AnswerOrFixed.get(this.isAux, answers);
+            destinationChatId = this.getAnswerValue(this.chatId, answers);
+            destinationIsGroup = this.getAnswerValue(this.isGroup, answers);
+            destinationIsAux = this.getAnswerValue(this.isAux, answers);
         } else {
             destinationChatId = sourceChatId;
             destinationIsGroup = sourceIsGroup;
@@ -61,52 +63,54 @@ class ChatPdfAction extends Action {
             return;
         }
 
-        var messageText = AnswerOrFixed.get(this.messageText, answers, "");
+        var messageText = this.getAnswerValue(this.messageText, answers, "");
         for(let i in this.messageFormatters) {
             var formatter = this.messageFormatters[i];
-            messageText = formatter.execute(messageText, answers, this.flow);
+            messageText = formatter.execute(messageText, this.flow);
         }
 
-        var startDate = AnswerOrFixed.get(this.startDate, answers);
-        var endDate = AnswerOrFixed.get(this.endDate, answers);
+        var startDate = this.getAnswerValue(this.startDate, answers);
+        var endDate = this.getAnswerValue(this.endDate, answers);
 
-        var filePath = await messengerApi.downloadChatPdf(filename, startDate, endDate, sourceChatId, sourceIsGroup, false);
+        var filePath = await messengerClient.downloadChatPdf(filename, startDate, endDate, sourceChatId, sourceIsGroup, false);
         if(!filePath) {
             Logger.error("ChatPdfAction::start() Unable to generate PDF");
             if(this.answerKey) {
                 answers.add(this.answerKey, false);
             }
             if(this.errorMessage && this.errorMessage.length > 0) {
-                response.send(this.errorMessage);
+                this.flow.msg.send(this.errorMessage);
             }
             flowCallback();
             return;
         }
         Logger.debug("ChatPdfAction::start() Generated PDF: " + filePath);
-        var messageData = control.createSendMessageData();
-        messageData.chatId = destinationChatId;
-        messageData.isGroup = destinationIsGroup;
-        messageData.isAux = destinationIsAux;
-        messageData.message = messageText;
-        messageData.addAttachmentPath(filePath);
-        messageData.overrideToken = this.overrideToken;
-        messengerApi.sendMessage(messageData, (messageSuccess, json) => {
-            if(this.answerKey) {
-                answers.add(this.answerKey + "_file_path", filePath);
-                answers.add(this.answerKey, messageSuccess);
-            }
+
+        var sendMessageData = new SendMessageData();
+        sendMessageData.setMessage(messageText);
+        sendMessageData.setChat(destinationChatId, destinationIsGroup, destinationIsAux);
+        sendMessageData.addAttachmentPath(filePath);
+        if(this.overrideToken) {
+            sendMessageData.setOverrideToken(this.overrideToken);
+        }
+
+        var json = await messengerClient.sendMessage(sendMessageData);
+        var messageSuccess = json != null;
+        if(this.answerKey) {
+            answers.add(this.answerKey, messageSuccess);
             if(messageSuccess) {
-                Logger.debug("ChatPdfAction::start() PDF message sent successfully");
-            } else {
-                Logger.error("ChatPdfAction::start() Unable to send PDF");
-                if(this.errorMessage && this.errorMessage.length > 0) {
-                    response.send(this.errorMessage);
-                }
+                answers.add(this.answerKey + "_file_path", filePath);
             }
-            flowCallback();
-            // TODO Retry mechanism?
-            // TODO Delete PDF after successful send
-        });
+        }
+        if(messageSuccess) {
+            Logger.debug("ChatPdfAction::start() PDF message sent successfully");
+        } else {
+            Logger.error("ChatPdfAction::start() Unable to send PDF");
+            if(this.errorMessage && this.errorMessage.length > 0) {
+                this.flow.msg.send(this.errorMessage);
+            }
+        }
+        flowCallback();
     }
 
     setAnswerKey(answerKey) {

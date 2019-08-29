@@ -1,12 +1,11 @@
 const Action = require('./action.js');
-const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
 const DateTools = require('./../utils/date-tools.js');
 const Logger = require('./../logger.js');
 
 class ModifyDateAction extends Action {
     constructor(useDate, answerKey, operation, timeScale, timeValue) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
         this.useDate = useDate;
         this.answerKey = answerKey;
@@ -18,26 +17,26 @@ class ModifyDateAction extends Action {
         this.maxFailOperations = 1000;
     }
 
-    start(response, answers, flowCallback) {
-        this.answers = answers;
-        var date = AnswerOrFixed.get(this.useDate, answers);
+    start(flowCallback) {
+        var answers = this.flow.answers;
+        var date = this.getAnswerValue(this.useDate, answers);
         if(!date) {
             date = DateTools.utcDate();
         }
-        var timeValue = AnswerOrFixed.get(this.timeValue, answers);
+        var timeValue = this.getAnswerValue(this.timeValue, answers);
         if(timeValue < 0) {
             Logger.error("ModifyDateAction::start() Invalid time value:", timeValue);
             flowCallback();
             return;
         }
-        var timeScale = AnswerOrFixed.get(this.timeScale, answers);
+        var timeScale = this.getAnswerValue(this.timeScale, answers);
         var useScale = DateTools.getTimeScale(timeScale);
         if(!useScale) {
             Logger.error("ModifyDateAction::start() Invalid time scale:", timeScale);
             flowCallback();
             return;
         }
-        var operation = AnswerOrFixed.get(this.operation, answers);
+        var operation = this.getAnswerValue(this.operation, answers);
         Logger.debug("ModifyDateAction::start() Modifying date:", date);
         var moment = DateTools.getUTCMoment(date);
         if(!this.doOperation(operation, moment, useScale, timeValue)) {
@@ -46,20 +45,20 @@ class ModifyDateAction extends Action {
         }
 
         if(this.dateConditions.length > 0) {
-            var failTimeValue = AnswerOrFixed.get(this.failTimeValue, answers);
+            var failTimeValue = this.getAnswerValue(this.failTimeValue, answers);
             if(failTimeValue < 1) {
                 Logger.error("ModifyDateAction::start() Invalid fail time value:", failTimeValue);
                 flowCallback();
                 return;
             }
-            var failTimeScale = AnswerOrFixed.get(this.failTimeScale, answers);
+            var failTimeScale = this.getAnswerValue(this.failTimeScale, answers);
             var useFailScale = DateTools.getTimeScale(failTimeScale);
             if(!useFailScale) {
                 Logger.error("ModifyDateAction::start() Invalid fail time scale:", failTimeScale);
                 flowCallback();
                 return;
             }
-            var failOperation = AnswerOrFixed.get(this.failOperation, answers);
+            var failOperation = this.getAnswerValue(this.failOperation, answers);
             while(!this.checkDateConditions()) {
                 this.failOperations++;
                 if(this.failOperations >= this.maxFailOperations) {
@@ -94,15 +93,16 @@ class ModifyDateAction extends Action {
             }
         }
         var date = moment.toDate();
-        Logger.debug("ModifyDateAction::doOperation() Saving modified date:", this.answerKey, date);
-        this.answers.add(this.answerKey, date);
+        var answerKey = this.getAnswerKey();
+        Logger.debug("ModifyDateAction::doOperation() Saving modified date:", answerKey, date);
+        this.flow.answers.add(answerKey, date);
         return true;
     }
 
     checkDateConditions() {
         for(let i in this.dateConditions) {
             var condition = this.dateConditions[i];
-            if(!condition.check(this.answers)) {
+            if(!condition.check(this.flow)) {
                 Logger.debug("ModifyDateAction::checkDateConditions() Condition not met: ", condition);
                 return false;
             }
@@ -128,8 +128,8 @@ class ModifyDateAction extends Action {
         this.dateConditions.push(condition);
     }
 
-    reset(answers) {
-        super.reset(answers);
+    reset() {
+        super.reset();
         this.failOperations = 0;
     }
 }

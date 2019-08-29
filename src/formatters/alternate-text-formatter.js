@@ -1,8 +1,7 @@
-const Extra = require('node-messenger-extra');
-
 const AnswerCondition = require('./../conditions/answer-condition.js');
 const Formatter = require('./formatter.js');
 const Logger = require('./../logger.js');
+const StringTools = require('./../utils/string-tools.js');
 
 class AlternateTextFormatter extends Formatter {
 
@@ -11,19 +10,19 @@ class AlternateTextFormatter extends Formatter {
         this.alternateText = alternateText;
     }
 
-    execute(text, answers, flow) {
+    execute(text, flow) {
         var alternateText = this.alternateText;
         if(!alternateText || alternateText.length === 0) {
             Logger.debug("AlternateTextFormatter::execute() Invalid alternate text: \"" + this.alternateText + "\"");
             return text;
         }
         Logger.debug("AlternateTextFormatter::execute() Alternate text: \"" + this.alternateText + "\"");
-        if(!this.checkConditions(answers)) {
+        if(!this.checkConditions(flow)) {
             Logger.debug("AlternateTextFormatter::execute() Condition not met");
             return text;
         }
         if(this.escapeHtml) {
-            return Extra.escapeHtml(alternateText);
+            return StringTools.escapeHtml(alternateText);
         }
         return alternateText;
     }
