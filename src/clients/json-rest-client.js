@@ -128,7 +128,7 @@ class JsonRestClient {
         });
     }
 
-    put(putUrl, overrideToken) {
+    put(putUrl, putJson, overrideToken) {
         return new Promise(async (resolve) => {
             try {
                 if(overrideToken) {
@@ -136,7 +136,7 @@ class JsonRestClient {
                 } else {
                     Logger.debug("JsonRestClient::put() >> " + putUrl);
                 }
-                this.http(this.apiUrl + putUrl, overrideToken).put()((err, resp, body) => {
+                this.http(this.apiUrl + putUrl, overrideToken).put(putJson)((err, resp, body) => {
                     if(!resp) {
                         Logger.error("JsonRestClient::put() << " + putUrl + ":", err);
                         resolve(null);
