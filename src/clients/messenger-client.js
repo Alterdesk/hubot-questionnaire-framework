@@ -6,7 +6,7 @@ class MessengerClient extends JsonRestClient {
     constructor(control) {
         var url = process.env.HUBOT_ALTERDESK_URL || process.env.NODE_ALTERDESK_URL || "https://api.alterdesk.com/v1/";
         var port = process.env.HUBOT_ALTERDESK_PORT || process.env.NODE_ALTERDESK_PORT || 443;
-        super(url, port);
+        super(url, port, "MessengerClient");
         var token = process.env.HUBOT_ALTERDESK_TOKEN || process.env.NODE_ALTERDESK_TOKEN;
         if(token) {
             this.setApiToken(token);

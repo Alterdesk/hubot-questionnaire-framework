@@ -10,7 +10,8 @@ const OS = require('os');
 const Logger = require('./../logger.js');
 
 class JsonRestClient {
-    constructor(url, port) {
+    constructor(url, port, loggerName) {
+        this.loggerName = loggerName || "JsonRestClient";
         this.apiUrl = url;
         this.apiPort = port;
         var domain;
@@ -33,7 +34,7 @@ class JsonRestClient {
                 }
             }
         }
-        Logger.debug("JsonRestClient::constructor() URL: " + url + " Port: " + port + " Protocol: " + this.apiProtocol + " Domain: " + this.apiDomain + " Path: " + this.pathParts);
+        Logger.debug(this.loggerName + "::constructor() URL: " + url + " Port: " + port + " Protocol: " + this.apiProtocol + " Domain: " + this.apiDomain + " Path: " + this.pathParts);
         this.httpOptions = {};
         this.httpOptions.port = this.apiPort;
         this.urlCookies = {};
@@ -42,12 +43,12 @@ class JsonRestClient {
     }
 
     setApiToken(apiToken) {
-        Logger.debug("JsonRestClient::setApiToken() Token: " + apiToken);
+        Logger.debug(this.loggerName + "::setApiToken() Token: " + apiToken);
         this.apiToken = apiToken;
     }
 
     setApiBasicAuth(apiBasicUsername, apiBasicPassword) {
-        Logger.debug("JsonRestClient::setApiBasicAuth()");
+        Logger.debug(this.loggerName + "::setApiBasicAuth()");
         this.apiBasicUsername = apiBasicUsername;
         this.apiBasicPassword = apiBasicPassword;
         if(this.apiBasicUsername && this.apiBasicPassword) {
@@ -73,13 +74,13 @@ class JsonRestClient {
         return new Promise(async (resolve) => {
             try {
                 if(overrideToken) {
-                    Logger.debug("JsonRestClient::get() Using override token >> " + getUrl);
+                    Logger.debug(this.loggerName + "::get() Using override token >> " + getUrl);
                 } else {
-                    Logger.debug("JsonRestClient::get() >> " + getUrl);
+                    Logger.debug(this.loggerName + "::get() >> " + getUrl);
                 }
                 this.http(this.apiUrl + getUrl, overrideToken).get()((err, resp, body) => {
                     if(!resp) {
-                        Logger.error("JsonRestClient::get() << " + getUrl + ":", err);
+                        Logger.error(this.loggerName + "::get() << " + getUrl + ":", err);
                         resolve(null);
                         return;
                     }
@@ -89,21 +90,21 @@ class JsonRestClient {
                         try {
                             json = JSON.parse(body);
                         } catch(err) {
-                            Logger.error("JsonRestClient::get() << " + getUrl + ":", err, body);
+                            Logger.error(this.loggerName + "::get() << " + getUrl + ":", err, body);
                             resolve(null);
                             return;
                         }
                     }
                     if(!json) {
-                        Logger.error("JsonRestClient::get() << " + getUrl + ": " + status + ": " + body);
+                        Logger.error(this.loggerName + "::get() << " + getUrl + ": " + status + ": " + body);
                         resolve(null);
                         return;
                     }
                     if(status === 302) {
-                        Logger.debug("JsonRestClient::get() << " + getUrl + ": " + status + ": " + body);
+                        Logger.debug(this.loggerName + "::get() << " + getUrl + ": " + status + ": " + body);
                         var cookie = resp.headers["set-cookie"];
                         if(cookie) {
-                            Logger.debug("JsonRestClient::get() Got cookie " + getUrl + ": " + cookie);
+                            Logger.debug(this.loggerName + "::get() Got cookie " + getUrl + ": " + cookie);
                             var url;
                             if(json && json["link"]) {
                                 url = json["link"];
@@ -114,15 +115,15 @@ class JsonRestClient {
                         }
                         resolve(json);
                     } else if(status === 200 || status === 201 || status === 204 || status === 304) {
-                        Logger.debug("JsonRestClient::get() << " + getUrl + ": " + status + ": " + body);
+                        Logger.debug(this.loggerName + "::get() << " + getUrl + ": " + status + ": " + body);
                         resolve(json);
                     } else {
-                        Logger.error("JsonRestClient::get() << " + getUrl + ": " + status + ": " + body);
+                        Logger.error(this.loggerName + "::get() << " + getUrl + ": " + status + ": " + body);
                         resolve(null);
                     }
                 });
             } catch(err) {
-                Logger.error("JsonRestClient::get() << " + getUrl + ":", err);
+                Logger.error(this.loggerName + "::get() << " + getUrl + ":", err);
                 resolve(null);
             }
         });
@@ -132,13 +133,13 @@ class JsonRestClient {
         return new Promise(async (resolve) => {
             try {
                 if(overrideToken) {
-                    Logger.debug("JsonRestClient::put() Using override token >> " + putUrl);
+                    Logger.debug(this.loggerName + "::put() Using override token >> " + putUrl);
                 } else {
-                    Logger.debug("JsonRestClient::put() >> " + putUrl);
+                    Logger.debug(this.loggerName + "::put() >> " + putUrl);
                 }
                 this.http(this.apiUrl + putUrl, overrideToken).put(putJson)((err, resp, body) => {
                     if(!resp) {
-                        Logger.error("JsonRestClient::put() << " + putUrl + ":", err);
+                        Logger.error(this.loggerName + "::put() << " + putUrl + ":", err);
                         resolve(null);
                         return;
                     }
@@ -148,26 +149,26 @@ class JsonRestClient {
                         try {
                             json = JSON.parse(body);
                         } catch(err) {
-                            Logger.error("JsonRestClient::put() << " + putUrl + ":", err, body);
+                            Logger.error(this.loggerName + "::put() << " + putUrl + ":", err, body);
                             resolve(null);
                             return;
                         }
                     }
                     if(!json) {
-                        Logger.error("JsonRestClient::put() << " + putUrl + ": " + status + ": " + body);
+                        Logger.error(this.loggerName + "::put() << " + putUrl + ": " + status + ": " + body);
                         resolve(null);
                         return;
                     }
                     if(status === 200 || status === 201 || status === 204 || status === 304) {
-                        Logger.debug("JsonRestClient::put() << " + putUrl + ": " + status + ": " + body);
+                        Logger.debug(this.loggerName + "::put() << " + putUrl + ": " + status + ": " + body);
                         resolve(json);
                     } else {
-                        Logger.error("JsonRestClient::put() << " + putUrl + ": " + status + ": " + body);
+                        Logger.error(this.loggerName + "::put() << " + putUrl + ": " + status + ": " + body);
                         resolve(null);
                     }
                 });
             } catch(err) {
-                Logger.error("JsonRestClient::put() << " + putUrl + ":", err);
+                Logger.error(this.loggerName + "::put() << " + putUrl + ":", err);
                 resolve(null);
             }
         });
@@ -177,13 +178,13 @@ class JsonRestClient {
         return new Promise(async (resolve) => {
             try {
                 if(overrideToken) {
-                    Logger.debug("JsonRestClient::post() Using override token >> " + postUrl + ": " + postJson);
+                    Logger.debug(this.loggerName + "::post() Using override token >> " + postUrl + ": " + postJson);
                 } else {
-                    Logger.debug("JsonRestClient::post() >> " + postUrl + ": " + postJson);
+                    Logger.debug(this.loggerName + "::post() >> " + postUrl + ": " + postJson);
                 }
                 this.http(this.apiUrl + postUrl, overrideToken).post(postJson)((err, resp, body) => {
                     if(!resp) {
-                        Logger.error("JsonRestClient::post() << " + postUrl + ":", err);
+                        Logger.error(this.loggerName + "::post() << " + postUrl + ":", err);
                         resolve(null);
                         return;
                     }
@@ -193,26 +194,26 @@ class JsonRestClient {
                         try {
                             json = JSON.parse(body);
                         } catch(err) {
-                            Logger.error("JsonRestClient::post() << " + postUrl + ":", err, body);
+                            Logger.error(this.loggerName + "::post() << " + postUrl + ":", err, body);
                             resolve(null);
                             return;
                         }
                     }
                     if(!json) {
-                        Logger.error("JsonRestClient::post() << " + postUrl + ": " + status + ": " + body);
+                        Logger.error(this.loggerName + "::post() << " + postUrl + ": " + status + ": " + body);
                         resolve(null);
                         return;
                     }
                     if(status === 200 || status === 201 || status === 204 || status === 304) {
-                        Logger.debug("JsonRestClient::post() << " + postUrl + ": " + status + ": " + body);
+                        Logger.debug(this.loggerName + "::post() << " + postUrl + ": " + status + ": " + body);
                         resolve(json);
                     } else {
-                        Logger.error("JsonRestClient::post() << " + postUrl + ": " + status + ": " + body);
+                        Logger.error(this.loggerName + "::post() << " + postUrl + ": " + status + ": " + body);
                         resolve(null);
                     }
                 });
             } catch(err) {
-                Logger.error("JsonRestClient::post() << " + postUrl + ":", err);
+                Logger.error(this.loggerName + "::post() << " + postUrl + ":", err);
                 resolve(null);
             }
         });
@@ -223,9 +224,9 @@ class JsonRestClient {
             try {
                 var postJson = JSON.stringify(postData);
                 if(overrideToken) {
-                    Logger.debug("JsonRestClient::postMultipart() Using override token >> " + postUrl + " formData: " + postJson + " filePaths: ", filePaths);
+                    Logger.debug(this.loggerName + "::postMultipart() Using override token >> " + postUrl + " formData: " + postJson + " filePaths: ", filePaths);
                 } else {
-                    Logger.debug("JsonRestClient::postMultipart() >> " + postUrl + " formData: " + postJson + " filePaths: ", filePaths);
+                    Logger.debug(this.loggerName + "::postMultipart() >> " + postUrl + " formData: " + postJson + " filePaths: ", filePaths);
                 }
                 var formData = new FormData();
                 if(postData) {
@@ -238,20 +239,20 @@ class JsonRestClient {
                         var filePath = filePaths[i];
                         try {
                             if(!FileSystem.existsSync(filePath)) {
-                                Logger.error("JsonRestClient::postMultipart() File does not exist: " + filePath);
+                                Logger.error(this.loggerName + "::postMultipart() File does not exist: " + filePath);
                                 resolve(null);
                                 return;
                             }
                             var stat = FileSystem.statSync(filePath);
                             if(stat["size"] === 0) {
-                                Logger.error("JsonRestClient::postMultipart() File is empty: " + filePath);
+                                Logger.error(this.loggerName + "::postMultipart() File is empty: " + filePath);
                                 resolve(null);
                                 return;
                             }
                             formData.append(fileParameter, FileSystem.createReadStream(filePath));
-                            Logger.debug("JsonRestClient::postMultipart() Uploading file: " + filePath);
+                            Logger.debug(this.loggerName + "::postMultipart() Uploading file: " + filePath);
                         } catch(err) {
-                            Logger.error("JsonRestClient::postMultipart() Error reading file: " + filePath, err);
+                            Logger.error(this.loggerName + "::postMultipart() Error reading file: " + filePath, err);
                             resolve(null);
                             return;
                         }
@@ -276,7 +277,7 @@ class JsonRestClient {
                         usePostUrl += pathPart + "/";
                     }
                     usePostUrl += postUrl;
-                    Logger.debug("JsonRestClient::postMultipart() Using post url " + usePostUrl);
+                    Logger.debug(this.loggerName + "::postMultipart() Using post url " + usePostUrl);
                 } else {
                     usePostUrl = postUrl;
                 }
@@ -288,7 +289,7 @@ class JsonRestClient {
                     path: "/" + usePostUrl,
                     headers: headers}, (err, res) => {
                     if(err || res == null) {
-                        Logger.debug("JsonRestClient::postMultipart() << " + postUrl + ": " + err);
+                        Logger.debug(this.loggerName + "::postMultipart() << " + postUrl + ": " + err);
                         resolve(null);
                         return;
                     }
@@ -300,20 +301,20 @@ class JsonRestClient {
                     // Incoming data ended
                     res.on('end', () => {
                         if(res.statusCode === 200 || res.statusCode === 201 || res.statusCode === 204 || res.statusCode === 304) {
-                            Logger.debug("JsonRestClient::postMultipart() << " + postUrl + ": " + res.statusCode + ": " + body);
+                            Logger.debug(this.loggerName + "::postMultipart() << " + postUrl + ": " + res.statusCode + ": " + body);
                             var json;
                             if(body && body !== "") {
                                 json = JSON.parse(body);
                             }
                             resolve(json);
                         } else {
-                            Logger.error("JsonRestClient::postMultipart() << " + postUrl + ": " + res.statusCode + ": " + body);
+                            Logger.error(this.loggerName + "::postMultipart() << " + postUrl + ": " + res.statusCode + ": " + body);
                             resolve(null);
                         }
                     });
                 });
             } catch(err) {
-                Logger.error("JsonRestClient::postMultipart() << " + postUrl + ":", err);
+                Logger.error(this.loggerName + "::postMultipart() << " + postUrl + ":", err);
                 resolve(null);
             }
         });
@@ -323,13 +324,13 @@ class JsonRestClient {
         return new Promise(async (resolve) => {
             try {
                 if(overrideToken) {
-                    Logger.debug("JsonRestClient::delete() Using override token >> " + deleteUrl);
+                    Logger.debug(this.loggerName + "::delete() Using override token >> " + deleteUrl);
                 } else {
-                    Logger.debug("JsonRestClient::delete() >> " + deleteUrl);
+                    Logger.debug(this.loggerName + "::delete() >> " + deleteUrl);
                 }
                 this.http(this.apiUrl + deleteUrl, overrideToken).delete(deleteJson)((err, resp, body) => {
                     if(!resp) {
-                        Logger.error("JsonRestClient::delete() << " + deleteUrl + ":", err);
+                        Logger.error(this.loggerName + "::delete() << " + deleteUrl + ":", err);
                         resolve(null);
                         return;
                     }
@@ -339,26 +340,26 @@ class JsonRestClient {
                         try {
                             json = JSON.parse(body);
                         } catch(err) {
-                            Logger.error("JsonRestClient::delete() << " + deleteUrl + ":", err, body);
+                            Logger.error(this.loggerName + "::delete() << " + deleteUrl + ":", err, body);
                             resolve(null);
                             return;
                         }
                     }
                     if(!json) {
-                        Logger.error("JsonRestClient::delete() << " + deleteUrl + ": " + status + ": " + body);
+                        Logger.error(this.loggerName + "::delete() << " + deleteUrl + ": " + status + ": " + body);
                         resolve(null);
                         return;
                     }
                     if(status === 200 || status === 201 || status === 204 || status === 304) {
-                        Logger.debug("JsonRestClient::delete() << " + deleteUrl + ": " + status + ": " + body);
+                        Logger.debug(this.loggerName + "::delete() << " + deleteUrl + ": " + status + ": " + body);
                         resolve(json);
                     } else {
-                        Logger.error("JsonRestClient::delete() << " + deleteUrl + ": " + status + ": " + body);
+                        Logger.error(this.loggerName + "::delete() << " + deleteUrl + ": " + status + ": " + body);
                         resolve(null);
                     }
                 });
             } catch(err) {
-                Logger.error("JsonRestClient::delete() << " + deleteUrl + ":", err);
+                Logger.error(this.loggerName + "::delete() << " + deleteUrl + ":", err);
                 resolve(null);
             }
         });
@@ -369,13 +370,13 @@ class JsonRestClient {
             try {
                 var cookie = this.urlCookies[url];
                 if(overrideToken) {
-                    Logger.debug("JsonRestClient::download() Using override token >> " + url + " name: " + name + " mime: " + mime + " cookie: " + cookie);
+                    Logger.debug(this.loggerName + "::download() Using override token >> " + url + " name: " + name + " mime: " + mime + " cookie: " + cookie);
                 } else {
-                    Logger.debug("JsonRestClient::download() >> " + url + " name: " + name + " mime: " + mime + " cookie: " + cookie);
+                    Logger.debug(this.loggerName + "::download() >> " + url + " name: " + name + " mime: " + mime + " cookie: " + cookie);
                 }
                 var tmpDownloadPath = await this.getTmpDownloadPath();
                 if(!tmpDownloadPath) {
-                    Logger.error("JsonRestClient::download() Unable to create temporary folder: " + tmpDownloadPath)
+                    Logger.error(this.loggerName + "::download() Unable to create temporary folder: " + tmpDownloadPath)
                     resolve(null);
                     return;
                 }
@@ -393,7 +394,7 @@ class JsonRestClient {
                     headers["Cookie"] = cookie;
                 }
                 requestData["headers"] = headers;
-                Logger.debug("JsonRestClient::download() Request data:", JSON.stringify(requestData));
+                Logger.debug(this.loggerName + "::download() Request data:", JSON.stringify(requestData));
                 var req = Request(requestData);
                 var res;
                 req.on('response', (response) => {
@@ -401,7 +402,7 @@ class JsonRestClient {
                 });
 
                 req.on('error', (err) => {
-                    Logger.debug("JsonRestClient::download() << " + url + ": " + err);
+                    Logger.debug(this.loggerName + "::download() << " + url + ": " + err);
                     resolve(null);
                 });
 
@@ -409,17 +410,17 @@ class JsonRestClient {
                     if(res == null) {
                         resolve(null);
                     } else if(res.statusCode == 200) {
-                        Logger.debug("JsonRestClient::download() << " + url + ": " + res.statusCode);
+                        Logger.debug(this.loggerName + "::download() << " + url + ": " + res.statusCode);
                         resolve(path);
                     } else {
-                        Logger.error("JsonRestClient::download() << " + url + ": " + res.statusCode);
+                        Logger.error(this.loggerName + "::download() << " + url + ": " + res.statusCode);
                         resolve(null);
                     }
                 });
 
                 req.pipe(FileSystem.createWriteStream(path));
             } catch(err) {
-                Logger.error("JsonRestClient::getTmpDownloadPath() << " + deleteUrl + ":", err);
+                Logger.error(this.loggerName + "::getTmpDownloadPath() << " + deleteUrl + ":", err);
                 resolve(null);
             }
         });
@@ -431,14 +432,14 @@ class JsonRestClient {
                 var tmpDownloadPath = this.tmpDownloadDir + "/" + UuidV1();
                 Mkdirp(tmpDownloadPath, (mkdirError) => {
                     if(mkdirError != null) {
-                        Logger.error("JsonRestClient::getTmpDownloadPath() Unable to create temporary folder: " + tmpDownloadPath)
+                        Logger.error(this.loggerName + "::getTmpDownloadPath() Unable to create temporary folder: " + tmpDownloadPath)
                         resolve(null);
                         return;
                     }
                     resolve(tmpDownloadPath);
                 });
             } catch(err) {
-                Logger.error("JsonRestClient::getTmpDownloadPath() << " + deleteUrl + ":", err);
+                Logger.error(this.loggerName + "::getTmpDownloadPath() << " + deleteUrl + ":", err);
                 resolve(null);
             }
         });
@@ -450,14 +451,14 @@ class JsonRestClient {
                 var tmpUploadPath = this.tmpUploadDir + "/" + UuidV1();
                 Mkdirp(tmpUploadPath, (mkdirError) => {
                     if(mkdirError != null) {
-                        Logger.error("JsonRestClient::getTmpUploadPath() Unable to create temporary folder: " + tmpUploadPath)
+                        Logger.error(this.loggerName + "::getTmpUploadPath() Unable to create temporary folder: " + tmpUploadPath)
                         resolve(null);
                         return;
                     }
                     resolve(tmpUploadPath);
                 });
             } catch(err) {
-                Logger.error("JsonRestClient::getTmpDownloadPath() << " + deleteUrl + ":", err);
+                Logger.error(this.loggerName + "::getTmpDownloadPath() << " + deleteUrl + ":", err);
                 resolve(null);
             }
         });
