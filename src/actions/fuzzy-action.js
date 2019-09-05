@@ -32,7 +32,7 @@ class FuzzyAction extends Action {
         this.askText(this.questionText);
     }
 
-    askText(text) {
+    askText(text) { // TODO Keep copy of active subflow and expand instead of replace on checkText(), askText(), showIndex() and showIndexOption()
         Logger.debug("FuzzyAction::askText()", text);
         var answerKey = this.getAnswerKey();
         var textAnswerKey = answerKey + "_text_" + this.textAttempts;
