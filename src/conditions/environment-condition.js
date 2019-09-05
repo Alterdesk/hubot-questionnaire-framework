@@ -6,6 +6,7 @@ class EnvironmentCondition extends Condition {
         super();
         this.checkKeys = [];
         this.checkValues = {};
+        this.overrideEnvValues = {};
     }
 
     addKey(checkKey) {
@@ -26,17 +27,25 @@ class EnvironmentCondition extends Condition {
         }
     }
 
+    setOverrideEnvValue(checkKey, envValue) {
+        this.addKey(checkKey);
+        this.overrideEnvValues[checkKey] = envValue;
+    }
+
     check(flow) {
         var inverse = this.getAnswerValue(this.inverse, flow.answers, false);
         for(let i in this.checkKeys) {
             var checkKey = this.checkKeys[i];
-            var value = process.env[checkKey];
+            var value = this.overrideEnvValues[checkKey];
+            if(value == null) {
+                value = process.env[checkKey];
+            }
             if(value == null) {
                 Logger.debug("EnvironmentCondition::check() No value for key:", checkKey);
                 continue;
             }
             Logger.debug("EnvironmentCondition::check() Got value for key: ", checkKey, value);
-            var values = this.checkValues[checkKey]
+            var values = this.checkValues[checkKey];
             if(!values || values.length === 0) {
                 Logger.debug("EnvironmentCondition::check() Condition met: inverse: " + inverse + " key: " + checkKey);
                 return !inverse;
