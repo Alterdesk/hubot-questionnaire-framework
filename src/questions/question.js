@@ -271,7 +271,7 @@ class Question extends Step {
                     } else {
                         var timeoutText = this.timeoutText || control.responseTimeoutText;
                         if(timeoutText && timeoutText.length > 0) {
-                            this.flow.sendRestartMessage(timeoutText);
+                            this.flow.sendRestartMessage(timeoutText);  // TODO Test not sending restart message on empty timeout text
                         }
                         this.flow.stop(false);
                     }
