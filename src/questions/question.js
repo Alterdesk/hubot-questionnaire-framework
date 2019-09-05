@@ -269,9 +269,12 @@ class Question extends Step {
                     if(configuredTimeoutCallback) {
                         configuredTimeoutCallback();
                     } else {
-                        var timeoutText = this.timeoutText || control.responseTimeoutText;
-                        if(timeoutText && timeoutText.length > 0) {
-                            this.flow.sendRestartMessage(timeoutText);  // TODO Test not sending restart message on empty timeout text
+                        var useTimeoutText = this.timeoutText;
+                        if(useTimeoutText == null) {
+                            useTimeoutText = control.responseTimeoutText;
+                        }
+                        if(useTimeoutText && useTimeoutText.length > 0) {
+                            this.flow.sendRestartMessage(useTimeoutText);
                         }
                         this.flow.stop(false);
                     }
