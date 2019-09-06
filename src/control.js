@@ -363,7 +363,7 @@ class Control {
             useTimeoutText = this.responseTimeoutText;
         }
         var useTimeoutCallback = question.timeoutCallback;
-        if(useTimeoutCallback == null && useTimeoutText && useTimeoutText.length > 0) {
+        if(!useTimeoutCallback && useTimeoutText && useTimeoutText.length > 0) {
             Logger.debug("Control::addTimeoutTimer() ms: " + useTimeoutMs + " text: " + useTimeoutText);
             useTimeoutCallback = () => {
                 question.flow.sendRestartMessage(useTimeoutText);
