@@ -201,28 +201,67 @@ class FuzzyAction extends Action {
         }
 
         var matches = [];
-        var possible = [];
 
         for(let i in checkWords) {
             var word = checkWords[i];
+            Logger.debug("FuzzyAction::checkText() Checking word: " + word);
 
             let removeCandidates = [];
 
             for(let i in checkCandidates) {
                 var candidate = checkCandidates[i];
-                var distance = candidate.getDistance(word);
+
+                var name = candidate.getName();
+                var nameDistance = Levenshtein(word, name);
+//                Logger.debug("FuzzyAction::checkText() word: " + word + " name: " + name + " distance: " + nameDistance);
+
+                var bestAlias;
+                var aliasDistance = Number.MAX_SAFE_INTEGER;
+
+                var aliases = candidate.getAliases();
+                for(let index in aliases) {
+                    var alias = aliases[index];
+                    var d = Levenshtein(word, alias);
+//                    Logger.debug("FuzzyAction::checkText() word: " + word + " alias: " + alias + " distance: " + d);
+                    if(d < aliasDistance) {
+                        aliasDistance = d;
+                        bestAlias = alias;
+                    }
+                }
+
+                var distance;
+                if(aliasDistance < nameDistance) {
+                    distance = aliasDistance;
+                } else {
+                    distance = nameDistance;
+                }
+
+                if(distance > this.maxLevenshteinDistance) {
+//                    Logger.debug("FuzzyAction::checkText() Candidate exceeds max distance: " + name + " distance: " + distance);
+                    continue;
+                }
+
+                var matchData = {};
+                matchData["distance"] = distance;
+                matchData["word"] = word;
+                if(aliasDistance < nameDistance) {
+                    Logger.debug("FuzzyAction::checkText() Candidate alias within distance: name: \"" + name + "\" word: \"" + word + "\" alias: \"" + bestAlias + "\" distance: " + aliasDistance);
+                    matchData["alias"] = bestAlias;
+                } else {
+                    Logger.debug("FuzzyAction::checkText() Candidate name within distance: name: \"" + name + "\" word: \"" + word + "\" distance: " + nameDistance);
+                    matchData["name"] = name;
+                }
+
                 if(distance === 0) {
-                    Logger.debug("FuzzyAction::checkText() Exact match candidate: " + candidate.name);
                     if(matchedCandidates.indexOf(candidate) === -1) {
                         matchedCandidates.push(candidate);
                         removeCandidates.push(candidate);
-                        matches.push(candidate.name);
+                        matches.push(matchData);
                     }
                 } else if(distance <= this.maxLevenshteinDistance) {
-                    Logger.debug("FuzzyAction::checkText() Possible candidate: " + candidate.name);
                     if(possibleCandidates.indexOf(candidate) === -1) {
                         possibleCandidates.push(candidate);
-                        possible.push(candidate.name);
+                        matches.push(matchData);
                     }
                 }
             }
@@ -236,7 +275,6 @@ class FuzzyAction extends Action {
         }
 
         this.flow.answers.add(textAnswerKey + "_matches", matches);
-        this.flow.answers.add(textAnswerKey + "_possible", possible);
 
         if(!this.alwaysConfirm && matchedCandidates.length === 1 && possibleCandidates.length === 0) {
             this.done(matchedCandidates[0]);
@@ -415,6 +453,10 @@ class FuzzyCandidate {
         this.aliases = [];
     }
 
+    getName() {
+        return this.name;
+    }
+
     addAlias(alias) {
         this.aliases.push(StringTools.safeName(alias, -1, true, true));
     }
@@ -425,30 +467,8 @@ class FuzzyCandidate {
         }
     }
 
-    getDistance(word) {
-        var nameDistance = Levenshtein(word, this.name);
-//        Logger.debug("FuzzyCandidate::getDistance() word: " + word + " name: " + this.name + " distance: " + nameDistance);
-        if(nameDistance === 0 || !this.aliases || this.aliases.length === 0) {
-            return nameDistance;
-        }
-        var aliasDistance;
-        for(let index in this.aliases) {
-            var alias = this.aliases[index];
-            var distance = Levenshtein(word, alias);
-//            Logger.debug("FuzzyCandidate::getDistance() word: " + word + " alias: " + alias + " distance: " + distance);
-            if(distance === 0) {
-                return 0;
-            } else if(!aliasDistance) {
-                aliasDistance = distance;
-            } else if(distance < aliasDistance) {
-                aliasDistance = distance;
-            }
-        }
-        if(nameDistance < aliasDistance) {
-            return nameDistance;
-        } else {
-            return aliasDistance;
-        }
+    getAliases() {
+        return this.aliases;
     }
 }
 
