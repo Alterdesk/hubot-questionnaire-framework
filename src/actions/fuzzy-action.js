@@ -243,6 +243,7 @@ class FuzzyAction extends Action {
 
                 var matchData = {};
                 matchData["distance"] = distance;
+                matchData["candidate"] = name;
                 matchData["word"] = word;
                 if(aliasDistance < nameDistance) {
                     Logger.debug("FuzzyAction::checkText() Candidate alias within distance: name: \"" + name + "\" word: \"" + word + "\" alias: \"" + bestAlias + "\" distance: " + aliasDistance);
