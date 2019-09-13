@@ -66,7 +66,10 @@ class ChatTools {
     }
 
     static getChatUserKey(chatId, userId) {
-        return chatId + "/" + userId;
+        if(chatId === userId) {
+            return "conversation/" + userId;
+        }
+        return "groupchat/" + chatId + "/" + userId;
     }
 
 }
