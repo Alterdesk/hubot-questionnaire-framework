@@ -111,16 +111,17 @@ class BotApi {
         }
         Logger.debug("BotApi::processData()", parsed);
         if(parsed["command"]) {
-            this.processCommand(parsed["command"], parsed["param"]);
-        } else if(parsed["trigger"] && parsed["param"]) {
-            this.processTrigger(parsed["trigger"], parsed["param"]);
+            this.processCommand(parsed);
+        } else if(parsed["trigger"]) {
+            this.processTrigger(parsed);
         } else {
             Logger.error("BotApi::processData() Invalid data:", parsed);
         }
     }
 
-    processCommand(command, param) {
-        Logger.debug("BotApi::processCommand() Command:", command, param);
+    processCommand(data) {
+        var command = data["command"];
+        Logger.debug("BotApi::processCommand() Command:", command);
         var result = {};
         var exitCode = -1;
 
@@ -135,11 +136,15 @@ class BotApi {
         } else if(command === "connected") {
             result["connected"] = this.isConnected();
         } else if(command === "configured") {
-        var result = {};
             result["configured"] = this.isConfigured();
         } else if(command === "questionnaires") {
             result["questionnaires"] = this.control.getActiveQuestionnaires();
+        } else if(command === "stats") {
+            result["connected"] = this.isConnected();
+            result["configured"] = this.isConfigured();
+            result["questionnaires"] = this.control.getActiveQuestionnaires();
         } else {
+            Logger.error("BotApi::processCommand() Unknown command:", command);
             result["error"] = "Unknown command: \"" + command + "\"";
         }
         console.log(JSON.stringify(result));
@@ -150,10 +155,16 @@ class BotApi {
         }
     }
 
-    processTrigger(trigger, param) {
+    processTrigger(data) {
+        var param = data["param"];
+        if(!param) {
+            Logger.error("BotApi::processTrigger() Invalid params:", data);
+        }
+        var trigger = data["trigger"];
         Logger.debug("BotApi::processTrigger() Trigger:", trigger, param);
+
         var chatId = param["chat_id"];
-        var groupId = param["is_group"];
+        var isGroup = param["is_group"];
         var userId = param["user_id"];
         var answers = Answers.fromObject(param["answers"]);
         this.executeCommand(chatId, isGroup, userId, trigger, answers);
