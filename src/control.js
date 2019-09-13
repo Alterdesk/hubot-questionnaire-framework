@@ -321,8 +321,10 @@ class Control {
     // Add a pending request for a user
     addPendingRequest(message, pendingRequest) {
         var userId = ChatTools.getUserId(message.user);
-        Logger.debug("Control::addPendingRequest() userId: " + userId + " chat: " + message.room);
-        this.pendingRequests[message.room + "/" + userId] = pendingRequest;
+        var chatId = message.room;
+        Logger.debug("Control::addPendingRequest() userId: " + userId + " chat: " + chatId);
+        var chatUserKey = ChatTools.getChatUserKey(chatId, userId);
+        this.pendingRequests[chatUserKey] = pendingRequest;
         if(!this.hasTimeoutTimer(message)) {
             this.addTimeoutTimer(message, pendingRequest.msg, pendingRequest.question);
         }
@@ -347,7 +349,10 @@ class Control {
 
     // Check if a pending request is present for a user in a chat
     hasPendingRequest(message) {
-        return this.pendingRequests[message.room + "/" + ChatTools.getUserId(message.user)] != null;
+        var userId = ChatTools.getUserId(message.user);
+        var chatId = message.room;
+        var chatUserKey = ChatTools.getChatUserKey(chatId, userId);
+        return this.pendingRequests[chatUserKey] != null;
     }
 
     // Add a timeout timer for a user
