@@ -97,13 +97,101 @@ class BotApi {
         }
     }
 
+    processData(data) {
+        if(!data) {
+            Logger.error("BotApi::processData() Invalid data:", data);
+            return;
+        }
+        var parsed;
+        try {
+            parsed = JSON.parse(data);
+        } catch(e) {
+            Logger.error("BotApi::processData() Invalid JSON:", data, e);
+            return;
+        }
+        Logger.debug("BotApi::processData()", parsed);
+        if(parsed["command"]) {
+            this.processCommand(parsed);
+        } else if(parsed["trigger"]) {
+            this.processTrigger(parsed);
+        } else {
+            Logger.error("BotApi::processData() Invalid data:", parsed);
+        }
+    }
+
+    processCommand(data) {
+        var command = data["command"];
+        Logger.debug("BotApi::processCommand() Command:", command);
+        var result = {};
+        var exitCode = -1;
+
+        if(command === "stop") {
+            if(this.control.armExitOnIdle(true)) {
+                exitCode = 0;
+            }
+            result["stop"] = true;
+        } else if(command === "kill") {
+            exitCode = 1;
+            result["kill"] = true;
+        } else if(command === "connected") {
+            result["connected"] = this.isConnected();
+        } else if(command === "configured") {
+            result["configured"] = this.isConfigured();
+        } else if(command === "questionnaires") {
+            result["questionnaires"] = this.control.getActiveQuestionnaires();
+        } else if(command === "stats") {
+            result["connected"] = this.isConnected();
+            result["configured"] = this.isConfigured();
+            result["questionnaires"] = this.control.getActiveQuestionnaires();
+        } else {
+            Logger.error("BotApi::processCommand() Unknown command:", command);
+            result["error"] = "Unknown command: \"" + command + "\"";
+        }
+        console.log(JSON.stringify(result));
+
+        if(exitCode !== -1) {
+            Logger.debug("BotApi::processCommand() Exiting:", exitCode);
+            process.exit(exitCode);
+        }
+    }
+
+    processTrigger(data) {
+        var param = data["param"];
+        if(!param) {
+            Logger.error("BotApi::processTrigger() Invalid params:", data);
+        }
+        var trigger = data["trigger"];
+        Logger.debug("BotApi::processTrigger() Trigger:", trigger, param);
+
+        var chatId = param["chat_id"];
+        var isGroup = param["is_group"];
+        var userId = param["user_id"];
+        var answers = Answers.fromObject(param["answers"]);
+        this.executeCommand(chatId, isGroup, userId, trigger, answers);
+
+        var result = {};
+        result["trigger"] = trigger;
+        console.log(JSON.stringify(result));
+    }
+
+    isConnected() {
+        if(this.robot.adapter && typeof this.robot.adapter.connected === "boolean") {
+           return this.robot.adapter.connected;
+        }
+        return false;
+    }
+
+    isConfigured() {
+        return this.control.acceptedCommands.length > 0;
+    }
+
     getConfigured(req, res) {
         try {
             if(!this.checkRequest(req, res)) {
                 return;
             }
             var result = {};
-            result["result"] = this.control.acceptedCommands.length > 0;
+            result["result"] = this.isConfigured();
             this.respondRequest(req, res, 200, JSON.stringify(result));
         } catch(error) {
             Logger.error("BotApi::getConfigured()", error);
@@ -116,12 +204,8 @@ class BotApi {
             if(!this.checkRequest(req, res)) {
                return;
             }
-            var connected = false;
-            if(this.robot.adapter && typeof this.robot.adapter.connected === "boolean") {
-                connected = this.robot.adapter.connected;
-            }
             var result = {};
-            result["result"] = connected;
+            result["result"] = this.isConnected();
             this.respondRequest(req, res, 200, JSON.stringify(result));
         } catch(error) {
             Logger.error("BotApi::getConnected()", error);
