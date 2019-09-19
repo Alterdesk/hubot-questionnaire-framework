@@ -90,9 +90,7 @@ class CreateGroupData {
 
         if(this.auxId != null) {
             data["aux_id"] = this.auxId;
-            if(hasAuxMembers) {
-                data["aux_members"] = true; // TODO All member ids should be aux or not aux
-            }
+            data["aux_members"] = hasAuxMembers;
         }
 
         return data;
