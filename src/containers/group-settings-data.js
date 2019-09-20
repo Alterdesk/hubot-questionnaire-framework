@@ -51,11 +51,21 @@ class GroupSettingsData {
     getPutData() {
         var data = {};
 
-        data["allow_contacts"] = this.allowContacts;
-        data["auto_close_after"] = this.autoCloseAfter;
-        data["auto_expire_after"] = this.autoExpireAfter;
-        data["hybrid_messaging"] = this.hybridMessaging;
-        data["members_can_invite"] = this.membersCanInvite;
+        if(this.allowContacts != null) {
+            data["allow_contacts"] = this.allowContacts;
+        }
+        if(this.autoCloseAfter != null) {
+            data["auto_close_after"] = this.autoCloseAfter;
+        }
+        if(this.autoExpireAfter != null) {
+            data["auto_expire_after"] = this.autoExpireAfter;
+        }
+        if(this.hybridMessaging != null) {
+            data["hybrid_messaging"] = this.hybridMessaging;
+        }
+        if(this.membersCanInvite != null) {
+            data["members_can_invite"] = this.membersCanInvite;
+        }
 
         return data;
     }
