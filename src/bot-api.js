@@ -123,6 +123,10 @@ class BotApi {
         var command = data["command"];
         Logger.debug("BotApi::processCommand() Command:", command);
         var result = {};
+        var id = data["id"];
+        if(id) {
+            result["id"] = id;
+        }
         var exitCode = -1;
 
         if(command === "stop") {
@@ -170,6 +174,10 @@ class BotApi {
         this.executeCommand(chatId, isGroup, userId, trigger, answers);
 
         var result = {};
+        var id = data["id"];
+        if(id) {
+            result["id"] = id;
+        }
         result["trigger"] = trigger;
         console.log(JSON.stringify(result));
     }
