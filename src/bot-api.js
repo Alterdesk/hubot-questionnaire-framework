@@ -133,20 +133,22 @@ class BotApi {
             if(this.control.armExitOnIdle(true)) {
                 exitCode = 0;
             }
-            result["stop"] = true;
+            result["result"] = true;
         } else if(command === "kill") {
             exitCode = 1;
-            result["kill"] = true;
+            result["result"] = true;
         } else if(command === "connected") {
-            result["connected"] = this.isConnected();
+            result["result"] = this.isConnected();
         } else if(command === "configured") {
-            result["configured"] = this.isConfigured();
+            result["result"] = this.isConfigured();
         } else if(command === "questionnaires") {
-            result["questionnaires"] = this.control.getActiveQuestionnaires();
+            result["result"] = this.control.getActiveQuestionnaires();
         } else if(command === "stats") {
-            result["connected"] = this.isConnected();
-            result["configured"] = this.isConfigured();
-            result["questionnaires"] = this.control.getActiveQuestionnaires();
+            var resultObject = {};
+            resultObject["connected"] = this.isConnected();
+            resultObject["configured"] = this.isConfigured();
+            resultObject["questionnaires"] = this.control.getActiveQuestionnaires();
+            result["result"] = resultObject;
         } else {
             Logger.error("BotApi::processCommand() Unknown command:", command);
             result["error"] = "Unknown command: \"" + command + "\"";
@@ -178,7 +180,7 @@ class BotApi {
         if(id) {
             result["id"] = id;
         }
-        result["trigger"] = trigger;
+        result["result"] = trigger;
         console.log(JSON.stringify(result));
     }
 
