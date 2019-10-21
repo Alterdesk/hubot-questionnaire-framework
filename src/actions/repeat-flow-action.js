@@ -100,6 +100,13 @@ class RepeatFlowAction extends Action {
         this.minIterations = minIterations;
     }
 
+    getSummaryQuestions(limitToTitles, excludeTitles) {
+        if(!this.repeatFlow) {
+            return null;
+        }
+        return this.repeatFlow.getSummaryQuestions(limitToTitles, excludeTitles, false);
+    }
+
     reset() {
         super.reset();
         this.iteration = -1;

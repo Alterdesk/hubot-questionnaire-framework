@@ -29,6 +29,14 @@ class Action extends Step {
         });
     }
 
+    getSummaryQuestions(limitToTitles, excludeTitles) {
+        return null;
+    }
+
+    hasAskedQuestions() {
+        return this.askedQuestions;
+    }
+
     resetAskedQuestions() {
         this.askedQuestions = false;
     }
