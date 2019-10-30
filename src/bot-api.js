@@ -474,13 +474,13 @@ class BotApi {
         }
         var token = headers["authorization"];
         if(typeof token !== "string") {
-            Logger.error("BotApi::checkRequest() Invalid schedule API token: " + token);
+            Logger.error("BotApi::checkRequest() Invalid bot API token: " + token);
             this.respondRequest(req, res, 403, this.getJsonError("Invalid authorization token"));
             return false;
         }
         token = token.replace("Bearer ", "");
         if(this.token !== token) {
-            Logger.error("BotApi::checkRequest() Invalid schedule API token: " + token);
+            Logger.error("BotApi::checkRequest() Invalid bot API token: " + token);
             this.respondRequest(req, res, 403, this.getJsonError("Invalid authorization token"));
             return false;
         }
