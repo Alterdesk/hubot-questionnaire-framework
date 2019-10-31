@@ -19,12 +19,6 @@ class CalculateNumberAction extends Action {
         if(!result) {
             result = 0;
         }
-        var timeValue = this.getAnswerValue(this.timeValue, answers);
-        if(timeValue < 0) {
-            Logger.error("CalculateNumberAction::start() Invalid time value:", timeValue);
-            flowCallback();
-            return;
-        }
         var operation = this.getAnswerValue(this.operation, answers);
         Logger.debug("CalculateNumberAction::start() Starting with value:", result);
         for(let index in this.values) {
