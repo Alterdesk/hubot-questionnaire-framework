@@ -55,11 +55,9 @@ class ChatTools {
         } else if(flow) {
             repeatIteration = flow.repeatIteration;
         }
-        if(typeof repeatIteration === "number" && repeatIteration > -1) {//} && answerKey.indexOf("#") !== -1) {  // TODO Temporary fallback for old checks
+        if(typeof repeatIteration === "number" && repeatIteration > -1 && answerKey.indexOf("#") !== -1) {
             if(answerKey.indexOf("#") !== -1) {
                 answerKey = answerKey.replace("#", repeatIteration);
-            } else {
-                answerKey += "_" + repeatIteration;
             }
         }
         return answerKey;
