@@ -1,5 +1,6 @@
 const Action = require('./action.js');
 const AnswerCondition = require('./../conditions/answer-condition.js');
+const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
 
 class RepeatFlowAction extends Action {
@@ -59,19 +60,19 @@ class RepeatFlowAction extends Action {
         }
 
         if(this.iteration > -1 && this.repeatKey && this.repeatKey !== "") {
-            var key = this.repeatKey + "_" + this.iteration;
-            var value = answers.get(key);
+            var repeatKey = ChatTools.getAnswerKey(this.repeatKey, this.flow, this.iteration);
+            var value = answers.get(repeatKey);
             if(value == null) {
-                Logger.debug("RepeatFlowAction::checkRepeat() Repeat answer not given:", key, value);
+                Logger.debug("RepeatFlowAction::checkRepeat() Repeat answer not given:", repeatKey, value);
                 this.flowCallback();
                 return;
             }
             if(this.repeatValue !== value && this.repeatValue != null) {
-                Logger.debug("RepeatFlowAction::checkRepeat() Repeat answer does not match:", key, value, this.repeatValue);
+                Logger.debug("RepeatFlowAction::checkRepeat() Repeat answer does not match:", repeatKey, value, this.repeatValue);
                 this.flowCallback();
                 return;
             }
-            Logger.debug("RepeatFlowAction::checkRepeat() Repeat answer accepted:", key, value);
+            Logger.debug("RepeatFlowAction::checkRepeat() Repeat answer accepted:", repeatKey, value);
         }
 
         this.nextIteration();
@@ -81,7 +82,8 @@ class RepeatFlowAction extends Action {
         this.iteration++;
         Logger.debug("RepeatFlowAction::nextIteration() Iteration:", this.iteration);
         if(this.repeatKey && this.repeatKey !== "") {
-            this.flow.answers.add(this.repeatKey + "_iteration", this.iteration);
+            var repeatKey = this.repeatKey.replace("#", "");    // TODO Replace with proper iterationKey
+            this.flow.answers.add(repeatKey + "iteration", this.iteration);
         }
         this.repeatFlow.setRepeatIteration(this.iteration);
         this.flow.startSubFlow(this.repeatFlow, false);
