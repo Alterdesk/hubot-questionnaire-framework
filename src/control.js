@@ -693,6 +693,14 @@ class Control {
         this.helpQuestionStyle = style;
     }
 
+    setOverrideHelpCallback(overrideHelpCallback) {
+        this.overrideHelpCallback = overrideHelpCallback;
+    }
+
+    setOverrideCatchAllCallback(overrideCatchAllCallback) {
+        this.overrideCatchAllCallback = overrideCatchAllCallback;
+    }
+
     // Check if the received answer was a command and trigger it if so
     async checkCommandButton(message) {
         var acceptedCommand = false;
@@ -749,6 +757,11 @@ class Control {
 
     // Send the help message
     sendHelpMessage(message) {
+        if(this.overrideHelpCallback) {
+            Logger.debug("Control:sendHelpMessage() Using override help callback");
+            this.overrideHelpCallback(message);
+            return;
+        }
         var helpText = this.catchHelpText;
         for(let field in this.acceptedHelpTexts) {
             helpText += "\n • \'" + field + "\' - " + this.acceptedHelpTexts[field];
@@ -770,6 +783,11 @@ class Control {
 
     // Send the catch all message
     sendCatchAllMessage(message) {
+        if(this.overrideCatchAllCallback) {
+            Logger.debug("Control:sendHelpMessage() Using override catch all callback");
+            this.overrideCatchAllCallback(message);
+            return;
+        }
         var sendMessageData = new SendMessageData();
         sendMessageData.setHubotMessage(message);
         sendMessageData.setMessage(this.catchAllText);
