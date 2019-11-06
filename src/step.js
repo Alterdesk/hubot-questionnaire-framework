@@ -19,6 +19,14 @@ class Step {
         return ChatTools.getAnswerKey(this.answerKey, this.flow);
     }
 
+    getRepeatKey() {
+        return ChatTools.getRepeatKey(this.answerKey);
+    }
+
+    getRepeatedKeys(answers) {
+        return ChatTools.getRepeatedKeys(this.answerKey, answers);
+    }
+
     getLabelAnswerKey() {
         return ChatTools.getAnswerKey(this.answerKey + "_label", this.flow);
     }

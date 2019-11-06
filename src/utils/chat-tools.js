@@ -1,4 +1,5 @@
 const {Response, User, Message, TextMessage} = require('hubot');
+const RegexTools = require('./regex-tools.js');
 
 class ChatTools {
 
@@ -61,6 +62,48 @@ class ChatTools {
             }
         }
         return answerKey;
+    }
+
+    static getRepeatKey(answerKey) {
+        if(typeof answerKey === "string" && answerKey.indexOf("#") !== -1) {
+            return answerKey;
+        }
+        return null;
+    }
+
+    static getRepeatedKeys(answerKey, answers) {
+        if(typeof answerKey !== "string" || !answers) {
+            console.log("getRepeatedKeys() invalid answerkey or answers:", answerKey, answers);
+            return null;
+        }
+        var hashIndex = answerKey.indexOf("#");
+        if(hashIndex === -1) {
+            console.log("getRepeatedKeys() invalid hash index:", hashIndex);
+            return null;
+        }
+        var keySubstring;
+        if(hashIndex === 0) {
+            keySubstring = answerKey.substring(hashIndex + 1);
+        } else {
+            keySubstring = answerKey.substring(0, hashIndex);
+        }
+        console.log("getRepeatedKeys() got sub string:", keySubstring);
+        var result = answers.getKeysContaining(keySubstring);
+        console.log("getRepeatedKeys() result:", result);
+        if(!result) {
+            return null;
+        }
+        var numberRegex = RegexTools.getNumberOnlyRegex();
+        var filteredKeys = [];
+        for(let index in result) {
+            var key = result[index];
+            var replaceResult = key.replace(keySubstring, "");
+            if(typeof replaceResult === "string" && replaceResult.match(numberRegex)) {
+                filteredKeys.push(key);
+            }
+        }
+        console.log("getRepeatedKeys() filtered:", filteredKeys);
+        return filteredKeys;
     }
 
     static getChatUserKey(chatId, userId) {

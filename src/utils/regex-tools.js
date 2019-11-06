@@ -14,6 +14,11 @@ class RegexTools {
     static getNumberRegex() {
         return new RegExp(/\d+/, 'g');
     }
+
+    // Get the regular expression to detect only numbers
+    static getNumberOnlyRegex() {
+        return new RegExp(/^\d+$/, 'g');
+    }
     
     // Get the regular expression to detect a phone number
     static getPhoneRegex() {
