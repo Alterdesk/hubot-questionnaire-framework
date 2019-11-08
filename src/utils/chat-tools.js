@@ -106,6 +106,43 @@ class ChatTools {
         return filteredKeys;
     }
 
+    static getRepeatIterations(answerKey, answers) {
+        if(typeof answerKey !== "string" || !answers) {
+            return 0;
+        }
+        var hashIndex = answerKey.indexOf("#");
+        if(hashIndex === -1) {
+            return 0;
+        }
+        var keySubstring;
+        if(hashIndex === 0) {
+            keySubstring = answerKey.substring(hashIndex + 1);
+        } else {
+            keySubstring = answerKey.substring(0, hashIndex);
+        }
+        console.log("getRepeatIterations() got sub string:", keySubstring);
+        var result = answers.getKeysContaining(keySubstring);
+        console.log("getRepeatIterations() result:", result);
+        if(!result) {
+            return 0;
+        }
+        var numberRegex = RegexTools.getNumberOnlyRegex();
+        var maxIteration = 0;
+        for(let index in result) {
+            var key = result[index];
+            var replaceResult = key.replace(keySubstring, "");
+            if(typeof replaceResult === "string" && replaceResult.match(numberRegex)) {
+                var iteration = parseInt(replaceResult);
+                if(iteration > maxIteration) {
+                    maxIteration = iteration;
+                }
+            }
+        }
+        maxIteration++;
+        console.log("getRepeatIterations() result:", maxIteration);
+        return maxIteration;
+    }
+
     static getChatUserKey(chatId, userId) {
         if(chatId === userId) {
             return "conversation/" + userId;

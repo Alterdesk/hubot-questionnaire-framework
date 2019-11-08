@@ -23,6 +23,10 @@ class Step {
         return ChatTools.getRepeatKey(this.answerKey);
     }
 
+    getRepeatIterations(answers) {
+        return ChatTools.getRepeatIterations(this.answerKey, answers);
+    }
+
     getRepeatedKeys(answers) {
         return ChatTools.getRepeatedKeys(this.answerKey, answers);
     }
