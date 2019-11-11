@@ -12,10 +12,25 @@ class RepeatFlowAction extends Action {
         this.conditions = [];
         this.iteration = -1;
         this.minIterations = 1;
+        this.summaryQuestions = {};
 
         if(this.repeatFlow) {
             this.repeatFlow.finish(() => {
                 Logger.debug("RepeatFlowAction::finish() Iteration finished:", this.iteration);
+                var questions = this.repeatFlow.getSummaryQuestions(null, null, false);
+                if(questions && questions.length !== 0) {
+                    for(let i in questions) {
+                        var question = questions[i];
+                        var repeatKey = question.getRepeatKey();
+                        if(!repeatKey || repeatKey === "") {
+                            continue;
+                        }
+                        if(this.summaryQuestions[repeatKey]) {
+                            continue;
+                        }
+                        this.summaryQuestions[repeatKey] = question;
+                    }
+                }
                 this.askedQuestions = true;
                 this.checkRepeat();
             });
@@ -82,7 +97,7 @@ class RepeatFlowAction extends Action {
         this.iteration++;
         Logger.debug("RepeatFlowAction::nextIteration() Iteration:", this.iteration);
         if(this.repeatKey && this.repeatKey !== "") {
-            var repeatKey = this.repeatKey.replace("#", "");    // TODO Replace with proper iterationKey
+            var repeatKey = this.repeatKey.replace("#", "");    // TODO Replace with proper iterationKey as property of action
             this.flow.answers.add(repeatKey + "iteration", this.iteration);
         }
         this.repeatFlow.setRepeatIteration(this.iteration);
@@ -103,10 +118,17 @@ class RepeatFlowAction extends Action {
     }
 
     getSummaryQuestions(limitToTitles, excludeTitles) {
-        if(!this.repeatFlow) {
+        if(!this.repeatFlow || !this.summaryQuestions) {
             return null;
         }
-        return this.repeatFlow.getSummaryQuestions(limitToTitles, excludeTitles, false);
+        var questions = [];
+        for(let i in this.summaryQuestions) {
+            var question = this.summaryQuestions[i];
+            if(ChatTools.filterSummaryQuestion(question, limitToTitles, excludeTitles)) {
+                questions.push(question);
+            }
+        }
+        return questions;
     }
 
     reset() {
