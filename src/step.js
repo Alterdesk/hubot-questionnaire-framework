@@ -11,12 +11,29 @@ class Step {
         this.flow = flow;
     }
 
+    // Set the sub flow to execute after this step
+    setSubFlow(subFlow) {
+        this.subFlow = subFlow;
+    }
+
     setAnswerKey(answerKey) {
         this.answerKey = answerKey;
     }
 
     getAnswerKey() {
         return ChatTools.getAnswerKey(this.answerKey, this.flow);
+    }
+
+    getRepeatKey() {
+        return ChatTools.getRepeatKey(this.answerKey);
+    }
+
+    getRepeatIterations(answers) {
+        return ChatTools.getRepeatIterations(this.answerKey, answers);
+    }
+
+    getRepeatedKeys(answers) {
+        return ChatTools.getRepeatedKeys(this.answerKey, answers);
     }
 
     getLabelAnswerKey() {
@@ -32,6 +49,7 @@ class Step {
     }
 
     reset() {
+        this.subFlow = null;
         var answerKey = this.getAnswerKey();
         if(answerKey) {
             this.flow.answers.remove(answerKey);

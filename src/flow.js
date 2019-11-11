@@ -1484,7 +1484,7 @@ class Flow {
                     Logger.info("Flow::previous() Not handled in sub flow of Action: \"" + className + "\"");
                 }
                 action.reset(this.answers);
-                if(!checkpoint && action.askedQuestions) {
+                if(!checkpoint && action.hasAskedQuestions()) {
                     Logger.info("Flow::previous() Action \"" + className + "\" has asked questions, calling next()");
                     action.resetAskedQuestions();
                     this.next();
@@ -1566,25 +1566,21 @@ class Flow {
     }
 
     getSummaryQuestions(limitToTitles, excludeTitles, checkSuperFlow) {
-        Logger.info("Flow::getSummaryQuestions()", this.name);
+        Logger.info("Flow::getSummaryQuestions() " + this.name + " limit: " + limitToTitles + " exclude: " + excludeTitles);
         var questions = [];
         for(let index in this.steps) {
             var step = this.steps[index];
             Logger.info("Flow::getSummaryQuestions() Checking:", step);
             if(step instanceof Question) {
                 var question = step;
-                var answerKey = question.getAnswerKey();
-                if(question.inSummary) {
-                    var title = question.summaryTitle;
-                    if((!excludeTitles || excludeTitles.length === 0 || !title || excludeTitles.indexOf(title) === -1)
-                       && ((!limitToTitles || limitToTitles.length === 0) || (title && limitToTitles.indexOf(title) !== -1))) {
-                        Logger.info("Flow::getSummaryQuestions() Found summary question:", answerKey);
-                        questions.push(question);
-                    } else {
-                        Logger.info("Flow::getSummaryQuestions() Not including question:", answerKey);
-                    }
-                } else {
-                    Logger.debug("Flow::getSummaryQuestions() No summary options for question:", answerKey);
+                if(ChatTools.filterSummaryQuestion(question, limitToTitles, excludeTitles)) {
+                    questions.push(question);
+                }
+            } else if(step instanceof Action) {
+                var action = step;
+                var actionQuestions = action.getSummaryQuestions(limitToTitles, excludeTitles, false);
+                if(actionQuestions && actionQuestions.length > 0) {
+                    questions = questions.concat(actionQuestions);
                 }
             }
             if(step.subFlow) {

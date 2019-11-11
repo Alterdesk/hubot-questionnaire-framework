@@ -11,11 +11,6 @@ class Action extends Step {
         this.askedQuestions = false;
     }
 
-    // Set the sub flow to execute after this action
-    setSubFlow(subFlow) {
-        this.subFlow = subFlow;
-    }
-
     // Execute this action
     execute() {
         // Trigger action callback
@@ -29,13 +24,16 @@ class Action extends Step {
         });
     }
 
-    resetAskedQuestions() {
-        this.askedQuestions = false;
+    getSummaryQuestions(limitToTitles, excludeTitles) {
+        return null;
     }
 
-    reset() {
-        super.reset();
-        this.subFlow = null;
+    hasAskedQuestions() {
+        return this.askedQuestions;
+    }
+
+    resetAskedQuestions() {
+        this.askedQuestions = false;
     }
 }
 
