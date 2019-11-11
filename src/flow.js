@@ -1573,18 +1573,8 @@ class Flow {
             Logger.info("Flow::getSummaryQuestions() Checking:", step);
             if(step instanceof Question) {
                 var question = step;
-                var answerKey = question.getAnswerKey();
-                if(question.inSummary) {
-                    var title = question.summaryTitle;
-                    if((!excludeTitles || excludeTitles.length === 0 || !title || excludeTitles.indexOf(title) === -1)
-                       && ((!limitToTitles || limitToTitles.length === 0) || (title && limitToTitles.indexOf(title) !== -1))) {
-                        Logger.info("Flow::getSummaryQuestions() Found summary question: " + answerKey + " title: \"" + title + "\"");
-                        questions.push(question);
-                    } else {
-                        Logger.info("Flow::getSummaryQuestions() Not including question:", answerKey);
-                    }
-                } else {
-                    Logger.debug("Flow::getSummaryQuestions() No summary options for question:", answerKey);
+                if(ChatTools.filterSummaryQuestion(question, limitToTitles, excludeTitles)) {
+                    questions.push(question);
                 }
             } else if(step instanceof Action) {
                 var action = step;
