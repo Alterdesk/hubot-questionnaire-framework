@@ -11,6 +11,11 @@ class Step {
         this.flow = flow;
     }
 
+    // Set the sub flow to execute after this step
+    setSubFlow(subFlow) {
+        this.subFlow = subFlow;
+    }
+
     setAnswerKey(answerKey) {
         this.answerKey = answerKey;
     }
@@ -44,6 +49,7 @@ class Step {
     }
 
     reset() {
+        this.subFlow = null;
         var answerKey = this.getAnswerKey();
         if(answerKey) {
             this.flow.answers.remove(answerKey);

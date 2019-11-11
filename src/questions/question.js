@@ -29,11 +29,6 @@ class Question extends Step {
         this.flow = flow;
     }
 
-    // Set the sub flow to execute after this question
-    setSubFlow(subFlow) {
-        this.subFlow = subFlow;
-    }
-
     // Set a format function to format given answer with
     setFormatAnswerFunction(formatAnswerFunction) {
         this.formatAnswerFunction = formatAnswerFunction;
@@ -356,7 +351,6 @@ class Question extends Step {
     // Reset the question to be asked again
     reset() {
         super.reset();
-        this.subFlow = null;
         this.formattedQuestionText = null;
         var labelKey = this.getLabelAnswerKey();
         this.flow.answers.remove(labelKey);
