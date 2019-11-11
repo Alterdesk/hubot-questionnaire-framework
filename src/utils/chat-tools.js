@@ -1,5 +1,7 @@
 const {Response, User, Message, TextMessage} = require('hubot');
+
 const RegexTools = require('./regex-tools.js');
+const Logger = require('./../logger.js');
 
 class ChatTools {
 
@@ -73,12 +75,12 @@ class ChatTools {
 
     static getRepeatedKeys(answerKey, answers) {
         if(typeof answerKey !== "string" || !answers) {
-            console.log("getRepeatedKeys() invalid answerkey or answers:", answerKey, answers);
+            Logger.debug("ChatTools::getRepeatedKeys() invalid answerkey or answers:", answerKey, answers);
             return null;
         }
         var hashIndex = answerKey.indexOf("#");
         if(hashIndex === -1) {
-            console.log("getRepeatedKeys() invalid hash index:", hashIndex);
+            Logger.debug("ChatTools::getRepeatedKeys() invalid hash index:", hashIndex);
             return null;
         }
         var keySubstring;
@@ -87,9 +89,9 @@ class ChatTools {
         } else {
             keySubstring = answerKey.substring(0, hashIndex);
         }
-        console.log("getRepeatedKeys() got sub string:", keySubstring);
+        Logger.debug("ChatTools::getRepeatedKeys() got sub string:", keySubstring);
         var result = answers.getKeysContaining(keySubstring);
-        console.log("getRepeatedKeys() result:", result);
+        Logger.debug("ChatTools::getRepeatedKeys() result:", result);
         if(!result) {
             return null;
         }
@@ -102,7 +104,7 @@ class ChatTools {
                 filteredKeys.push(key);
             }
         }
-        console.log("getRepeatedKeys() filtered:", filteredKeys);
+        Logger.debug("ChatTools::getRepeatedKeys() filtered:", filteredKeys);
         return filteredKeys;
     }
 
@@ -120,9 +122,9 @@ class ChatTools {
         } else {
             keySubstring = answerKey.substring(0, hashIndex);
         }
-        console.log("getRepeatIterations() got sub string:", keySubstring);
+        Logger.debug("ChatTools::getRepeatIterations() got sub string:", keySubstring);
         var result = answers.getKeysContaining(keySubstring);
-        console.log("getRepeatIterations() result:", result);
+        Logger.debug("ChatTools::getRepeatIterations() result:", result);
         if(!result) {
             return 0;
         }
@@ -139,8 +141,25 @@ class ChatTools {
             }
         }
         maxIteration++;
-        console.log("getRepeatIterations() result:", maxIteration);
+        Logger.debug("ChatTools::getRepeatIterations() result:", maxIteration);
         return maxIteration;
+    }
+
+    static filterSummaryQuestion(question, limitToTitles, excludeTitles) {
+        var answerKey = question.getAnswerKey();
+        if(!question.inSummary) {
+            Logger.debug("ChatTools::filterSummaryQuestion() No summary options for question:", answerKey);
+            return false;
+        }
+        var title = question.summaryTitle;
+        if((!excludeTitles || excludeTitles.length === 0 || !title || excludeTitles.indexOf(title) === -1)
+           && ((!limitToTitles || limitToTitles.length === 0) || (title && limitToTitles.indexOf(title) !== -1))) {
+            Logger.info("ChatTools::filterSummaryQuestion() Found summary question: " + answerKey + " title: \"" + title + "\"");
+            return true;
+        } else {
+            Logger.info("ChatTools::filterSummaryQuestion() Not including question:", answerKey);
+        }
+        return false;
     }
 
     static getChatUserKey(chatId, userId) {
