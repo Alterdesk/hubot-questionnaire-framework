@@ -30,8 +30,7 @@ class MessengerClient extends JsonRestClient {
             var filePaths = sendMessageData.getAttachmentPaths();
             return this.postMultipart(postUrl, postData, "files", filePaths, overrideToken)
         } else {
-            var postJson = JSON.stringify(postData);
-            return this.post(postUrl, postJson, overrideToken);
+            return this.post(postUrl, postData, overrideToken);
         }
     }
 
@@ -144,26 +143,23 @@ class MessengerClient extends JsonRestClient {
 
     inviteUser(inviteUserData) {
         var postData = inviteUserData.getPostData();
-        var postJson = JSON.stringify(postData);
         var postUrl = inviteUserData.getPostUrl();
         var overrideToken = inviteUserData.getOverrideToken();
-        return this.post(postUrl, postJson, overrideToken);
+        return this.post(postUrl, postData, overrideToken);
     }
 
     createGroup(createGroupData) {
         var postData = createGroupData.getPostData();
-        var postJson = JSON.stringify(postData);
         var postUrl = createGroupData.getPostUrl();
         var overrideToken = createGroupData.getOverrideToken();
-        return this.post(postUrl, postJson, overrideToken);
+        return this.post(postUrl, postData, overrideToken);
     }
 
     changeGroupSettings(groupSettingsData) {
         var putData = groupSettingsData.getPutData();
-        var putJson = JSON.stringify(putData);
         var putUrl = groupSettingsData.getPutUrl();
         var overrideToken = groupSettingsData.getOverrideToken();
-        return this.put(putUrl, putJson, overrideToken);
+        return this.put(putUrl, putData, overrideToken);
     }
 
     getGroupMembers(groupId, isAux, overrideToken) {
@@ -182,8 +178,7 @@ class MessengerClient extends JsonRestClient {
         var memberPutData = {};
         memberPutData["members"] = userIds;
 //        memberPutData["aux_members"] = false; TODO
-        var memberPutJson = JSON.stringify(memberPutData);
-        return this.put(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/members", memberPutJson, overrideToken);
+        return this.put(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/members", memberPutData, overrideToken);
     }
 
     removeGroupMembers(groupId, isAux, userIds, overrideToken) {
@@ -194,8 +189,7 @@ class MessengerClient extends JsonRestClient {
         var memberDeleteData = {};
         memberDeleteData["members"] = userIds;
 //        memberDeleteData["aux_members"] = false; TODO
-        var memberDeleteJson = JSON.stringify(memberDeleteData);
-        return this.delete(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/members", memberDeleteJson, overrideToken);
+        return this.delete(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/members", memberDeleteData, overrideToken);
     }
 
     changeGroupSubject(groupId, isAux, subject, overrideToken) {
@@ -203,10 +197,9 @@ class MessengerClient extends JsonRestClient {
         if(isAux) {
             methodPrefix += "aux/"
         }
-        var subjectPostData = {};
-        subjectPostData["subject"] = subject;
-        var subjectPostJson = JSON.stringify(subjectPostData);
-        return this.put(methodPrefix + "groupchats/" + encodeURIComponent(groupId), subjectPostJson, overrideToken);
+        var subjectPutData = {};
+        subjectPutData["subject"] = subject;
+        return this.put(methodPrefix + "groupchats/" + encodeURIComponent(groupId), subjectPutData, overrideToken);
     }
 
     changeGroupAvatar(groupId, isAux, avatarPath, overrideToken) {
@@ -221,13 +214,12 @@ class MessengerClient extends JsonRestClient {
     closeGroupChat(groupId, isAux, sendEmail, overrideToken) {
         var closePostData = {};
         closePostData["send_email"] = sendEmail;
-        var closePostJson = JSON.stringify(closePostData);
 
         var methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
         }
-        return this.delete(methodPrefix + "groupchats/" + encodeURIComponent(groupId), closePostJson, overrideToken);
+        return this.delete(methodPrefix + "groupchats/" + encodeURIComponent(groupId), closePostData, overrideToken);
     }
 
     getChat(chatId, isGroup, isAux, overrideToken) {
@@ -273,8 +265,7 @@ class MessengerClient extends JsonRestClient {
         var postData = {};
         postData["user_id"] = userId;
         postData["provider_id"] = providerId;
-        var postJson = JSON.stringify(postData);
-        return this.post(postUrl, postJson, overrideToken);
+        return this.post(postUrl, postData, overrideToken);
     }
 
     completeMentions(mentions, excludeIds, chatId, isGroup, isAux) {
