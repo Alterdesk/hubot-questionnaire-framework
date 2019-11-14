@@ -6,6 +6,22 @@ const Logger = require('./../logger.js');
 const USE_TIMEZONE = process.env.HUBOT_QUESTIONNAIRE_USE_TIMEZONE || process.env.USE_TIMEZONE || "UTC";
 const USE_LOCALE = LocaleTools.getLocale();
 
+const MILLISECONDS = "MILLISECONDS";
+const SECONDS = "SECONDS";
+const MINUTES = "MINUTES";
+const HOURS = "HOURS";
+const DAYS = "DAYS";
+const WEEKS = "WEEKS";
+const MONTHS = "MONTHS";
+const YEARS = "YEARS";
+
+const SECOND_IN_MS = 1000;
+const MINUTE_IN_MS = SECOND_IN_MS * 60;
+const HOUR_IN_MS = MINUTE_IN_MS * 60;
+const DAY_IN_MS = HOUR_IN_MS * 24;
+const WEEK_IN_MS = DAY_IN_MS * 7;
+const YEAR_IN_MS = WEEK_IN_MS * 52; // Not precise
+
 class DateTools {
 
     static getUTCMoment(data) {
@@ -32,14 +48,42 @@ class DateTools {
         return DateTools.getLocalMoment(date).format(format);
     }
 
-    static timePassed(date, timeScale, timeValue) {
+    static addTimeMoment(date, timeScale, timeValue) {
         var moment = DateTools.getUTCMoment(date);
         var useScale = DateTools.getTimeScale(timeScale);
         if(!useScale) {
-            return false;
+            return null;
         }
         moment.add(timeValue, useScale);
+        return moment;
+    }
+
+    static addTimeDate(date, timeScale, timeValue) {
+        var moment = DateTools.addTimeMoment(date, timeScale, timeValue);
+        if(!moment) {
+            Logger.error("DateTools::addTimeDate() Invalid moment:", moment);
+            return null;
+        }
+        return moment.toDate();
+    }
+
+    static timePassed(date, timeScale, timeValue) {
+        var moment = DateTools.addTimeMoment(date, timeScale, timeValue);
+        if(!moment) {
+            Logger.error("DateTools::timePassed() Invalid moment:", moment);
+            return false;
+        }
         return moment.isBefore(DateTools.getUTCMoment());
+    }
+
+    static isBefore(date, compareDate) {
+        var moment = DateTools.getUTCMoment(date);
+        return moment.isBefore(compareDate);
+    }
+
+    static isAfter(date, compareDate) {
+        var moment = DateTools.getUTCMoment(date);
+        return moment.isAfter(compareDate);
     }
 
     static isDate(date, year, month, day) {
@@ -64,6 +108,14 @@ class DateTools {
             }
         }
         return true;
+    }
+
+    static dateBetween(date, min, max, precisionScale) {
+        var timeScale;
+        if(precisionScale) {
+            timeScale = DateTools.getTimeScale(precisionScale);
+        }
+        return DateTools.getUTCMoment(date).isBetween(min, max, timeScale);
     }
 
     static timeInRange(date, min, max) {
@@ -101,25 +153,55 @@ class DateTools {
         return month >= min && month <= max;
     }
 
+    static getDiffMs(minDate, maxDate) {
+        var moment = DateTools.getUTCMoment(maxDate);
+        return moment.diff(minDate);
+    }
+
     static getTimeScale(timeScale) {
-        if(timeScale === "MILLISECONDS") {
+        if(timeScale === MILLISECONDS) {
             return "ms";
-        } else if(timeScale === "SECONDS") {
+        } else if(timeScale === SECONDS) {
             return "s";
-        } else if(timeScale === "MINUTES") {
+        } else if(timeScale === MINUTES) {
             return "m";
-        } else if(timeScale === "HOURS") {
+        } else if(timeScale === HOURS) {
             return "h";
-        } else if(timeScale === "DAYS") {
+        } else if(timeScale === DAYS) {
             return "d";
-        } else if(timeScale === "WEEKS") {
+        } else if(timeScale === WEEKS) {
             return "w";
-        } else if(timeScale === "MONTHS") {
+        } else if(timeScale === MONTHS) {
             return "M";
-        } else if(timeScale === "YEARS") {
+        } else if(timeScale === YEARS) {
             return "y";
         }
+        Logger.error("DateTools::getTimeScale() Invalid timescale:", timeScale);
         return null;
+    }
+
+    getYearInMs() {
+        return YEAR_IN_MS;
+    }
+
+    getWeekInMs() {
+        return WEEK_IN_MS;
+    }
+
+    getDayInMs() {
+        return DAY_IN_MS;
+    }
+
+    getHourInMs() {
+        return HOUR_IN_MS;
+    }
+
+    getMinuteMs() {
+        return MINUTE_IN_MS;
+    }
+
+    getSecondInMs() {
+        return SECOND_IN_MS;
     }
 
     static localDate() {
