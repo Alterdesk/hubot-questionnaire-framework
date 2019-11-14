@@ -180,27 +180,27 @@ class DateTools {
         return null;
     }
 
-    getYearInMs() {
+    static getYearInMs() {
         return YEAR_IN_MS;
     }
 
-    getWeekInMs() {
+    static getWeekInMs() {
         return WEEK_IN_MS;
     }
 
-    getDayInMs() {
+    static getDayInMs() {
         return DAY_IN_MS;
     }
 
-    getHourInMs() {
+    static getHourInMs() {
         return HOUR_IN_MS;
     }
 
-    getMinuteMs() {
+    static getMinuteMs() {
         return MINUTE_IN_MS;
     }
 
-    getSecondInMs() {
+    static getSecondInMs() {
         return SECOND_IN_MS;
     }
 
