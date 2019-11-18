@@ -150,7 +150,7 @@ class ChatPdfAction extends Action {
     }
 
     setErrorMessage(errorMessage) {
-        this.errorMessage;
+        this.errorMessage = errorMessage;
     }
 
     setOverrideToken(overrideToken) {
