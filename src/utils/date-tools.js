@@ -147,6 +147,10 @@ class DateTools {
         return DateTools.getUTCMoment(date).isoWeek();
     }
 
+    static getWeeksInYear(date) {
+        return DateTools.getUTCMoment(date).isoWeeksInYear();
+    }
+
     static monthInRange(date, min, max) {
         // Months are zero indexed
         var month = (DateTools.getUTCMoment(date).month() + 1);
