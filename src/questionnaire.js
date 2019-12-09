@@ -82,6 +82,7 @@ module.exports = {
     StringTools : require('./utils/string-tools.js'),
     SummaryAction : require('./actions/summary-action.js'),
     TextQuestion : require('./questions/text-question.js'),
+    TruncateFormatter : require('./formatters/truncate-formatter.js'),
     VerificationQuestion : require('./questions/verification-question.js')
 
 };
