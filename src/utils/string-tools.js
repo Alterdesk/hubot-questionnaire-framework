@@ -69,6 +69,20 @@ class StringTools {
         return string;
     }
 
+    static truncateEnd(string, maxLength) {
+        if(typeof string !== "string" || string.length <= maxLength) {
+            return string;
+        }
+        return string.substring(0, maxLength);
+    }
+
+    static truncateStart(string, maxLength) {
+        if(typeof string !== "string" || string.length <= maxLength) {
+            return string;
+        }
+        return string.substring(string.length - maxLength);
+    }
+
     // String to lowercase
     static lowercase(string) {
         if(typeof string !== "string" || string == "") {
