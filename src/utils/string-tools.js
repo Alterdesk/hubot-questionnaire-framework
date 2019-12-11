@@ -26,7 +26,7 @@ class StringTools {
         return string.replace(new RegExp(StringTools.escapeRegex(search), 'g'), replace);
     }
 
-    static safeName(string, maxLength, lowerCase, collapseBlocked) {
+    static removeDiacritics(string) {
         if(typeof string !== "string" || string.length === 0) {
             return string;
         }
@@ -49,6 +49,15 @@ class StringTools {
         string = string.replace(/[ŵŴ]/gi, "w");
         string = string.replace(/[ýÿŷÝŸŶ]/gi, "y");
         string = string.replace(/[źżžŹŻŽ]/gi, "z");
+
+        return string;
+    }
+
+    static safeName(string, maxLength, lowerCase, collapseBlocked) {
+        if(typeof string !== "string" || string.length === 0) {
+            return string;
+        }
+        string = StringTools.removeDiacritics(string);
 
         string = string.replace(/★/gi, "1");
         string = string.replace(/☆/gi, "0");
