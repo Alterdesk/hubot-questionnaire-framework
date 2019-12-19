@@ -43,6 +43,7 @@ module.exports = {
     EnvironmentCondition : require('./conditions/environment-condition.js'),
     Flow : require('./flow.js'),
     FlowAction : require('./actions/flow-action.js'),
+    FormatAnswerAction : require('./actions/format-answer-action.js'),
     Formatter : require('./formatters/formatter.js'),
     FuzzyAction : require('./actions/fuzzy-action.js'),
     GenerateNumberAction : require('./actions/generate-number-action.js'),
