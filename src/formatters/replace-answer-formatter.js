@@ -24,11 +24,11 @@ class ReplaceAnswerFormatter extends Formatter {
             Logger.error("ReplaceAnswerFormatter::execute() Invalid from: \"" + this.from + "\"");
             return text;
         }
-        Logger.debug("ReplaceAnswerFormatter::execute() Using from: \"" + this.from + "\" answerKey: \"" + answerKey + "\"");
         if(!this.checkConditions(flow)) {
-            Logger.debug("ReplaceAnswerFormatter::execute() Condition not met");
+            Logger.debug("ReplaceAnswerFormatter::execute() Condition not met: from: \"" + this.from + "\" answerKey: \"" + answerKey + "\"");
             return text;
         }
+        Logger.debug("ReplaceAnswerFormatter::execute() Using from: \"" + this.from + "\" answerKey: \"" + answerKey + "\"");
         if(!flow.answers.has(answerKey)) {
             Logger.debug("ReplaceAnswerFormatter::execute() Answer not found: \"" + answerKey + "\"");
             if(this.fallbackText != null) {

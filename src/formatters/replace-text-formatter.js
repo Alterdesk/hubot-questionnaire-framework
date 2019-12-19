@@ -11,18 +11,19 @@ class ReplaceTextFormatter extends Formatter {
     }
 
     execute(text, flow) {
-        Logger.debug("ReplaceTextFormatter::execute() Using from: \"" + this.from + "\" to: \"" + this.to + "\"");
         if(!this.checkConditions(flow)) {
-            Logger.debug("ReplaceTextFormatter::execute() Condition not met");
+            Logger.debug("ReplaceTextFormatter::execute() Condition not met: from: \"" + this.from + "\" to: \"" + this.to + "\"");
             return text;
         }
         if(!this.from) {
-            Logger.error("ReplaceTextFormatter::execute() No from was set:", this.from);
+            Logger.error("ReplaceTextFormatter::execute() Invalid from:", this.from);
             return text;
         }
         if(typeof this.to !== "string") {
+            Logger.error("ReplaceTextFormatter::execute() Invalid to:", this.to);
             return text;
         }
+        Logger.debug("ReplaceTextFormatter::execute() Using from: \"" + this.from + "\" to: \"" + this.to + "\"");
 
         var to = this.to;
         if(this.prefixText && this.prefixText.length > 0) {

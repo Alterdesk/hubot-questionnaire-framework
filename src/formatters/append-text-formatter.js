@@ -15,11 +15,11 @@ class AppendTextFormatter extends Formatter {
             Logger.error("AppendTextFormatter::execute() Invalid text:", this.appendText);
             return text;
         }
-        Logger.debug("AppendTextFormatter::execute() Using text: \"" + this.appendText + "\"");
         if(!this.checkConditions(flow)) {
-            Logger.debug("AppendTextFormatter::execute() Condition not met");
+            Logger.debug("AppendTextFormatter::execute() Condition not met: text: \"" + this.appendText + "\"");
             return text;
         }
+        Logger.debug("AppendTextFormatter::execute() Using text: \"" + this.appendText + "\"");
 
         var result = this.appendText;
         if(this.prefixText && this.prefixText.length > 0) {

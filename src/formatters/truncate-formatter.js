@@ -11,11 +11,11 @@ class TruncateFormatter extends Formatter {
     }
 
     execute(text, flow) {
-        Logger.debug("TruncateFormatter::execute() maxLength: " + this.maxLength + " truncateAt:", this.truncateAt);
         if(!this.checkConditions(flow)) {
-            Logger.debug("TruncateFormatter::execute() Condition not met");
+            Logger.debug("TruncateFormatter::execute() Condition not met: maxLength: " + this.maxLength + " truncateAt:", this.truncateAt);
             return text;
         }
+        Logger.debug("TruncateFormatter::execute() maxLength: " + this.maxLength + " truncateAt:", this.truncateAt);
         if(!text || text.length <= this.maxLength) {
             return text;
         }
