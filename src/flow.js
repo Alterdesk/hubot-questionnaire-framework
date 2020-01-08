@@ -1,10 +1,9 @@
-const Extra = require('node-messenger-extra');
-
 const Action = require('./actions/action.js');
 const Answers = require('./answers.js');
 const AnswerCondition = require('./conditions/answer-condition.js');
 const AttachmentQuestion = require('./questions/attachment-question.js');
 const BackAction = require('./actions/back-action.js');
+const ChatTools = require('./utils/chat-tools.js');
 const CloseGroupAction = require('./actions/close-group-action.js');
 const CompleteMentionsAction = require('./actions/complete-mentions-action.js');
 const EmailQuestion = require('./questions/email-question.js');
@@ -20,8 +19,10 @@ const PhoneNumberQuestion = require('./questions/phone-number-question.js');
 const PendingRequest = require('./pending-request.js');
 const PolarQuestion = require('./questions/polar-question.js');
 const Question = require('./questions/question.js');
+const SendMessageData = require('./containers/send-message-data.js');
 const SetAnswerAction = require('./actions/set-answer-action.js');
 const StopConditionAction = require('./actions/stop-condition-action.js');
+const StringTools = require('./utils/string-tools.js');
 const SummaryAction = require('./actions/summary-action.js');
 const TextQuestion = require('./questions/text-question.js');
 const VerificationQuestion = require('./questions/verification-question.js');
@@ -55,14 +56,11 @@ class Flow {
 
     // Add a step to the flow
     add(step) {
+        step.setFlow(this);
         if(step instanceof Question) {
-            let question = step;
-            question.setFlow(this);
-            this.lastAddedQuestion = question;
+            this.lastAddedQuestion = step;
         } else if(step instanceof Action) {
-            let action = step;
-            action.setFlow(this);
-            this.lastAddedAction = action;
+            this.lastAddedAction = step;
         }
         step.addedAfterStart = this.isRunning;
         this.steps.push(step);
@@ -124,7 +122,7 @@ class Flow {
             Logger.error("Flow::capitalize() Last added Question is not an instance of TextQuestion");
             return this;
         }
-        this.lastAddedQuestion.setFormatAnswerFunction(Extra.capitalizeFirstLetter);
+        this.lastAddedQuestion.setFormatAnswerFunction(StringTools.capitalizeFirstLetter);
         return this;
     }
 
@@ -138,7 +136,7 @@ class Flow {
             Logger.error("Flow::lastName() Last added Question is not an instance of TextQuestion");
             return this;
         }
-        this.lastAddedQuestion.setFormatAnswerFunction(Extra.capitalizeLastName);
+        this.lastAddedQuestion.setFormatAnswerFunction(StringTools.capitalizeLastName);
         return this;
     }
 
@@ -607,7 +605,7 @@ class Flow {
         return this;
     }
 
-    fuzzy(answerKey, questionText, invalidText, waitMs) { // TODO FuzzyAction may be subject to change
+    fuzzy(answerKey, questionText, invalidText, waitMs) {
         this.add(new FuzzyAction(answerKey, questionText, invalidText, waitMs));
         return this;
     }
@@ -784,8 +782,13 @@ class Flow {
     }
 
     setRepeatIteration(repeatIteration) {
+        Logger.debug("Flow::setRepeatIteration()", repeatIteration);
         this.repeatIteration = repeatIteration;
         this.currentStep = 0;
+    }
+
+    setName(name) {
+        this.name = name;
     }
 
     // Set a restart button for error, stop and timeout messages
@@ -804,16 +807,16 @@ class Flow {
         if(!this.msg || !this.msg.message || !this.msg.message.user) {
             return;
         }
-        var questionPayload;
-        if(this.control.messengerApi && this.restartButtonName && this.restartButtonLabel) {
-            questionPayload = this.control.createQuestionPayload();
-            questionPayload.multiAnswer = false;
-//            questionPayload.style = "horizontal";
+
+        var sendMessageData = new SendMessageData();
+        sendMessageData.setHubotMessage(this.msg.message);
+        sendMessageData.setMessage(text);
+        if(this.restartButtonName && this.restartButtonLabel) {
             var style = this.restartButtonStyle || "theme";
-            questionPayload.addOption(this.restartButtonName, this.restartButtonLabel, style);
-            questionPayload.addUserId(this.control.getUserId(this.msg.message.user));
+            sendMessageData.addQuestionButtonWithName(this.restartButtonName, this.restartButtonLabel, style);
+            sendMessageData.addRequestUserId(ChatTools.getUserId(this.msg.message.user));
         }
-        this.control.sendRequestMessage(this.msg.message, text, questionPayload);
+        this.control.sendRequestMessage(sendMessageData);
     }
 
     // Set the flow stopped callback function
@@ -830,7 +833,7 @@ class Flow {
 
     // Start the flow
     start(msg, answers) {
-        Logger.info("Flow::start()");
+        Logger.info("Flow::start()", this.name);
         if(!this.superFlow) {
             this.control.addActiveQuestionnaire(msg.message, this);
         }
@@ -862,22 +865,6 @@ class Flow {
         }
         this.msg = msg;
         this.answers = answers || new Answers();
-        if(this.repeatIteration > -1) {
-            for(let i in this.steps) {
-                var step = this.steps[i];
-                if(!step.answerKey) {
-                    continue;
-                }
-                if(!step.originalAnswerKey) {
-                    step.originalAnswerKey = step.answerKey;
-                }
-                step.answerKey = step.originalAnswerKey + "_" + this.repeatIteration;
-                if(step instanceof Question
-                        || step instanceof Action) {
-                    step.reset(this.answers);
-                }
-            }
-        }
         this.next();
     }
 
@@ -906,7 +893,7 @@ class Flow {
                     response.send(flow.backText)
                 }
                 if(flow.control.questionnaireBackCallback) {
-                    var userId = flow.control.getUserId(flow.msg.message.user);
+                    var userId = ChatTools.getUserId(flow.msg.message.user);
                     flow.control.questionnaireBackCallback(userId, false, flow.answers);
                 }
                 // Try to go back
@@ -925,7 +912,7 @@ class Flow {
                     response.send(flow.checkpointText)
                 }
                 if(flow.control.questionnaireBackCallback) {
-                    var userId = flow.control.getUserId(flow.msg.message.user);
+                    var userId = ChatTools.getUserId(flow.msg.message.user);
                     this.control.questionnaireBackCallback(userId, true, flow.answers);
                 }
                 // Try to go to last checkpoint
@@ -940,17 +927,12 @@ class Flow {
             var answerValue = question.checkAndParseAnswer(listener.matches, response.message);
             if(answerValue == null) {
                 Logger.debug("Flow::callback() No valid answer value from listener, resetting listener");
+                if(flow.control.questionAnswerRejectedCallback) {
+                    var userId = ChatTools.getUserId(response.message.user);
+                    var answerKey = question.getAnswerKey();
+                    flow.control.questionAnswerRejectedCallback(userId, answerKey, response.message, flow.answers, question);
+                }
                 if(question.resendOnInvalid) {
-                    if(flow.control.questionAnswerRejectedCallback) {
-                        var userId = flow.control.getUserId(response.message.user);
-                        var useKey;
-                        if(question.originalAnswerKey) {
-                            useKey = question.originalAnswerKey;
-                        } else {
-                            useKey = question.answerKey;
-                        }
-                        flow.control.questionAnswerRejectedCallback(userId, useKey, response.message, flow.answers);
-                    }
                     response.send(question.invalidText);
                     question.send(flow.control, response, this.callback);
                 } else {
@@ -982,13 +964,15 @@ class Flow {
 
     // Process question answer
     onAnswer(response, question, answerValue) {
+        var answerKey = question.getAnswerKey();
+
         // Format the given answer if a function was set
         if(question.formatAnswerFunction) {
-            Logger.debug("Flow::onAnswer() Formatting answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
+            Logger.debug("Flow::onAnswer() Formatting answer: key: \"" + answerKey + "\" value: \"" + answerValue + "\"");
             var formatted = question.formatAnswerFunction(answerValue);
             if(formatted && formatted !== "") {
                 answerValue = formatted;
-                Logger.debug("Flow::onAnswer() Formatted answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
+                Logger.debug("Flow::onAnswer() Formatted answer: key: \"" + answerKey + "\" value: \"" + answerValue + "\"");
             }
         }
 
@@ -997,14 +981,14 @@ class Flow {
 
         // Is the question asked to multiple users and not all users answered yet
         if(question.isMultiUser) {
-            var multiAnswers = this.answers.get(question.answerKey);
+            var multiAnswers = this.answers.get(answerKey);
             if(!multiAnswers) {
                 multiAnswers = new Answers();
-                this.answers.add(question.answerKey, multiAnswers);
+                this.answers.add(answerKey, multiAnswers);
             }
-            var userId = this.control.getUserId(response.message.user);
+            var userId = ChatTools.getUserId(response.message.user);
             multiAnswers.add(userId, answerValue);
-            Logger.debug("Flow::onAnswer() Added multi-user answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
+            Logger.debug("Flow::onAnswer() Added multi-user answer: key: \"" + answerKey + "\" value: \"" + answerValue + "\"");
 
             if(choiceLabel && choiceLabel.length > 0) {
                 var labelKey = userId + "_label";
@@ -1025,16 +1009,16 @@ class Flow {
                 }
             }
 
-            let parsedUserIds = this.parsedMultiUserAnswers[question.answerKey];
+            let parsedUserIds = this.parsedMultiUserAnswers[answerKey];
             if(!parsedUserIds) {
                 parsedUserIds = {};
-                this.parsedMultiUserAnswers[question.answerKey] = parsedUserIds;
+                this.parsedMultiUserAnswers[answerKey] = parsedUserIds;
             }
             parsedUserIds[userId] = true;
 
             // Call question answered callback if set
             if(this.control.questionAnsweredCallback) {
-                this.control.questionAnsweredCallback(userId, question.answerKey, answerValue, this.answers);
+                this.control.questionAnsweredCallback(userId, answerKey, answerValue, this.answers, question);
             }
 
             // Check if a value was set to break multi user question on and use it
@@ -1073,63 +1057,38 @@ class Flow {
             }
         } else {
             // Valid answer, store in the answers object
-            this.answers.add(question.answerKey, answerValue);
-            Logger.debug("Flow::onAnswer() Added answer: key: \"" + question.answerKey + "\" value: \"" + answerValue + "\"");
+            this.answers.add(answerKey, answerValue);
+            Logger.debug("Flow::onAnswer() Added answer: key: \"" + answerKey + "\" value: \"" + answerValue + "\"");
 
             if(choiceLabel && choiceLabel !== "") {
-                var labelKey;
-                if(question.originalAnswerKey && this.repeatIteration > -1) {
-                    labelKey = question.originalAnswerKey + "_label_" + this.repeatIteration;
-                } else {
-                    labelKey = question.answerKey + "_label";
-                }
+                var labelKey = question.getLabelAnswerKey();
                 this.answers.add(labelKey, choiceLabel);
                 Logger.debug("Flow::onAnswer() Added label answer: key: \"" + labelKey + "\" value: \"" + choiceLabel + "\"");
             }
 
             if(choiceValue != null) {
-                var valueKey;
-                if(question.originalAnswerKey && this.repeatIteration > -1) {
-                    valueKey = question.originalAnswerKey + "_value_" + this.repeatIteration;
-                } else {
-                    valueKey = question.answerKey + "_value";
-                }
+                var valueKey = question.getValueAnswerKey();
                 this.answers.add(valueKey, choiceValue);
                 Logger.debug("Flow::onAnswer() Added value answer: key: \"" + valueKey + "\" value: \"" + choiceValue + "\"");
             }
 
             // Call question answered callback if set
             if(this.control.questionAnsweredCallback) {
-                var userId = this.control.getUserId(this.msg.message.user);
-                var useKey;
-                if(question.originalAnswerKey) {
-                    useKey = question.originalAnswerKey;
-                } else {
-                    useKey = question.answerKey;
-                }
-                this.control.questionAnsweredCallback(userId, useKey, answerValue, this.answers);
+                var userId = ChatTools.getUserId(this.msg.message.user);
+                var answerKey = question.getAnswerKey();
+                this.control.questionAnsweredCallback(userId, answerKey, answerValue, this.answers, question);
                 if(choiceLabel != null) {
-                    var useLabelKey;
-                    if(question.originalAnswerKey) {
-                        useLabelKey = question.originalAnswerKey + "_label";
-                    } else {
-                        useLabelKey = question.answerKey + "_label";
-                    }
-                    this.control.questionAnsweredCallback(userId, useLabelKey, choiceLabel, this.answers);
+                    var labelKey = question.getLabelAnswerKey();
+                    this.control.questionAnsweredCallback(userId, labelKey, choiceLabel, this.answers, question);
                 }
                 if(choiceValue != null) {
-                    var useValueKey;
-                    if(question.originalAnswerKey) {
-                        useValueKey = question.originalAnswerKey + "_value";
-                    } else {
-                        useValueKey = question.answerKey + "_value";
-                    }
-                    this.control.questionAnsweredCallback(userId, useValueKey, choiceValue, this.answers);
+                    var valueKey = question.getValueAnswerKey();
+                    this.control.questionAnsweredCallback(userId, valueKey, choiceValue, this.answers, question);
                 }
             }
         }
 
-        this.parsedAnswerKeys[question.answerKey] = true;
+        this.parsedAnswerKeys[answerKey] = true;
 
         if(question.stopOnValue && question.stopOnValue === answerValue) {
             this.questionStop(question);
@@ -1149,7 +1108,7 @@ class Flow {
             Logger.debug("Flow::questionExecute() Flow not running", this.name);
             return;
         }
-        Logger.info("Flow::questionExecute() answerKey: \"" + question.answerKey + "\"");
+        Logger.info("Flow::questionExecute() answerKey: \"" + question.getAnswerKey() + "\"");
         question.execute(this.control, this.msg, this.callback, this.answers);
     }
 
@@ -1170,7 +1129,7 @@ class Flow {
             Logger.debug("Flow::questionAnswered() Flow not running", this.name);
             return;
         }
-        Logger.info("Flow::questionAnswered() answerKey: \"" + question.answerKey + "\" useFinalize: " + question.useFinalize);
+        Logger.info("Flow::questionAnswered() answerKey: \"" + question.getAnswerKey() + "\" useFinalize: " + question.useFinalize);
         if(question.useFinalize) {
             question.finalize(this.answers, () => {
                 this.questionDone(question);
@@ -1181,7 +1140,7 @@ class Flow {
     }
 
     questionDone(question) {
-        Logger.info("Flow::questionDone() answerKey: \"" + question.answerKey + "\"");
+        Logger.info("Flow::questionDone() answerKey: \"" + question.getAnswerKey() + "\"");
         // Trigger sub flow if set in question, otherwise continue
         if(question.subFlow instanceof Flow) {
             Logger.debug("Flow::questionDone() Calling startSubFlow()", question.subFlow.name);
@@ -1197,7 +1156,7 @@ class Flow {
             return;
         }
         if(this.control.actionDoneCallback) {
-            var userId = this.control.getUserId(this.msg.message.user);
+            var userId = ChatTools.getUserId(this.msg.message.user);
             this.control.actionDoneCallback(userId, action, this.answers);
         }
         var className = "";
@@ -1293,7 +1252,6 @@ class Flow {
         }
         Logger.info("Flow::stop()", this.name);
         this.isRunning = false;
-        // TODO Add Flow.cleanup() that calls Listener/PendingRequest cleanup()
         for(let index in this.steps) {
             var step = this.steps[index];
             if(step instanceof Question) {
@@ -1316,7 +1274,7 @@ class Flow {
                 this.stoppedCallback(this.msg, error, this.answers);
             }
             if(this.control.questionnaireStoppedCallback) {
-                var userId = this.control.getUserId(this.msg.message.user);
+                var userId = ChatTools.getUserId(this.msg.message.user);
                 this.control.questionnaireStoppedCallback(userId, error, this.answers);
             }
         }
@@ -1350,17 +1308,18 @@ class Flow {
         Logger.info("Flow::next() Step " + stepIndex + " \"" + className + "\"");
         if(step instanceof Question) {
             var question = step;
-            var answerValue = this.answers.get(question.answerKey);
+            var answerKey = question.getAnswerKey();
+            var answerValue = this.answers.get(answerKey);
             if(answerValue != null) {
                 // If question is already checked and parsed and was asked to a single user
-                if(this.parsedAnswerKeys[question.answerKey] && !question.isMultiUser) {
-                    Logger.debug("Flow::next() Already have parsed answer \"" + answerValue + "\" for \"" + question.answerKey + "\", skipping question");
+                if(this.parsedAnswerKeys[answerKey] && !question.isMultiUser) {
+                    Logger.debug("Flow::next() Already have parsed answer \"" + answerValue + "\" for \"" + answerKey + "\", skipping question");
                     this.questionAnswered(question);
                     return;
                 }
 
                 var chatId = this.msg.message.room;
-                var isGroup = this.control.isUserInGroup(this.msg.message.user);
+                var isGroup = ChatTools.isUserInGroup(this.msg.message.user);
 
                 if(answerValue instanceof Answers) {
                     var multiAnswers = answerValue;
@@ -1381,10 +1340,10 @@ class Flow {
                         }
                     }
                     if(checkUserIds.length > 0 && !question.isMultiUser) {
-                        Control.warning("Flow::next() Got pre-filled multi-user answers for single user question \"" + question.answerKey + "\", forcing question to be multi-user");
+                        Control.warning("Flow::next() Got pre-filled multi-user answers for single user question \"" + answerKey + "\", forcing question to be multi-user");
                         question.isMultiUser = true;
                     }
-                    let parsedUserIds = this.parsedMultiUserAnswers[question.answerKey];
+                    let parsedUserIds = this.parsedMultiUserAnswers[answerKey];
                     let parsedAnswers = 0;
                     for(let index in checkUserIds) {
                         var userId = checkUserIds[index];
@@ -1393,7 +1352,7 @@ class Flow {
                             continue;
                         }
                         if(parsedUserIds && parsedUserIds[userId]) {
-                            Logger.debug("Flow::next() Already parsed multi-user answer from \"" + userId + "\" for \"" + question.answerKey + "\"");
+                            Logger.debug("Flow::next() Already parsed multi-user answer from \"" + userId + "\" for \"" + answerKey + "\"");
                             parsedAnswers++
                             continue;
                         }
@@ -1401,44 +1360,44 @@ class Flow {
                         if(userAnswer && userAnswer.match) {
                             matches = userAnswer.match(question.regex);
                         }
-                        var message = this.control.createHubotResponse(userId, chatId, isGroup);
+                        var message = ChatTools.createHubotResponse(this.control.robot, userId, chatId, isGroup);
                         message.text = userAnswer;
                         var parsedValue = question.checkAndParseAnswer(matches, message);
                         if(parsedValue != null) {
-                            Logger.debug("Flow::next() Got pre-filled multi-user answer \"" + parsedValue + "\" for \"" + question.answerKey + "\"");
+                            Logger.debug("Flow::next() Got pre-filled multi-user answer \"" + parsedValue + "\" for \"" + answerKey + "\"");
                             if(this.onAnswer(message, question, parsedValue)) {
-                                Logger.debug("Flow::next() Got all pre-filled user answers for multi-user question \"" + question.answerKey + "\", skipping question");
+                                Logger.debug("Flow::next() Got all pre-filled user answers for multi-user question \"" + answerKey + "\", skipping question");
                                 return;
                             }
                         } else {
-                            Logger.error("Flow::next() Rejected pre-filled multi-user answer \"" + userAnswer + "\" for \"" + question.answerKey + "\" matches: ", matches);
+                            Logger.error("Flow::next() Rejected pre-filled multi-user answer \"" + userAnswer + "\" for \"" + answerKey + "\" matches: ", matches);
                         }
                     }
                     if(parsedAnswers > 0 && parsedAnswers == checkUserIds.length) {
-                        Logger.debug("Flow::next() Parsed all pre-filled user answers for multi-user question \"" + question.answerKey + "\", skipping question");
+                        Logger.debug("Flow::next() Parsed all pre-filled user answers for multi-user question \"" + answerKey + "\", skipping question");
                         this.questionAnswered(question);
                         return;
                     }
                 } else {
                     // Check and parse pre-filled answer
-                    var userId = this.control.getUserId(this.msg.message.user);
+                    var userId = ChatTools.getUserId(this.msg.message.user);
                     var matches;
                     if(answerValue && answerValue.match) {
                         matches = answerValue.match(question.regex);
                     }
-                    var message = this.control.createHubotResponse(userId, chatId, isGroup);
+                    var message = ChatTools.createHubotResponse(this.control.robot, userId, chatId, isGroup);
                     message.text = answerValue;
                     var parsedValue = question.checkAndParseAnswer(matches, message);
                     if(parsedValue != null) {
-                        Logger.debug("Flow::next() Got pre-filled answer \"" + parsedValue + "\" for \"" + question.answerKey + "\", skipping question");
+                        Logger.debug("Flow::next() Got pre-filled answer \"" + parsedValue + "\" for \"" + answerKey + "\", skipping question");
                         this.onAnswer(this.msg, question, parsedValue);
                         return;
                     } else {
-                        Logger.error("Flow::next() Rejected pre-filled answer \"" + answerValue + "\" for \"" + question.answerKey + "\" matches: ", matches);
+                        Logger.error("Flow::next() Rejected pre-filled answer \"" + answerValue + "\" for \"" + answerKey + "\" matches: ", matches);
                     }
                 }
             }
-            Logger.info("Flow::next() Question: \"" + question.answerKey + "\": \"" + question.getQuestionText() + "\"");
+            Logger.info("Flow::next() Question: \"" + answerKey + "\": \"" + question.getQuestionText() + "\"");
 
             // Delay executing this message if a delay was set
             if(question.delayMs && question.delayMs > 0) {
@@ -1451,10 +1410,10 @@ class Flow {
             }
         } else if(step instanceof Information) {
             var information = step;
-            information.execute(this, this.msg, this.answers);
+            information.execute();
         } else if(step instanceof Action) {
             var action = step;
-            action.execute(this, this.msg, this.answers);
+            action.execute();
             if(action.controlsFlow) {
                 return;
             }
@@ -1486,24 +1445,25 @@ class Flow {
             Logger.info("Flow::previous() Step " + stepIndex + " \"" + className + "\"");
             if(step instanceof Question) {
                 let question = step;
+                let answerKey = question.getAnswerKey();
                 if(question.subFlow) {
-                    Logger.info("Flow::previous() Question: \"" + question.answerKey + "\" has sub flow");
+                    Logger.info("Flow::previous() Question: \"" + answerKey + "\" has sub flow");
                     if(question.subFlow.previous(checkpoint, true)) {
-                        Logger.info("Flow::previous() Handled in sub flow of Question: \"" + question.answerKey + "\"");
+                        Logger.info("Flow::previous() Handled in sub flow of Question: \"" + answerKey + "\"");
                         return true;
                     }
-                    Logger.info("Flow::previous() Not handled in sub flow of Question: \"" + question.answerKey + "\"");
+                    Logger.info("Flow::previous() Not handled in sub flow of Question: \"" + answerKey + "\"");
                 }
-                Logger.info("Flow::previous() Question: \"" + question.answerKey + "\": " + question.getQuestionText());
+                Logger.info("Flow::previous() Question: \"" + answerKey + "\": " + question.getQuestionText(this.answers));
 
-                let removedAnswer = this.answers.remove(question.answerKey);
+                let removedAnswer = this.answers.remove(answerKey);
 
                 if(removedAnswer != null) {
-                    Logger.info("Flow::previous() Removed answer: key: \"" + question.answerKey + "\" value: \"" + removedAnswer + "\"");
-                    if(question.isMultiUser && this.parsedMultiUserAnswers[question.answerKey]) {
-                        delete this.parsedMultiUserAnswers[question.answerKey];
+                    Logger.info("Flow::previous() Removed answer: key: \"" + answerKey + "\" value: \"" + removedAnswer + "\"");
+                    if(question.isMultiUser && this.parsedMultiUserAnswers[answerKey]) {
+                        delete this.parsedMultiUserAnswers[answerKey];
                     }
-                    this.parsedAnswerKeys[question.answerKey] = false;
+                    this.parsedAnswerKeys[answerKey] = false;
                     question.reset(this.answers);
                     if(checkpoint && !question.isCheckpoint) {
                         Logger.info("Flow::previous() Question is not a checkpoint, continuing");
@@ -1524,7 +1484,7 @@ class Flow {
                     Logger.info("Flow::previous() Not handled in sub flow of Action: \"" + className + "\"");
                 }
                 action.reset(this.answers);
-                if(!checkpoint && action.askedQuestions) {
+                if(!checkpoint && action.hasAskedQuestions()) {
                     Logger.info("Flow::previous() Action \"" + className + "\" has asked questions, calling next()");
                     action.resetAskedQuestions();
                     this.next();
@@ -1546,17 +1506,106 @@ class Flow {
         return false;
     }
 
-    getQuestion(answerKey) {
+    getQuestion(answerKey, checkSuperFlow) {
+        Logger.info("Flow::getQuestion()", answerKey, this.name);
         for(let index in this.steps) {
             var step = this.steps[index];
-            if(!step instanceof Question) {
-                continue;
+            if(step instanceof Question) {
+                if(step.getAnswerKey() === answerKey) {
+                    Logger.info("Flow::getQuestion() Found question:", answerKey, step);
+                    return step;
+                }
             }
-            if(step.answerKey === answerKey) {
-                return step;
+            if(step.subFlow) {
+                Logger.info("Flow::getQuestion() Checking sub flow:", step.subFlow.name);
+                var question = step.subFlow.getQuestion(answerKey, false);
+                if(question) {
+                    return question;
+                }
             }
         }
+        if(this.superFlow && checkSuperFlow) {
+            Logger.info("Flow::getQuestion() Checking super flow:", this.superFlow.name);
+            var question = this.superFlow.getQuestion(answerKey);
+            if(question) {
+                return question;
+            }
+        }
+        Logger.info("Flow::getQuestion() Unable to find question:", answerKey);
         return null;
+    }
+
+    getQuestions(answerKeys, checkSuperFlow) {
+        Logger.info("Flow::getQuestions()", answerKeys, this.name);
+        var questions = [];
+        for(let index in this.steps) {
+            var step = this.steps[index];
+            if(step instanceof Question) {
+                var answerKey = question.getAnswerKey();
+                if(answerKeys.indexOf(answerKey) !== -1) {
+                    Logger.info("Flow::getQuestion() Found question:", answerKey);
+                    questions.push(step);
+                }
+            }
+            if(step.subFlow) {
+                Logger.info("Flow::getQuestion() Checking sub flow:", step.subFlow.name);
+                var subQuestions = step.subFlow.getQuestions(answerKeys, false);
+                if(subQuestions && subQuestions.length > 0) {
+                    questions = questions.concat(subQuestions);
+                }
+            }
+        }
+        if(this.superFlow && checkSuperFlow) {
+            Logger.info("Flow::getQuestion() Checking super flow:", this.superFlow.name);
+            var superQuestions = this.superFlow.getQuestions(answerKeys);
+            if(superQuestions && superQuestions.length > 0) {
+                questions = questions.concat(superQuestions);
+            }
+        }
+        return questions;
+    }
+
+    getSummaryQuestions(limitToTitles, excludeTitles, checkSuperFlow) {
+        Logger.info("Flow::getSummaryQuestions() " + this.name + " limit: " + limitToTitles + " exclude: " + excludeTitles);
+        var questions = [];
+        for(let index in this.steps) {
+            var step = this.steps[index];
+            Logger.info("Flow::getSummaryQuestions() Checking:", step);
+            if(step instanceof Question) {
+                var question = step;
+                if(ChatTools.filterSummaryQuestion(question, limitToTitles, excludeTitles)) {
+                    questions.push(question);
+                }
+            } else if(step instanceof Action) {
+                var action = step;
+                var actionQuestions = action.getSummaryQuestions(limitToTitles, excludeTitles, false);
+                if(actionQuestions && actionQuestions.length > 0) {
+                    questions = questions.concat(actionQuestions);
+                }
+            }
+            if(step.subFlow) {
+                Logger.info("Flow::getSummaryQuestions() Checking sub flow:", step.subFlow.name);
+                var subQuestions = step.subFlow.getSummaryQuestions(limitToTitles, excludeTitles, false);
+                if(subQuestions && subQuestions.length > 0) {
+                    questions = questions.concat(subQuestions);
+                }
+            }
+        }
+        if(this.superFlow && checkSuperFlow) {
+            Logger.info("Flow::getSummaryQuestions() Checking super flow:", this.superFlow.name);
+            var superQuestions = this.superFlow.getSummaryQuestions(limitToTitles, excludeTitles);
+            if(superQuestions && superQuestions.length > 0) {
+                questions = questions.concat(superQuestions);
+            }
+        }
+        return questions;
+    }
+
+    getRootFlow() {
+        if(this.superFlow) {
+            return this.superFlow.getRootFlow();
+        }
+        return this;
     }
 
     createInstance() {

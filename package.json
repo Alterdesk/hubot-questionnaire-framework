@@ -13,14 +13,16 @@
   "author": "Alterdesk",
   "license": "MIT",
   "dependencies": {
-    "hubot": "^2.19.0",
-    "moment": "^2.20.1",
-    "moment-timezone": "^0.5.23",
-    "js-levenshtein": "^1.1.3",
-    "log": "1.4.0",
-    "node-messenger-extra": "https://github.com/Alterdesk/node-messenger-extra.git"
-  },
-  "optionalDependencies": {
-    "node-messenger-sdk": "https://github.com/Alterdesk/node-messenger-sdk.git"
+    "express": "^4.17.1",
+    "hubot": "^3.3.2",
+    "mkdirp": "^0.5.1",
+    "moment": "^2.24.0",
+    "moment-timezone": "^0.5.26",
+    "js-levenshtein": "^1.1.6",
+    "form-data": "^2.5.0",
+    "scoped-http-client": "^0.11.0",
+    "node-messenger-log": "git+ssh://git@npm.gitlab.alterdesk.com:zaurus/node-messenger-log.git",
+    "request": "^2.88.0",
+    "uuid": "^3.3.3"
   }
 }

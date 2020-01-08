@@ -1,43 +1,39 @@
 const Logger = require('./../logger.js');
+const Step = require('./../step.js');
 
 // Class to preform an external action during a flow
-class Action {
+class Action extends Step {
     constructor(callback, waitMs) {
+        super();
         this.callback = callback;
         this.waitMs = waitMs || 0;
         this.controlsFlow = false;
         this.askedQuestions = false;
     }
 
-    // Set the parent flow
-    setFlow(flow) {
-        this.flow = flow;
-    }
-
-    // Set the sub flow to execute after this action
-    setSubFlow(subFlow) {
-        this.subFlow = subFlow;
-    }
-
     // Execute this action
-    execute(flow, msg, answers) {
+    execute() {
         // Trigger action callback
-        this.callback(msg, answers, () => {
+        this.callback(() => {
             if(this.waitMs > 0) {
                 Logger.debug("Action::execute() Waiting after executing action for " + this.waitMs + " milliseconds");
             }
             setTimeout(() => {
-                flow.actionDone(this);
+                this.flow.actionDone(this);
             }, this.waitMs);
         });
     }
 
-    resetAskedQuestions() {
-        this.askedQuestions = false;
+    getSummaryQuestions(limitToTitles, excludeTitles) {
+        return null;
     }
 
-    reset(answers) {
-        this.subFlow = null;
+    hasAskedQuestions() {
+        return this.askedQuestions;
+    }
+
+    resetAskedQuestions() {
+        this.askedQuestions = false;
     }
 }
 

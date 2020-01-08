@@ -1,12 +1,15 @@
 const {User, Message} = require('hubot');
 
+const ChatTools = require('./../utils/chat-tools.js');
 const Listener = require('./../listener.js');
 const Logger = require('./../logger.js');
 const PendingRequest = require('./../pending-request.js');
+const Step = require('./../step.js');
 
 // Class for defining questions
-class Question {
+class Question extends Step {
     constructor(answerKey, questionText, invalidText) {
+        super();
         this.answerKey = answerKey || "ANSWER_KEY";
         this.questionText = questionText || "QUESTION_TEXT";
         this.invalidText = invalidText || "INVALID_TEXT";
@@ -17,17 +20,13 @@ class Question {
         this.resendOnInvalid = true;
         this.sendMessageOnStop = true;
         this.useFinalize = false;
+        this.inSummary = false;
         this.questionFormatters = [];
     }
 
     // Set the parent flow
     setFlow(flow) {
         this.flow = flow;
-    }
-
-    // Set the sub flow to execute after this question
-    setSubFlow(subFlow) {
-        this.subFlow = subFlow;
     }
 
     // Set a format function to format given answer with
@@ -116,32 +115,31 @@ class Question {
         this.isMultiUser = true;
     }
 
+    setInSummary(inSummary) {
+        this.inSummary = inSummary;
+    }
+
+    setSummaryTitle(summaryTitle) {
+        this.summaryTitle = summaryTitle;
+    }
+
+    setSummaryAnswerFormatter(summaryAnswerFormatter) {
+        this.summaryAnswerFormatter = summaryAnswerFormatter;
+    }
+
+    setSummaryPart(summaryPart) {
+        this.summaryPart = summaryPart;
+    }
+
     setResendOnInvalid(resendOnInvalid) {
         this.resendOnInvalid = resendOnInvalid;
     }
 
     // Execute this question
-    execute(control, msg, callback, answers) {
-        var formatted;
-        if(this.formatQuestionFunction != null) {
-            Logger.debug("Question::execute() Formatting question with function");
-            formatted = this.formatQuestionFunction(answers);
-        } else if(this.questionFormatters.length > 0) {
-            Logger.debug("Question::execute() Formatting question with " + this.questionFormatters.length + " formatter(s)");
-            formatted = this.questionText;
-            for(let i in this.questionFormatters) {
-                var formatter = this.questionFormatters[i];
-                formatted = formatter.execute(formatted, answers);
-            }
-        }
-        if(formatted && formatted !== "") {
-            // Set formatted question as question text
-            this.formattedQuestionText = formatted;
-        }
-
+    execute(callback) {
         // Generate user id list by mentioned users
         if(this.isMultiUser && !this.userIds && this.mentionAnswerKey) {
-            var mentions = answers.get(this.mentionAnswerKey);
+            var mentions = this.flow.answers.get(this.mentionAnswerKey);
             if(mentions) {
                 this.userIds = [];
                 for(let index in mentions) {
@@ -159,16 +157,32 @@ class Question {
         }
 
         // Send question text
-        this.send(control, msg, callback);
+        this.send(callback);
     }
 
     // Send the message text
-    send(control, msg, callback) {
-        this.setListenersAndPendingRequests(control, msg, callback);
-        msg.send(this.getQuestionText());
+    send(callback) {
+        this.setListenersAndPendingRequests(callback);
+        this.flow.msg.send(this.getQuestionText());
     }
 
     getQuestionText() {
+        var formatted;
+        if(this.formatQuestionFunction != null) {
+            Logger.debug("Question::getQuestionText() Formatting question with function");
+            formatted = this.formatQuestionFunction(this.flow.answers);
+        } else if(this.questionFormatters.length > 0) {
+            Logger.debug("Question::getQuestionText() Formatting question with " + this.questionFormatters.length + " formatter(s)");
+            formatted = this.questionText;
+            for(let i in this.questionFormatters) {
+                var formatter = this.questionFormatters[i];
+                formatted = formatter.execute(formatted, this.flow);
+            }
+        }
+        if(formatted && formatted !== "") {
+            // Set formatted question as question text
+            this.formattedQuestionText = formatted;
+        }
         return this.formattedQuestionText || this.questionText;
     }
 
@@ -193,17 +207,13 @@ class Question {
             Logger.error("Question::getRemainingUserIds() Flow is null");
             return null;
         }
-        let parsedUserIds = this.flow.parsedMultiUserAnswers[this.answerKey];
+        let answerKey = this.getAnswerKey();
+        let parsedUserIds = this.flow.parsedMultiUserAnswers[answerKey];
         if(!parsedUserIds || parsedUserIds.length == 0) {
             return this.userIds;
         }
-        let answers = this.flow.answers;
-        if(!answers) {
-            Logger.error("Question::getRemainingUserIds() Answers is null");
-            return null;
-        }
-        let multiAnswers = answers.get(this.answerKey);
-        if(!answers) {
+        let multiAnswers = this.flow.answers.get(answerKey);
+        if(!multiAnswers) {
             return this.userIds;
         }
 
@@ -223,41 +233,45 @@ class Question {
     }
 
     // Set the Listeners and PendingRequests for this Question
-    setListenersAndPendingRequests(control, msg, callback) {
+    setListenersAndPendingRequests(callback) {
         // Check if listeners or pending requests should be added
-        if(!this.useListeners && !this.usePendingRequests || (this.pendingRequest && !control.messengerApi)) {
+        if(!this.useListeners && !this.usePendingRequests) {
             return;
         }
+        var control = this.flow.control;
+        var msg = this.flow.msg;
 
         // Check if the question should be asked to multiple users
         if(this.isMultiUser && this.userIds && this.userIds.length > 0) {
             let remainingUserIds = this.getRemainingUserIds();
             // Check if user id list is available and not empty
             if(remainingUserIds && remainingUserIds.length > 0) {
-                var question = this;
-                question.timedOut = false;
-                question.multiUserMessages = [];
+                this.timedOut = false;
+                this.multiUserMessages = [];
 
-                var configuredTimeoutCallback = question.timeoutCallback;
+                var configuredTimeoutCallback = this.timeoutCallback;
 
-                question.timeoutCallback = () => {
+                this.timeoutCallback = () => {
                     // Check if question was already timed out
-                    if(question.timedOut) {
+                    if(this.timedOut) {
                         return;
                     }
                     // Mark question as timed out
-                    question.timedOut = true;
+                    this.timedOut = true;
                     // Clean up remaining listeners
-                    question.cleanup(msg.message);
+                    this.cleanup(msg.message);
                     // Trigger timeout callback
                     if(configuredTimeoutCallback) {
                         configuredTimeoutCallback();
                     } else {
-                        var timeoutText = question.timeoutText || control.responseTimeoutText;
-                        if(timeoutText && timeoutText.length > 0) {
-                            question.flow.sendRestartMessage(timeoutText);
+                        var useTimeoutText = this.timeoutText;
+                        if(useTimeoutText == null) {
+                            useTimeoutText = control.responseTimeoutText;
                         }
-                        question.flow.stop(false);
+                        if(useTimeoutText && useTimeoutText.length > 0) {
+                            this.flow.sendRestartMessage(useTimeoutText);
+                        }
+                        this.flow.stop(false);
                     }
                 };
 
@@ -271,19 +285,19 @@ class Question {
                     userMessage.room = msg.message.room;
 
                     // Store for cleanup if needed
-                    question.multiUserMessages.push(userMessage);
+                    this.multiUserMessages.push(userMessage);
 
                     if(control.questionAskedCallback) {
-                        control.questionAskedCallback(userId, this.answerKey, this.flow.answers);
+                        control.questionAskedCallback(userId, this.answerKey, this.flow.answers, this);
                     }
 
-                    if(question.useListeners) {
+                    if(this.useListeners) {
                         // Add listener for user and wait for answer
-                        control.addListener(userMessage, new Listener(msg, callback, this));
+                        control.addListener(userMessage, new Listener(msg, this.flow.callback, this));
                     }
-                    if(question.usePendingRequests) {
+                    if(this.usePendingRequests) {
                         // Add listener for user and wait for answer
-                        control.addPendingRequest(userMessage, new PendingRequest(msg, callback, this));
+                        control.addPendingRequest(userMessage, new PendingRequest(msg, this.flow.callback, this));
                     }
                 }
                 return;
@@ -294,23 +308,18 @@ class Question {
         }
 
         if(control.questionAskedCallback) {
-            var userId = control.getUserId(msg.message.user);
-            var useKey;
-            if(this.originalAnswerKey) {
-                useKey = this.originalAnswerKey;
-            } else {
-                useKey = this.answerKey;
-            }
-            control.questionAskedCallback(userId, useKey, this.flow.answers);
+            var userId = ChatTools.getUserId(msg.message.user);
+            var answerKey = this.getAnswerKey();
+            control.questionAskedCallback(userId, answerKey, this.flow.answers, this);
         }
 
         if(this.useListeners) {
             // Add listener for single user and wait for answer
-            control.addListener(msg.message, new Listener(msg, callback, this));
+            control.addListener(msg.message, new Listener(msg, this.flow.callback, this));
         }
         if(this.usePendingRequests) {
             // Add a pending request for single user and wait for answer
-            control.addPendingRequest(msg.message, new PendingRequest(msg, callback, this));
+            control.addPendingRequest(msg.message, new PendingRequest(msg, this.flow.callback, this));
         }
     }
 
@@ -340,9 +349,13 @@ class Question {
     }
 
     // Reset the question to be asked again
-    reset(answers) {
-        this.subFlow = null;
-        answers.remove(this.answerKey + "_label");
+    reset() {
+        super.reset();
+        this.formattedQuestionText = null;
+        var labelKey = this.getLabelAnswerKey();
+        this.flow.answers.remove(labelKey);
+        var valueKey = this.getValueAnswerKey();
+        this.flow.answers.remove(valueKey);
     }
 }
 

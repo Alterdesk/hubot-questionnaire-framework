@@ -1,13 +1,14 @@
-const Extra = require('node-messenger-extra');
-
+const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
 const Question = require('./question.js');
+const RegexTools = require('./../utils/regex-tools.js');
+const SendMessageData = require('./../containers/send-message-data.js');
 
 // Multiple choice question, add options by regex and optional sub flow
 class MultipleChoiceQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
-        this.regex = Extra.getNonEmptyRegex();
+        this.regex = RegexTools.getNonEmptyRegex();
         this.options = [];
         this.useButtons = false;
         this.multiAnswer = false;
@@ -114,26 +115,20 @@ class MultipleChoiceQuestion extends Question {
         return this.requestMessageId;
     }
 
-    send(control, msg, callback) {
-        if(control.messengerApi && this.useButtons) {
-            var messageData = control.createSendMessageData();
-            messageData.message = this.getQuestionText();
-            messageData.chatId = msg.message.room;
-            messageData.isGroup = control.isUserInGroup(msg.message.user);
-            messageData.isAux = false;
+    async send(callback) {
+        if(this.useButtons) {
+            var msg = this.flow.msg;
+            var sendMessageData = new SendMessageData();
+            var messageText =  this.getQuestionText();
+            sendMessageData.setMessage(messageText);
+            sendMessageData.setHubotMessage(msg.message);
+            var requestStyle = this.questionStyle || "horizontal";
+            sendMessageData.setRequestOptions(this.multiAnswer, requestStyle);
 
-            var answers;
-            if(this.flow) {
-                answers = this.flow.answers;
-            }
-
-            var questionPayload = control.createQuestionPayload();
-            questionPayload.multiAnswer = this.multiAnswer;
-            questionPayload.style = this.questionStyle || "horizontal";
             for(let i in this.options) {
                 var option = this.options[i];
 
-                if(!option.isAvailable(answers)) {
+                if(!option.isAvailable(this.flow)) {
                     continue;
                 }
 
@@ -141,59 +136,52 @@ class MultipleChoiceQuestion extends Question {
                 if(!label) {
                     label = "Label" + i;
                 }
+                var style = option.style || "theme";
 
                 var name = option.name || option.regex;
                 if(name) {
                     name = name.toLowerCase();
+                    sendMessageData.addQuestionButtonWithName(name, label, style);
                 } else {
-                    name = "name" + i;
+                    sendMessageData.addQuestionButton(label, style);
                 }
 
-                var style = option.style || "theme";
-                questionPayload.addOption(name, label, style);
             }
             if(this.isMultiUser && this.userIds && this.userIds.length > 0) {
                 let remainingUserIds = this.getRemainingUserIds();
                 if(remainingUserIds && remainingUserIds.length > 0) {
-                    questionPayload.addUserIds(remainingUserIds);
+                    sendMessageData.addRequestUserIds(remainingUserIds);
                 } else {
                     Logger.error("MultipleChoiceQuestion::send() Got no remaining user ids for multi-user question: " + this.answerKey);
-                    questionPayload.addUserId(control.getUserId(msg.message.user));
+                    sendMessageData.addRequestUserId(ChatTools.getUserId(msg.message.user));
                 }
             } else {
-                questionPayload.addUserId(control.getUserId(msg.message.user));
+                sendMessageData.addRequestUserId(ChatTools.getUserId(msg.message.user));
             }
-            messageData.payload = questionPayload;
 
-            var question = this;
-            question.usePendingRequests = true;
+            this.usePendingRequests = true;
+            this.setListenersAndPendingRequests(callback);
 
-            question.setListenersAndPendingRequests(control, msg, callback);
+            this.flow.control.sendComposing(msg);
 
-            control.sendComposing(msg);
-
-            // Send the message and parse result in callback
-            control.messengerApi.sendMessage(messageData, function(success, json) {
-                Logger.debug("MultipleChoiceQuestion::send() Successful: " + success);
-                if(json != null) {
-                    var messageId = json["id"];
-                    Logger.debug("MultipleChoiceQuestion::send() Question message id: " + messageId);
-                    question.requestMessageId = messageId;
-                } else {
-                    var fallbackText = question.getQuestionText();
-                    for(let i in questionPayload.questionOptions) {
-                        var option = questionPayload.questionOptions[i];
-                        fallbackText += "\n • \"" + option.name + "\" - " + option.label;
-                    }
-                    msg.send(fallbackText);
+            var json = await this.flow.control.messengerClient.sendMessage(sendMessageData);
+            var success = json != null;
+            Logger.debug("MultipleChoiceQuestion::send() Successful: " + success);
+            if(json != null) {
+                var messageId = json["id"];
+                Logger.debug("MultipleChoiceQuestion::send() Question message id: " + messageId);
+                this.requestMessageId = messageId;
+            } else {
+                var fallbackText = messageText;
+                for(let i in this.options) {
+                    var option = this.options[i];
+                    fallbackText += "\n • \"" + option.name + "\" - " + option.label;
                 }
-            });
-        } else {
-            if(this.useButtons) {
-                Logger.error("MultipleChoiceQuestion::send() Messenger API instance not set");
+                msg.send(fallbackText);
             }
-            this.setListenersAndPendingRequests(control, msg, callback);
-            msg.send(this.getQuestionText());
+        } else {
+            this.setListenersAndPendingRequests(callback);
+            msg.send(messageText);
         }
     }
 
@@ -223,15 +211,11 @@ class MultipleChoiceQuestion extends Question {
     }
 
     checkAndParseChoice(choice) {
-        var answers;
-        if(this.flow) {
-            answers = this.flow.answers;
-        }
         var optionMatch = null;
         var longestMatch = null;
         for(let index in this.options) {
             var option = this.options[index];
-            if(!option.isAvailable(answers)) {
+            if(!option.isAvailable(this.flow)) {
                 continue;
             }
             var match = choice.match(option.regex);
@@ -266,15 +250,15 @@ class MultipleChoiceOption {
         this.conditions = conditions;
     }
 
-    isAvailable(answers) {
+    isAvailable(flow) {
         if(typeof this.available === "boolean") {
             return this.available;
         }
         this.available = true;
-        if(this.conditions && this.conditions.length > 0 && answers) {
+        if(this.conditions && this.conditions.length > 0) {
             for(let i in this.conditions) {
                 var condition = this.conditions[i];
-                if(!condition.check(answers)) {
+                if(!condition.check(flow)) {
                     Logger.debug("MultipleChoiceOption::isAvailable() Condition not met: ", condition);
                     this.available = false;
                     break;

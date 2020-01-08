@@ -4,20 +4,20 @@ const Logger = require('./../logger.js');
 
 class StopConditionAction extends Action {
     constructor(sendMessage, waitMs) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, waitMs);
         this.sendMessage = sendMessage;
         this.conditions = [];
     }
 
-    start(response, answers, flowCallback) {
+    start(flowCallback) {
         if(this.conditions.length === 0) {
             Logger.debug("StopConditionAction::start() No conditions are set, stopping flow");
         } else {
             for(let i in this.conditions) {
                 var condition = this.conditions[i];
-                if(!condition.check(answers)) {
+                if(!condition.check(this.flow)) {
                     Logger.debug("StopConditionAction::start() Condition not met: ", condition);
                     flowCallback();
                     return;

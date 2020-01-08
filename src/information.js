@@ -1,30 +1,32 @@
 const Logger = require('./logger.js');
+const Step = require('./step.js');
 
 // Class to send the user information during a flow
-class Information {
+class Information extends Step {
     constructor(text, waitMs) {
+        super();
         this.text = text;
         this.waitMs = waitMs || 0;
         this.formatters = [];
     }
 
     // Execute this information message
-    execute(flow, msg, answers) {
+    execute() {
         var result = this.text;
 
         // Format text with formatters if set
         for(let i in this.formatters) {
             var formatter = this.formatters[i];
-            result = formatter.execute(result, answers);
+            result = formatter.execute(result, this.flow);
         }
 
         // Send information message text
-        msg.send(result);
+        this.flow.msg.send(result);
         if(this.waitMs > 0) {
             Logger.debug("Information::execute() Waiting after sending information for " + this.waitMs + " milliseconds");
         }
         setTimeout(() => {
-            flow.next();
+            this.flow.next();
         }, this.waitMs);
     }
 

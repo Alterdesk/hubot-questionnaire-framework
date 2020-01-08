@@ -1,8 +1,8 @@
-const Extra = require('node-messenger-extra');
-
 const Formatter = require('./formatter.js');
+const ChatTools = require('./../utils/chat-tools.js');
 const DateTools = require('./../utils/date-tools.js');
 const Logger = require('./../logger.js');
+const StringTools = require('./../utils/string-tools.js');
 
 class ReplaceDateFormatter extends Formatter {
 
@@ -12,31 +12,31 @@ class ReplaceDateFormatter extends Formatter {
         this.format = format;
     }
 
-    execute(text, answers) {
+    execute(text, flow) {
         var date;
-        if(!this.checkConditions(answers)) {
-            Logger.debug("ReplaceDateFormatter::execute() Condition not met");
+        if(!this.from || this.from.length === 0) {
+            Logger.error("ReplaceDateFormatter::execute() Invalid from: \"" + this.from + "\"");
             return text;
         }
-        var answerKey = this.answerKey;
-        if(answerKey && this.repeatIteration > -1) {
-            answerKey = answerKey + "_" + this.repeatIteration;
+        if(!this.format || this.format.length === 0) {
+            Logger.error("ReplaceDateFormatter::execute() Invalid format: \"" + this.format + "\"");
+            return text;
         }
-        if(answerKey && answers.has(answerKey)) {
-            date = answers.get(answerKey);
+        var answerKey = ChatTools.getAnswerKey(this.answerKey, flow);
+        if(answerKey && flow.answers.has(answerKey)) {
+            date = flow.answers.get(answerKey);
         } else {
             date = DateTools.utcDate();
         }
-        Logger.debug("ReplaceDateFormatter::execute() Using from: \"" + this.from + "\" format: \"" + this.format + "\"" + " Date: " + date);
-        if(!this.from) {
-            return text;
-        }
-        if(!this.format) {
-            return text;
-        }
         if(!date) {
+            Logger.error("ReplaceDateFormatter::execute() Invalid date:", date);
             return text;
         }
+        if(!this.checkConditions(flow)) {
+            Logger.debug("ReplaceDateFormatter::execute() Condition not met: from: \"" + this.from + "\" format: \"" + this.format + "\"" + " Date: " + date);
+            return text;
+        }
+        Logger.debug("ReplaceDateFormatter::execute() Using from: \"" + this.from + "\" format: \"" + this.format + "\"" + " Date: " + date);
         var formatted = DateTools.formatToLocal(date, this.format);
         if(this.prefixText && this.prefixText.length > 0) {
             formatted = this.prefixText + formatted;
@@ -45,7 +45,7 @@ class ReplaceDateFormatter extends Formatter {
             formatted = formatted + this.suffixText;
         }
         if(this.escapeHtml) {
-            formatted = Extra.escapeHtml(formatted);
+            formatted = StringTools.escapeHtml(formatted);
         }
         return text.replace(this.from, formatted);
     }

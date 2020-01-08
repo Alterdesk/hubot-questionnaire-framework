@@ -1,12 +1,11 @@
-const Extra = require('node-messenger-extra');
-
 const Question = require('./question.js');
+const RegexTools = require('./../utils/regex-tools.js');
 
 // Email Question, accepts email addresses, able to limit to domains
 class EmailQuestion extends Question {
     constructor(answerKey, questionText, invalidText) {
         super(answerKey, questionText, invalidText);
-        this.regex = Extra.getEmailRegex();
+        this.regex = RegexTools.getEmailRegex();
         this.allowedDomains = [];
     }
 

@@ -2,16 +2,16 @@ const Action = require('./action.js');
 
 class SummaryAction extends Action {
     constructor(summaryFunction, waitMs) {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, waitMs || 0);
         this.summaryFunction = summaryFunction;
     }
 
-    start(response, answers, flowCallback) {
-        var summary = this.summaryFunction(answers);
+    start(flowCallback) {
+        var summary = this.summaryFunction(this.flow.answers);
         if(summary && summary !== "") {
-            response.send(summary);
+            this.flow.msg.send(summary);
         }
         flowCallback();
     }

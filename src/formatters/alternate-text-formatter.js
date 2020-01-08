@@ -1,8 +1,7 @@
-const Extra = require('node-messenger-extra');
-
 const AnswerCondition = require('./../conditions/answer-condition.js');
 const Formatter = require('./formatter.js');
 const Logger = require('./../logger.js');
+const StringTools = require('./../utils/string-tools.js');
 
 class AlternateTextFormatter extends Formatter {
 
@@ -11,16 +10,21 @@ class AlternateTextFormatter extends Formatter {
         this.alternateText = alternateText;
     }
 
-    execute(text, answers) {
-        Logger.debug("AlternateTextFormatter::execute() Alternate text:\"" + this.alternateText + "\"");
-        if(!this.checkConditions(answers)) {
-            Logger.debug("AlternateTextFormatter::execute() Condition not met");
+    execute(text, flow) {
+        var alternateText = this.alternateText;
+        if(!alternateText || alternateText.length === 0) {
+            Logger.debug("AlternateTextFormatter::execute() Invalid alternate text: \"" + this.alternateText + "\"");
             return text;
         }
-        if(this.escapeHtml) {
-            return Extra.escapeHtml(this.alternateText);
+        if(!this.checkConditions(flow)) {
+            Logger.debug("AlternateTextFormatter::execute() Condition not met: text: \"" + this.alternateText + "\"");
+            return text;
         }
-        return this.alternateText;
+        Logger.debug("AlternateTextFormatter::execute() Alternate text: \"" + this.alternateText + "\"");
+        if(this.escapeHtml) {
+            return StringTools.escapeHtml(alternateText);
+        }
+        return alternateText;
     }
 
 }

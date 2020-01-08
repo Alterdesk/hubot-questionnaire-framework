@@ -1,48 +1,20 @@
 const Action = require('./action.js');
-const AnswerOrFixed = require('./../utils/answer-or-fixed.js');
+const ChatTools = require('./../utils/chat-tools.js');
+const GroupSettingsData = require('./../containers/group-settings-data.js');
 const Logger = require('./../logger.js');
 
 class ChangeGroupSettingsAction extends Action {
     constructor() {
-        super((response, answers, flowCallback) => {
-            this.start(response, answers, flowCallback);
+        super((flowCallback) => {
+            this.start(flowCallback);
         }, 0);
     }
 
-    start(response, answers, flowCallback) {
-        this.answers = answers;
+    async start(flowCallback) {
+        this.answers = this.flow.answers;
         this.flowCallback = flowCallback;
-        if(!this.flow || !this.flow.msg || !this.flow.control || !this.flow.control.messengerApi) {
-            Logger.error("ChangeGroupSettingsAction::start() Invalid Flow, Control or MessengerApi");
-            flowCallback();
-            return;
-        }
-
-        // Group chat settings
-        var settingsPostData = {};
-        var allowContactsValue = AnswerOrFixed.get(this.allowContacts, answers);
-        if(allowContactsValue != null) {
-            settingsPostData["allow_contacts"] = allowContactsValue;
-        }
-        var autoCloseAfterValue = AnswerOrFixed.get(this.autoCloseAfter, answers);
-        if(autoCloseAfterValue != null) {
-            settingsPostData["auto_close_after"] = autoCloseAfterValue;
-        }
-        var autoExpireAfterValue = AnswerOrFixed.get(this.autoExpireAfter, answers);
-        if(autoCloseAfterValue != null) {
-            settingsPostData["auto_expire_after"] = autoExpireAfterValue;
-        }
-        var hybridMessagingValue = AnswerOrFixed.get(this.hybridMessaging, answers);
-        if(hybridMessagingValue != null) {
-            settingsPostData["hybrid_messaging"] = hybridMessagingValue;
-        }
-        var membersCanInviteValue = AnswerOrFixed.get(this.membersCanInvite, answers);
-        if(membersCanInviteValue != null) {
-            settingsPostData["members_can_invite"] = membersCanInviteValue;
-        }
-
-        if(settingsPostData.length === 0) {
-            Logger.error("ChangeGroupSettingsAction::start() No settings to set:", settingsPostData);
+        if(!this.flow || !this.flow.msg || !this.flow.control) {
+            Logger.error("ChangeGroupSettingsAction::start() Invalid Flow or Control");
             flowCallback();
             return;
         }
@@ -50,10 +22,10 @@ class ChangeGroupSettingsAction extends Action {
         var chatId;
         var isAux;
         if(this.chatId) {
-            chatId = AnswerOrFixed.get(this.chatId, answers);
-            isAux = AnswerOrFixed.get(this.isAux, answers);
+            chatId = this.getAnswerValue(this.chatId, answers);
+            isAux = this.getAnswerValue(this.isAux, answers);
         } else {
-            var isGroup = this.flow.control.isUserInGroup(this.flow.msg.message.user);
+            var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
                 Logger.error("ChangeGroupSettingsAction::start() Not a group chat");
                 flowCallback();
@@ -62,22 +34,45 @@ class ChangeGroupSettingsAction extends Action {
             chatId = this.flow.msg.message.room;
             isAux = false;
         }
+
         if(!chatId) {
             Logger.error("ChangeGroupSettingsAction::start() Invalid chat id");
             flowCallback();
             return;
         }
 
-        var settingsPostJson = JSON.stringify(settingsPostData);
-        var postUrl;
-        if(isAux) {
-            postUrl = "aux/groupchats/" + chatId + "/settings";
-        } else {
-            postUrl = "groupchats/" + chatId + "/settings";
+        // Group chat settings
+        var groupSettingsData = new GroupSettingsData();
+
+        groupSettingsData.setChat(chatId, isAux);
+
+        var allowContactsValue = this.getAnswerValue(this.allowContacts, answers);
+        if(allowContactsValue != null) {
+            groupSettingsData.setAllowContacts(allowContactsValue);
         }
-        this.flow.control.messengerApi.put(postUrl, settingsPostJson, (success, json) => {
-            flowCallback();
-        }, this.overrideToken);
+        var autoCloseAfterValue = this.getAnswerValue(this.autoCloseAfter, answers);
+        if(autoCloseAfterValue != null) {
+            groupSettingsData.setCloseAfter(autoCloseAfterValue);
+        }
+        var autoExpireAfterValue = this.getAnswerValue(this.autoExpireAfter, answers);
+        if(autoCloseAfterValue != null) {
+            groupSettingsData.setExpireAfter(autoExpireAfterValue);
+        }
+        var hybridMessagingValue = this.getAnswerValue(this.hybridMessaging, answers);
+        if(hybridMessagingValue != null) {
+            groupSettingsData.setHybridMessaging(hybridMessagingValue);
+        }
+        var membersCanInviteValue = this.getAnswerValue(this.membersCanInvite, answers);
+        if(membersCanInviteValue != null) {
+            groupSettingsData.setMembersCanInvite(membersCanInviteValue);
+        }
+
+        if(this.overrideToken) {
+            groupSettingsData.setOverrideToken(this.overrideToken);
+        }
+
+        await this.flow.control.messengerClient.changeGroupSettings(groupSettingsData);
+        flowCallback()
     }
 
     setAllowContacts(allowContacts) {
@@ -110,13 +105,6 @@ class ChangeGroupSettingsAction extends Action {
 
     setOverrideToken(overrideToken) {
         this.overrideToken = overrideToken;
-    }
-
-    reset(answers) {
-        super.reset(answers);
-        if(this.answerKey) {
-            answers.remove(this.answerKey);
-        }
     }
 }
 

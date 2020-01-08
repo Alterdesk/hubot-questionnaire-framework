@@ -8,12 +8,12 @@ class CaseFormatter extends Formatter {
         this.toUppercase = toUppercase;
     }
 
-    execute(text, answers) {
-        Logger.debug("CaseFormatter::execute() toUppercase:", this.toUppercase);
-        if(!this.checkConditions(answers)) {
-            Logger.debug("CaseFormatter::execute() Condition not met");
+    execute(text, flow) {
+        if(!this.checkConditions(flow)) {
+            Logger.debug("CaseFormatter::execute() Condition not met: toUppercase:", this.toUppercase);
             return text;
         }
+        Logger.debug("CaseFormatter::execute() toUppercase:", this.toUppercase);
         if(this.toUppercase) {
             return text.toUpperCase();
         } else {

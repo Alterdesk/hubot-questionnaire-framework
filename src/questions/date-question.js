@@ -1,5 +1,3 @@
-const Extra = require('node-messenger-extra');
-
 const DateTools = require('./../utils/date-tools.js');
 const Question = require('./question.js');
 
