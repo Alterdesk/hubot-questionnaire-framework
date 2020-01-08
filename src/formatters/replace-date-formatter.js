@@ -14,10 +14,6 @@ class ReplaceDateFormatter extends Formatter {
 
     execute(text, flow) {
         var date;
-        if(!this.checkConditions(flow)) {
-            Logger.debug("ReplaceDateFormatter::execute() Condition not met");
-            return text;
-        }
         if(!this.from || this.from.length === 0) {
             Logger.error("ReplaceDateFormatter::execute() Invalid from: \"" + this.from + "\"");
             return text;
@@ -34,6 +30,10 @@ class ReplaceDateFormatter extends Formatter {
         }
         if(!date) {
             Logger.error("ReplaceDateFormatter::execute() Invalid date:", date);
+            return text;
+        }
+        if(!this.checkConditions(flow)) {
+            Logger.debug("ReplaceDateFormatter::execute() Condition not met: from: \"" + this.from + "\" format: \"" + this.format + "\"" + " Date: " + date);
             return text;
         }
         Logger.debug("ReplaceDateFormatter::execute() Using from: \"" + this.from + "\" format: \"" + this.format + "\"" + " Date: " + date);

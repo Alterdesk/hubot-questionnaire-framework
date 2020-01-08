@@ -16,11 +16,11 @@ class AlternateTextFormatter extends Formatter {
             Logger.debug("AlternateTextFormatter::execute() Invalid alternate text: \"" + this.alternateText + "\"");
             return text;
         }
-        Logger.debug("AlternateTextFormatter::execute() Alternate text: \"" + this.alternateText + "\"");
         if(!this.checkConditions(flow)) {
-            Logger.debug("AlternateTextFormatter::execute() Condition not met");
+            Logger.debug("AlternateTextFormatter::execute() Condition not met: text: \"" + this.alternateText + "\"");
             return text;
         }
+        Logger.debug("AlternateTextFormatter::execute() Alternate text: \"" + this.alternateText + "\"");
         if(this.escapeHtml) {
             return StringTools.escapeHtml(alternateText);
         }

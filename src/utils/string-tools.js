@@ -26,7 +26,7 @@ class StringTools {
         return string.replace(new RegExp(StringTools.escapeRegex(search), 'g'), replace);
     }
 
-    static safeName(string, maxLength, lowerCase, collapseBlocked) {
+    static removeDiacritics(string) {
         if(typeof string !== "string" || string.length === 0) {
             return string;
         }
@@ -50,6 +50,15 @@ class StringTools {
         string = string.replace(/[ýÿŷÝŸŶ]/gi, "y");
         string = string.replace(/[źżžŹŻŽ]/gi, "z");
 
+        return string;
+    }
+
+    static safeName(string, maxLength, lowerCase, collapseBlocked) {
+        if(typeof string !== "string" || string.length === 0) {
+            return string;
+        }
+        string = StringTools.removeDiacritics(string);
+
         string = string.replace(/★/gi, "1");
         string = string.replace(/☆/gi, "0");
 
@@ -67,6 +76,20 @@ class StringTools {
         }
 
         return string;
+    }
+
+    static truncateEnd(string, maxLength) {
+        if(typeof string !== "string" || string.length <= maxLength) {
+            return string;
+        }
+        return string.substring(0, maxLength);
+    }
+
+    static truncateStart(string, maxLength) {
+        if(typeof string !== "string" || string.length <= maxLength) {
+            return string;
+        }
+        return string.substring(string.length - maxLength);
     }
 
     // String to lowercase
