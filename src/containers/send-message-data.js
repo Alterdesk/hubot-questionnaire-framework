@@ -1,4 +1,5 @@
 const ChatTools = require('./../utils/chat-tools.js');
+const StringTools = require('./../utils/string-tools.js');
 
 class SendMessageData {
     constructor() {
@@ -75,7 +76,7 @@ class SendMessageData {
 
     addQuestionButton(label, style) {
         var name = StringTools.safeName(label, 32, true);
-        this.addQuestionOptionWithName(name, label, style);
+        this.addQuestionButtonWithName(name, label, style);
     }
 
     addQuestionButtonWithName(name, label, style) {
