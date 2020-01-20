@@ -374,7 +374,7 @@ class Control {
                 question.flow.sendRestartMessage(useTimeoutText);
             };
         } else if(useTimeoutCallback != null) {
-            Logger.debug("Control::addTimeoutTimer() callback: " + useTimeoutCallback);
+            Logger.debug("Control::addTimeoutTimer() Using custom callback");
         }
 
         var timer = setTimeout(() => {
