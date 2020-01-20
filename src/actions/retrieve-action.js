@@ -51,8 +51,11 @@ class RetrieveAction extends Action {
         var answerKey = this.getAnswerKey();
         if(answerKey && value != null) {
             var answers = this.flow.answers;
-            answers.add(answerKey, value);
             if(this.chatId) {
+                var id = value["id"];
+                if(id) {
+                    answers.add(answerKey + "_id", id);
+                }
                 var subject = value["subject"];
                 if(subject) {
                     answers.add(answerKey + "_subject", subject);
@@ -63,8 +66,14 @@ class RetrieveAction extends Action {
                 }
                 var members = value["members"];
                 if(members) {
+                    var memberIds = [];
                     for(let i in members) {
                         var member = members[i];
+                        var memberId = member["id"];
+                        if(memberId) {
+                            answers.add(answerKey + "_member_id_" + i, memberId);
+                            memberIds.push(memberId);
+                        }
                         var firstName = member["first_name"];
                         if(firstName) {
                             answers.add(answerKey + "_member_first_name_" + i, firstName);
@@ -73,9 +82,14 @@ class RetrieveAction extends Action {
                         if(lastName) {
                             answers.add(answerKey + "_member_last_name_" + i, lastName);
                         }
+                        var memberCompanyId = member["id"];
+                        if(memberCompanyId) {
+                            answers.add(answerKey + "_member_company_id_" + i, memberCompanyId);
+                        }
                         answers.add(answerKey + "_member_" + i, member);
                     }
                     answers.add(answerKey + "_members", members.length);
+                    answers.add(answerKey + "_member_ids", memberIds);
                 }
             } else if(this.userId) {
                 answers.addObject(answerKey, value);

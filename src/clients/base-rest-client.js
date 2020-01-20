@@ -143,11 +143,6 @@ class BaseRestClient {
                     if(body && body !== "") {
                         result = await this.parse(body);
                     }
-                    if(!result) {
-                        Logger.error(this.loggerName + "::put() << " + putUrl + ": " + status + ": " + body);
-                        resolve(null);
-                        return;
-                    }
                     if(status === 200 || status === 201 || status === 204 || status === 304) {
                         Logger.debug(this.loggerName + "::put() << " + putUrl + ": " + status + ": " + body);
                         resolve(result);
@@ -182,11 +177,6 @@ class BaseRestClient {
                     var result;
                     if(body && body !== "") {
                         result = await this.parse(body);
-                    }
-                    if(!result) {
-                        Logger.error(this.loggerName + "::post() << " + postUrl + ": " + status + ": " + body);
-                        resolve(null);
-                        return;
                     }
                     if(status === 200 || status === 201 || status === 204 || status === 304) {
                         Logger.debug(this.loggerName + "::post() << " + postUrl + ": " + status + ": " + body);
