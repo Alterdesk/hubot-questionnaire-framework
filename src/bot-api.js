@@ -415,7 +415,7 @@ class BotApi {
 
             var userId;
             if(isGroup) {
-                userId = body["user_id"]
+                userId = body["user_id"];
             } else {
                 userId = chatId;
             }
