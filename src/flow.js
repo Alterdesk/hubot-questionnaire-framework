@@ -1609,7 +1609,7 @@ class Flow {
     }
 
     createInstance() {
-        return new Flow();
+        return new Flow(this.control);
     }
 }
 
