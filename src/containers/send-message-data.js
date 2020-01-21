@@ -70,7 +70,7 @@ class SendMessageData {
 
     addRequestUserIds(userIds) {
         for(let index in userIds) {
-            this.addRequestUserId.push(userIds[index]);
+            this.requestUserIds.push(userIds[index]);
         }
     }
 
