@@ -27,7 +27,7 @@ class CreateGroupData {
 
     addMemberIds(ids) {
         for(var index in ids) {
-            this.addMemberId(ids[index]);
+            this.addMemberId.push(ids[index]);
         }
     }
 
@@ -37,7 +37,7 @@ class CreateGroupData {
 
     addInvites(invites) {
         for(var index in invites) {
-            this.addInvite(invites[index]);
+            this.addInvite.push(invites[index]);
         }
     }
 

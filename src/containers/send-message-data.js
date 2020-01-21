@@ -51,7 +51,7 @@ class SendMessageData {
 
     addAttachmentPaths(paths) {
         for(let index in paths) {
-            this.attachmentPaths(paths[index]);
+            this.attachmentPaths.push(paths[index]);
         }
     }
 
@@ -70,7 +70,7 @@ class SendMessageData {
 
     addRequestUserIds(userIds) {
         for(let index in userIds) {
-            this.addRequestUserId(userIds[index]);
+            this.addRequestUserId.push(userIds[index]);
         }
     }
 
