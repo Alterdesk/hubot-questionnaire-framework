@@ -13,6 +13,7 @@ class BotApi {
         this.control = control;
         this.timers = {};
         this.overrideCallbacks = {};
+        this.startDate = DateTools.utcDate();
 
         var useApi = parseInt(process.env.HUBOT_USE_API || 1);;
         if(useApi === 0) {
@@ -61,6 +62,8 @@ class BotApi {
         app.get("/stats/configured", (req, res) => {this.getConfigured(req, res)});
         app.get("/stats/connected", (req, res) => {this.getConnected(req, res)});
         app.get("/stats/questionnaires", (req, res) => {this.getQuestionnaires(req, res)});
+        app.get("/stats/start_date", (req, res) => {this.getStartDate(req, res)});
+        app.get("/stats", (req, res) => {this.getStats(req, res)});
 
         app.get("/actions/stop", (req, res) => {this.getStop(req, res)});
         app.get("/actions/kill", (req, res) => {this.getKill(req, res)});
@@ -143,12 +146,10 @@ class BotApi {
             result["result"] = this.isConfigured();
         } else if(command === "questionnaires") {
             result["result"] = this.control.getActiveQuestionnaires();
+        } else if(command === "start_date") {
+            result["result"] = this.startDate;
         } else if(command === "stats") {
-            var resultObject = {};
-            resultObject["connected"] = this.isConnected();
-            resultObject["configured"] = this.isConfigured();
-            resultObject["questionnaires"] = this.control.getActiveQuestionnaires();
-            result["result"] = resultObject;
+            result["result"] = this.getStatsData();
         } else {
             Logger.error("BotApi::processCommand() Unknown command:", command);
             result["error"] = "Unknown command: \"" + command + "\"";
@@ -195,6 +196,15 @@ class BotApi {
         return this.control.acceptedCommands.length > 0;
     }
 
+    getStatsData() {
+        var data = {};
+        data["connected"] = this.isConnected();
+        data["configured"] = this.isConfigured();
+        data["questionnaires"] = this.control.getActiveQuestionnaires();
+        data["start_date"] = this.startDate;
+        return data;
+    }
+
     getConfigured(req, res) {
         try {
             if(!this.checkRequest(req, res)) {
@@ -228,11 +238,40 @@ class BotApi {
             if(!this.checkRequest(req, res)) {
                 return;
             }
-            var questionnaires = this.control.getActiveQuestionnaires();
-            this.respondRequest(req, res, 200, JSON.stringify(questionnaires));
+            var result = {};
+            result["result"] = this.control.getActiveQuestionnaires();
+            this.respondRequest(req, res, 200, JSON.stringify(result));
         } catch(error) {
             Logger.error("BotApi::getQuestionnaires()", error);
             this.respondRequest(req, res, 500, this.getJsonError("Get questionnaires event error"));
+        }
+    }
+
+    getStartDate(req, res) {
+        try {
+            if(!this.checkRequest(req, res)) {
+                return;
+            }
+            var result = {};
+            result["result"] = this.startDate;
+            this.respondRequest(req, res, 200, JSON.stringify(result));
+        } catch(error) {
+            Logger.error("BotApi::getStartDate()", error);
+            this.respondRequest(req, res, 500, this.getJsonError("Get start date event error"));
+        }
+    }
+
+    getStats(req, res) {
+        try {
+            if(!this.checkRequest(req, res)) {
+               return;
+            }
+            var result = {};
+            result["result"] = this.getStatsData();
+            this.respondRequest(req, res, 200, JSON.stringify(result));
+        } catch(error) {
+            Logger.error("BotApi::getStats()", error);
+            this.respondRequest(req, res, 500, this.getJsonError("Get stats event error"));
         }
     }
 
