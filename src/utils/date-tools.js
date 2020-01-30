@@ -162,6 +162,11 @@ class DateTools {
         return moment.diff(minDate);
     }
 
+    static epochSeconds(date) {
+        var moment = DateTools.getUTCMoment(date);
+        return moment.unix();
+    }
+
     static getTimeScale(timeScale) {
         if(timeScale === MILLISECONDS) {
             return "ms";
