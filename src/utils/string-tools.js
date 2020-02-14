@@ -79,14 +79,14 @@ class StringTools {
     }
 
     static truncateEnd(string, maxLength) {
-        if(typeof string !== "string" || string.length <= maxLength) {
+        if(typeof string !== "string" || maxLength < 1 || string.length <= maxLength) {
             return string;
         }
         return string.substring(0, maxLength);
     }
 
     static truncateStart(string, maxLength) {
-        if(typeof string !== "string" || string.length <= maxLength) {
+        if(typeof string !== "string" || maxLength < 1 || string.length <= maxLength) {
             return string;
         }
         return string.substring(string.length - maxLength);
