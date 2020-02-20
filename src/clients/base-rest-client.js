@@ -314,11 +314,6 @@ class BaseRestClient {
                     if(body && body !== "") {
                         result = await this.parse(body);
                     }
-                    if(!result) {
-                        Logger.error(this.loggerName + "::delete() << " + deleteUrl + ": " + status + ": " + body);
-                        resolve(null);
-                        return;
-                    }
                     if(status === 200 || status === 201 || status === 204 || status === 304) {
                         Logger.debug(this.loggerName + "::delete() << " + deleteUrl + ": " + status + ": " + body);
                         resolve(result);
