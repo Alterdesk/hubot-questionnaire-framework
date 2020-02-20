@@ -892,15 +892,17 @@ class Flow {
                 if(flow.backText && flow.backText != "") {
                     response.send(flow.backText)
                 }
-                if(flow.control.questionnaireBackCallback) {
-                    var userId = ChatTools.getUserId(flow.msg.message.user);
-                    flow.control.questionnaireBackCallback(userId, false, flow.answers);
-                }
-                // Try to go back
-                if(!flow.previous(false)) {
-                    Logger.error("Flow::callback() Unable to go back, restarting flow");
-                    flow.next();
-                }
+                setTimeout(() => {
+                    if(flow.control.questionnaireBackCallback) {
+                        var userId = ChatTools.getUserId(flow.msg.message.user);
+                        flow.control.questionnaireBackCallback(userId, false, flow.answers);
+                    }
+                    // Try to go back
+                    if(!flow.previous(false)) {
+                        Logger.error("Flow::callback() Unable to go back, restarting flow");
+                        flow.next();
+                    }
+                }, flow.control.typingDelayMs);
                 return;
             }
 
@@ -911,15 +913,17 @@ class Flow {
                 if(flow.checkpointText && flow.checkpointText != "") {
                     response.send(flow.checkpointText)
                 }
-                if(flow.control.questionnaireBackCallback) {
-                    var userId = ChatTools.getUserId(flow.msg.message.user);
-                    this.control.questionnaireBackCallback(userId, true, flow.answers);
-                }
-                // Try to go to last checkpoint
-                if(!flow.previous(true)) {
-                    Logger.error("Flow::callback() Unable to go back to last checkpoint, restarting flow");
-                    flow.next();
-                }
+                setTimeout(() => {
+                    if(flow.control.questionnaireBackCallback) {
+                        var userId = ChatTools.getUserId(flow.msg.message.user);
+                        this.control.questionnaireBackCallback(userId, true, flow.answers);
+                    }
+                    // Try to go to last checkpoint
+                    if(!flow.previous(true)) {
+                        Logger.error("Flow::callback() Unable to go back to last checkpoint, restarting flow");
+                        flow.next();
+                    }
+                }, flow.control.typingDelayMs);
                 return;
             }
 
