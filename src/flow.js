@@ -448,7 +448,7 @@ class Flow {
             return this;
         }
         if(!(this.lastAddedQuestion instanceof VerificationQuestion)) {
-            Logger.error("Flow::verified() Last added Question is not an instance of MultipleChoiceQuestion");
+            Logger.error("Flow::verified() Last added Question is not an instance of VerificationQuestion");
             return this;
         }
         this.lastAddedQuestion.setVerifiedSubFlow(subFlow);
@@ -462,7 +462,7 @@ class Flow {
             return this;
         }
         if(!(this.lastAddedQuestion instanceof VerificationQuestion)) {
-            Logger.error("Flow::unverified() Last added Question is not an instance of MultipleChoiceQuestion");
+            Logger.error("Flow::unverified() Last added Question is not an instance of VerificationQuestion");
             return this;
         }
         this.lastAddedQuestion.setUnverifiedSubFlow(subFlow);
@@ -1008,7 +1008,7 @@ class Flow {
 
             var answerCount = 0;
             for(let index in question.userIds) {
-                if(multiAnswers.get(question.userIds[index])) {
+                if(multiAnswers.get(question.userIds[index]) != null) {
                     answerCount++;
                 }
             }
@@ -1057,6 +1057,7 @@ class Flow {
 
             // Check if still waiting for more answers
             if(!breaking && question.userIds.length > answerCount) {
+                Logger.debug("Flow::onAnswer() Waiting for more multi-user answers: needed: " + question.userIds.length + " got: " + answerCount);
                 return false;
             }
         } else {
