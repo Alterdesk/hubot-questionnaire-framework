@@ -446,6 +446,19 @@ class BaseRestClient {
     getContentType() {
         return "text/plain; charset=UTF-8"
     }
+
+    formatBody(data) {
+        return new Promise(async (resolve) => {
+            resolve(data);
+        });
+    }
+
+    parse(body) {
+        return new Promise(async (resolve) => {
+            resolve(body);
+        });
+    }
+
 }
 
 module.exports = BaseRestClient;
