@@ -938,7 +938,9 @@ class Flow {
                 }
                 if(question.resendOnInvalid) {
                     response.send(question.invalidText);
-                    question.send(flow.control, response, this.callback);
+                    setTimeout(() => {
+                        question.send(flow.control, response, this.callback);
+                    }, flow.control.typingDelayMs);
                 } else {
                     flow.control.addListener(response.message, new Listener(response, this.callback, question));
                 }
