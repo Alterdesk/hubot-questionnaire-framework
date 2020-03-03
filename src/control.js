@@ -532,7 +532,7 @@ class Control {
         this.catchAllStartCommand = start;
     }
 
-    setCatchAllNoMentionInGroup(need) {
+    setCatchAllNoMentionInGroup(no) {
         this.catchAllNoMentionInGroup = no;
     }
 
