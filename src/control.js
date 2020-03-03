@@ -51,6 +51,8 @@ class Control {
         this.catchAllText = process.env.HUBOT_QUESTIONNAIRE_CATCH_ALL_TEXT || "COMMAND_NOT_FOUND_TEXT";
         // Start command when unknown command is catched and only one command is available
         this.catchAllStartCommand = process.env.HUBOT_QUESTIONNAIRE_CATCH_ALL_START_COMMAND || false;
+        // Use the catch all in group, even when not mentioned
+        this.catchAllNoMentionInGroup = process.env.HUBOT_QUESTIONNAIRE_CATCH_ALL_NO_MENTION_IN_GROUP || false;
 
         // Catch all button name to use on unaccepted command
         this.catchAllButtonName = process.env.HUBOT_QUESTIONNAIRE_CATCH_ALL_BUTTON_NAME;
@@ -249,7 +251,9 @@ class Control {
 
                 // Stop if catch all is enabled and an unknown command was sent
                 if(this.catchAllCommands && unknownCommand) {
-                    if(this.catchAllStartCommand && (!isGroup || isMentioned) && this.acceptedCommands.length === 1) {
+                    if(this.catchAllStartCommand
+                            && (!isGroup || isMentioned || this.catchAllNoMentionInGroup)
+                            && this.acceptedCommands.length === 1) {
                         var accepted = this.acceptedCommands[0];
                         Logger.debug("Control::receive() Catched unknown command, changed to \"" + accepted + "\"");
                         message.text = accepted;
@@ -527,6 +531,11 @@ class Control {
     setCatchAllStartCommand(start) {
         this.catchAllStartCommand = start;
     }
+
+    setCatchAllNoMentionInGroup(need) {
+        this.catchAllNoMentionInGroup = no;
+    }
+
     setCatchAllButton(name, label, style) {
         this.catchAllButtonName = name;
         this.catchAllButtonLabel = label;
