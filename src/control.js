@@ -720,8 +720,8 @@ class Control {
                     break;
                 }
             }
-            if(!acceptedCommand) {
-                Logger.error("Control:checkCommandButton() Not an accepted command: \"" + optionText + "\"");
+            if(!acceptedCommand && !this.catchAllCommands) {
+                Logger.warn("Control:checkCommandButton() Not an accepted command: \"" + optionText + "\"");
                 return;
             }
         }
@@ -742,17 +742,21 @@ class Control {
         }
         var id = user["id"];
         if(id !== this.robotUserId) {
-            Logger.error("Control::checkCommandButton() User id is not robot id on checkCommandButton:", this.robotUserId, messageJson);
+            Logger.warn("Control::checkCommandButton() User id is not robot id on checkCommandButton:", this.robotUserId, messageJson);
             return;
         }
         if(helpCommand) {
             Logger.debug("Control:checkCommandButton() Sending help message");
             this.sendHelpMessage(message);
-        } else {
-            Logger.debug("Control:checkCommandButton() Accepted command: " + optionText);
-            var textMessage = ChatTools.createHubotTextMessage(userId, chatId, isGroup, optionText);
-            this.robot.receive(textMessage);
+            return;
         }
+        if(!acceptedCommand) {
+            Logger.debug("Control:checkCommandButton() Not an accepted command, catch all enabled: \"" + optionText + "\"");
+        } else {
+            Logger.debug("Control:checkCommandButton() Accepted command: \"" + optionText + "\"");
+        }
+        var textMessage = ChatTools.createHubotTextMessage(userId, chatId, isGroup, optionText);
+        this.robot.receive(textMessage);
     }
 
     // Send the help message
