@@ -256,6 +256,7 @@ class Control {
                             && this.acceptedCommands.length === 1) {
                         var accepted = this.acceptedCommands[0];
                         Logger.debug("Control::receive() Catched unknown command, changed to \"" + accepted + "\"");
+                        message.catchedText = message.text;
                         message.text = accepted;
                     } else {
                         if(!isGroup || isMentioned) {
