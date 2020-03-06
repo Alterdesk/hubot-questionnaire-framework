@@ -20,7 +20,6 @@
     "moment-timezone": "^0.5.26",
     "js-levenshtein": "^1.1.6",
     "form-data": "^2.5.0",
-    "scoped-http-client": "^0.11.0",
     "node-messenger-log": "https://github.com/Alterdesk/node-messenger-log.git",
     "request": "^2.88.0",
     "uuid": "^3.3.3"
