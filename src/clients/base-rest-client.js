@@ -90,7 +90,6 @@ class BaseRestClient {
                 }
                 options["headers"] = headers;
 
-                Logger.debug(this.loggerName + "::http() " + method + " >> OPTIONS:", JSON.stringify(options));
                 var request = this.client.request(options, (res) => {
                     var response = {};
                     var status = res.statusCode;
@@ -151,10 +150,10 @@ class BaseRestClient {
         });
     }
 
-    get(getUrl, overrideToken) {
+    get(url, overrideToken) {
         return new Promise(async (resolve) => {
             try {
-                var response = await this.http(getUrl, "GET", null, overrideToken);
+                var response = await this.http(url, "GET", null, overrideToken);
                 if(!response) {
                     resolve(null);
                     return;
@@ -163,16 +162,16 @@ class BaseRestClient {
                 resolve(result);
 
             } catch(err) {
-                Logger.error(this.loggerName + "::get() << " + getUrl + ":", err);
+                Logger.error(this.loggerName + "::get() << " + url + ":", err);
                 resolve(null);
             }
         });
     }
 
-    put(putUrl, putData, overrideToken) {
+    put(url, data, overrideToken) {
         return new Promise(async (resolve) => {
             try {
-                var response = await this.http(putUrl, "PUT", putData, overrideToken);
+                var response = await this.http(url, "PUT", data, overrideToken);
                 if(!response) {
                     resolve(null);
                     return;
@@ -180,16 +179,16 @@ class BaseRestClient {
                 var result = response["result"];
                 resolve(result);
             } catch(err) {
-                Logger.error(this.loggerName + "::put() << " + putUrl + ":", err);
+                Logger.error(this.loggerName + "::put() << " + url + ":", err);
                 resolve(null);
             }
         });
     }
 
-    post(postUrl, postData, overrideToken) {
+    post(url, data, overrideToken) {
         return new Promise(async (resolve) => {
             try {
-                var response = await this.http(postUrl, "POST", postData, overrideToken);
+                var response = await this.http(url, "POST", data, overrideToken);
                 if(!response) {
                     resolve(null);
                     return;
@@ -197,25 +196,25 @@ class BaseRestClient {
                 var result = response["result"];
                 resolve(result);
             } catch(err) {
-                Logger.error(this.loggerName + "::post() << " + postUrl + ":", err);
+                Logger.error(this.loggerName + "::post() << " + url + ":", err);
                 resolve(null);
             }
         });
     }
 
-    postMultipart(postUrl, postData, fileParameter, filePaths, overrideToken) {
+    postMultipart(postUrl, data, fileParameter, filePaths, overrideToken) {
         return new Promise(async (resolve) => {
             try {
-                var postJson = await this.formatBody(postData);
+                var postJson = await this.formatBody(data);
                 if(overrideToken) {
                     Logger.debug(this.loggerName + "::postMultipart() Using override token >> " + postUrl + " formData: " + postJson + " filePaths: ", filePaths);
                 } else {
                     Logger.debug(this.loggerName + "::postMultipart() >> " + postUrl + " formData: " + postJson + " filePaths: ", filePaths);
                 }
                 var formData = new FormData();
-                if(postData) {
-                    for(var propName in postData) {
-                        formData.append(propName, postData[propName]);
+                if(data) {
+                    for(var propName in data) {
+                        formData.append(propName, data[propName]);
                     }
                 }
                 if(fileParameter && filePaths) {
@@ -299,10 +298,10 @@ class BaseRestClient {
         });
     }
 
-    delete(deleteUrl, deleteData, overrideToken) {
+    delete(url, deleteData, overrideToken) {
         return new Promise(async (resolve) => {
             try {
-                var response = await this.http(deleteUrl, "DELETE", deleteData, overrideToken);
+                var response = await this.http(url, "DELETE", deleteData, overrideToken);
                 if(!response) {
                     resolve(null);
                     return;
@@ -310,7 +309,7 @@ class BaseRestClient {
                 var result = response["result"];
                 resolve(result);
             } catch(err) {
-                Logger.error(this.loggerName + "::delete() << " + deleteUrl + ":", err);
+                Logger.error(this.loggerName + "::delete() << " + url + ":", err);
                 resolve(null);
             }
         });
@@ -345,7 +344,7 @@ class BaseRestClient {
                     headers["Cookie"] = cookie;
                 }
                 requestData["headers"] = headers;
-                Logger.debug(this.loggerName + "::download() Request data:", await this.formatBody(requestData));
+
                 var req = Request(requestData);
                 var res;
                 req.on('response', (response) => {
@@ -371,7 +370,7 @@ class BaseRestClient {
 
                 req.pipe(FileSystem.createWriteStream(path));
             } catch(err) {
-                Logger.error(this.loggerName + "::getTmpDownloadPath() << " + deleteUrl + ":", err);
+                Logger.error(this.loggerName + "::download() << " + url + ":", err);
                 resolve(null);
             }
         });
