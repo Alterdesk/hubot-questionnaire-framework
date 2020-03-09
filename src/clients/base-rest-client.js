@@ -91,9 +91,7 @@ class BaseRestClient {
                 options["headers"] = headers;
 
                 var request = this.client.request(options, (res) => {
-                    var response = {};
                     var status = res.statusCode;
-                    response["status"] = status;
                     var encoding = this.getEncoding();
                     if(encoding && encoding.length > 0) {
                         res.setEncoding(encoding);
@@ -107,9 +105,7 @@ class BaseRestClient {
                     res.on('end', async () => {
                         var result;
                         if(body && body.length > 0) {
-                            response["body"] = body;
                             result = await this.parse(body);
-                            response["result"] = result;
                         }
                         if(status === 302) {
                             Logger.debug(this.loggerName + "::http() " + method + " << " + url + ": " + status + ": " + body);
@@ -124,10 +120,10 @@ class BaseRestClient {
                                 }
                                 this.urlCookies[cookieUrl] = cookie;
                             }
-                            resolve(response);
+                            resolve(result);
                         } else if(status === 200 || status === 201 || status === 204 || status === 304) {
                             Logger.debug(this.loggerName + "::http() " + method + " << " + url + ": " + status + ": " + body);
-                            resolve(response);
+                            resolve(result);
                         } else {
                             Logger.error(this.loggerName + "::http() " + method + " << " + url + ": " + status + ": " + body);
                             resolve(null);
@@ -136,7 +132,7 @@ class BaseRestClient {
 
                     res.on('error', (err) => {
                         Logger.error(this.loggerName + "::http() << " + url + ":", err);
-                        resolve(response);
+                        resolve(result);
                     });
                 });
                 if(formattedBody && formattedBody.length > 0) {
@@ -152,53 +148,22 @@ class BaseRestClient {
 
     get(url, overrideToken) {
         return new Promise(async (resolve) => {
-            try {
-                var response = await this.http(url, "GET", null, overrideToken);
-                if(!response) {
-                    resolve(null);
-                    return;
-                }
-                var result = response["result"];
-                resolve(result);
-
-            } catch(err) {
-                Logger.error(this.loggerName + "::get() << " + url + ":", err);
-                resolve(null);
-            }
+            var result = await this.http(url, "GET", null, overrideToken);
+            resolve(result);
         });
     }
 
     put(url, data, overrideToken) {
         return new Promise(async (resolve) => {
-            try {
-                var response = await this.http(url, "PUT", data, overrideToken);
-                if(!response) {
-                    resolve(null);
-                    return;
-                }
-                var result = response["result"];
-                resolve(result);
-            } catch(err) {
-                Logger.error(this.loggerName + "::put() << " + url + ":", err);
-                resolve(null);
-            }
+            var result = await this.http(url, "PUT", data, overrideToken);
+            resolve(result);
         });
     }
 
     post(url, data, overrideToken) {
         return new Promise(async (resolve) => {
-            try {
-                var response = await this.http(url, "POST", data, overrideToken);
-                if(!response) {
-                    resolve(null);
-                    return;
-                }
-                var result = response["result"];
-                resolve(result);
-            } catch(err) {
-                Logger.error(this.loggerName + "::post() << " + url + ":", err);
-                resolve(null);
-            }
+            var result = await this.http(url, "POST", data, overrideToken);
+            resolve(result);
         });
     }
 
@@ -300,18 +265,8 @@ class BaseRestClient {
 
     delete(url, deleteData, overrideToken) {
         return new Promise(async (resolve) => {
-            try {
-                var response = await this.http(url, "DELETE", deleteData, overrideToken);
-                if(!response) {
-                    resolve(null);
-                    return;
-                }
-                var result = response["result"];
-                resolve(result);
-            } catch(err) {
-                Logger.error(this.loggerName + "::delete() << " + url + ":", err);
-                resolve(null);
-            }
+            var result = await this.http(url, "DELETE", deleteData, overrideToken);
+            resolve(result);
         });
     }
 
