@@ -1,6 +1,5 @@
 const FileSystem = require('fs');
 const FormData = require('form-data');
-const HttpClient = require('scoped-http-client');
 const UuidV1 = require('uuid/v1');
 const Mkdirp = require('mkdirp');
 const Request = require('request');
@@ -13,14 +12,21 @@ class BaseRestClient {
     constructor(url, port, loggerName) {
         this.loggerName = loggerName || "BaseRestClient";
         this.apiUrl = url;
-        this.apiPort = port;
+        this.apiPort = parseInt(port);
         var domain;
-        if(url.startsWith("http://")) {
-            this.apiProtocol = "http";
-            domain = url.replace("http://", "");
-        } else {
+        if(this.apiUrl.startsWith("https://")) {
             this.apiProtocol = "https";
-            domain = url.replace("https://", "");
+            domain = this.apiUrl.replace("https://", "");
+        } else if(this.apiUrl.startsWith("http://")) {
+            domain = this.apiUrl.replace("http://", "");
+        } else {
+            domain = this.apiUrl;
+        }
+        if(this.apiProtocol === "https") {
+            this.client = require('https');
+        } else {
+            this.apiProtocol = "http";
+            this.client = require('http');
         }
         this.pathParts = [];
         var urlParts = domain.split("/");
@@ -34,9 +40,7 @@ class BaseRestClient {
                 }
             }
         }
-        Logger.debug(this.loggerName + "::constructor() URL: " + url + " Port: " + port + " Protocol: " + this.apiProtocol + " Domain: " + this.apiDomain + " Path: " + this.pathParts);
-        this.httpOptions = {};
-        this.httpOptions.port = this.apiPort;
+        Logger.debug(this.loggerName + "::constructor() URL: " + this.apiUrl + " Port: " + port + " Protocol: " + this.apiProtocol + " Domain: " + this.apiDomain + " Path: " + this.pathParts);
         this.urlCookies = {};
         this.tmpDownloadDir = Path.resolve(OS.tmpdir(), 'messenger-downloads');
         this.tmpUploadDir = Path.resolve(OS.tmpdir(), 'messenger-uploads');
@@ -57,155 +61,125 @@ class BaseRestClient {
         }
     }
 
-    http(url, overrideToken) {
-        var client = HttpClient.create(url, this.httpOptions);
-        client.header('Content-Type', this.getContentType());
-        if(overrideToken && overrideToken.length > 0) {
-            client.header('Authorization', 'Bearer ' + overrideToken);
-        } else if(this.apiToken && this.apiToken.length > 0) {
-            client.header('Authorization', 'Bearer ' + this.apiToken);
-        } else if(this.apiBasicAuth && this.apiBasicAuth.length > 0) {
-            client.header('Authorization', 'Basic ' + this.apiBasicAuth);
-        }
-        return client;
-    }
-
-    get(getUrl, overrideToken) {
+    http(url, method, data, overrideToken) {
         return new Promise(async (resolve) => {
             try {
                 if(overrideToken) {
-                    Logger.debug(this.loggerName + "::get() Using override token >> " + getUrl);
+                    Logger.debug(this.loggerName + "::http() Using override token + " + method + " >> " + url);
                 } else {
-                    Logger.debug(this.loggerName + "::get() >> " + getUrl);
+                    Logger.debug(this.loggerName + "::http() " + method + " >> " + url);
                 }
-                this.http(this.apiUrl + getUrl, overrideToken).get()(async (err, resp, body) => {
-                    if(!resp) {
-                        Logger.error(this.loggerName + "::get() << " + getUrl + ":", err);
-                        resolve(null);
-                        return;
+                var options = {};
+                options["hostname"] = this.apiDomain;
+                options["defaultPort"] = this.apiPort;
+                options["port"] = this.apiPort;
+                options["path"] = this.apiUrl + url;
+                options["protocol"] = this.apiProtocol + ":";
+                options["method"] = method;
+                var headers = {};
+                headers["Content-Type"] = this.getContentType();
+                if(data) {
+                    var formattedBody = await this.formatBody(data);
+                    if(formattedBody && formattedBody.length > 0) {
+                        headers["Content-Length"] = Buffer.byteLength(formattedBody);
                     }
-                    var status = resp.statusCode;
-                    var result;
-                    if(body && body !== "") {
-                        result = await this.parse(body);
+                }
+                var auth = this.authHeader(overrideToken);
+                if(auth && auth.length > 0) {
+                    headers["Authorization"] = auth;
+                }
+                options["headers"] = headers;
+
+                var request = this.client.request(options, (res) => {
+                    var status = res.statusCode;
+                    var encoding = this.getEncoding();
+                    if(encoding && encoding.length > 0) {
+                        res.setEncoding(encoding);
                     }
-                    if(!result) {
-                        Logger.error(this.loggerName + "::get() << " + getUrl + ": " + status + ": " + body);
-                        resolve(null);
-                        return;
-                    }
-                    if(status === 302) {
-                        Logger.debug(this.loggerName + "::get() << " + getUrl + ": " + status + ": " + body);
-                        var cookie = resp.headers["set-cookie"];
-                        if(cookie) {
-                            Logger.debug(this.loggerName + "::get() Got cookie " + getUrl + ": " + cookie);
-                            var url;
-                            if(result && result["link"]) {
-                                url = result["link"];
-                            } else {
-                                url = getUrl;
-                            }
-                            this.urlCookies[url] = cookie;
+
+                    var body = "";
+                    res.on('data', (chunk) => {
+                        body += chunk;
+                    });
+
+                    res.on('end', async () => {
+                        var result;
+                        if(body && body.length > 0) {
+                            result = await this.parse(body);
                         }
-                        resolve(result);
-                    } else if(status === 200 || status === 201 || status === 204 || status === 304) {
-                        Logger.debug(this.loggerName + "::get() << " + getUrl + ": " + status + ": " + body);
-                        resolve(result);
-                    } else {
-                        Logger.error(this.loggerName + "::get() << " + getUrl + ": " + status + ": " + body);
-                        resolve(null);
-                    }
-                });
-            } catch(err) {
-                Logger.error(this.loggerName + "::get() << " + getUrl + ":", err);
-                resolve(null);
-            }
-        });
-    }
+                        if(status === 302) {
+                            Logger.debug(this.loggerName + "::http() " + method + " << " + url + ": " + status + ": " + body);
+                            var cookie = res.headers["set-cookie"];
+                            if(cookie) {
+                                Logger.debug(this.loggerName + "::http() " + method + " << Got cookie " + url + ": " + cookie);
+                                var cookieUrl;
+                                if(result && result["link"]) {
+                                    cookieUrl = result["link"];
+                                } else {
+                                    cookieUrl = getUrl;
+                                }
+                                this.urlCookies[cookieUrl] = cookie;
+                            }
+                            resolve(result);
+                        } else if(status === 200 || status === 201 || status === 204 || status === 304) {
+                            Logger.debug(this.loggerName + "::http() " + method + " << " + url + ": " + status + ": " + body);
+                            resolve(result);
+                        } else {
+                            Logger.error(this.loggerName + "::http() " + method + " << " + url + ": " + status + ": " + body);
+                            resolve(null);
+                        }
+                    });
 
-    put(putUrl, putData, overrideToken) {
-        return new Promise(async (resolve) => {
-            try {
-                var putJson = await this.formatBody(putData);
-                if(overrideToken) {
-                    Logger.debug(this.loggerName + "::put() Using override token >> " + putUrl);
-                } else {
-                    Logger.debug(this.loggerName + "::put() >> " + putUrl);
+                    res.on('error', (err) => {
+                        Logger.error(this.loggerName + "::http() << " + url + ":", err);
+                        resolve(result);
+                    });
+                });
+                if(formattedBody && formattedBody.length > 0) {
+                    request.write(formattedBody);
                 }
-                this.http(this.apiUrl + putUrl, overrideToken).put(putJson)(async (err, resp, body) => {
-                    if(!resp) {
-                        Logger.error(this.loggerName + "::put() << " + putUrl + ":", err);
-                        resolve(null);
-                        return;
-                    }
-                    var status = resp.statusCode;
-                    var result;
-                    if(body && body !== "") {
-                        result = await this.parse(body);
-                    }
-                    if(status === 200 || status === 201 || status === 204 || status === 304) {
-                        Logger.debug(this.loggerName + "::put() << " + putUrl + ": " + status + ": " + body);
-                        resolve(result);
-                    } else {
-                        Logger.error(this.loggerName + "::put() << " + putUrl + ": " + status + ": " + body);
-                        resolve(null);
-                    }
-                });
+                request.end();
             } catch(err) {
-                Logger.error(this.loggerName + "::put() << " + putUrl + ":", err);
+                Logger.error(this.loggerName + "::http() << " + url + ":", err);
                 resolve(null);
             }
         });
     }
 
-    post(postUrl, postData, overrideToken) {
+    get(url, overrideToken) {
         return new Promise(async (resolve) => {
-            try {
-                var postJson = await this.formatBody(postData);
-                if(overrideToken) {
-                    Logger.debug(this.loggerName + "::post() Using override token >> " + postUrl + ": " + postJson);
-                } else {
-                    Logger.debug(this.loggerName + "::post() >> " + postUrl + ": " + postJson);
-                }
-                this.http(this.apiUrl + postUrl, overrideToken).post(postJson)(async (err, resp, body) => {
-                    if(!resp) {
-                        Logger.error(this.loggerName + "::post() << " + postUrl + ":", err);
-                        resolve(null);
-                        return;
-                    }
-                    var status = resp.statusCode;
-                    var result;
-                    if(body && body !== "") {
-                        result = await this.parse(body);
-                    }
-                    if(status === 200 || status === 201 || status === 204 || status === 304) {
-                        Logger.debug(this.loggerName + "::post() << " + postUrl + ": " + status + ": " + body);
-                        resolve(result);
-                    } else {
-                        Logger.error(this.loggerName + "::post() << " + postUrl + ": " + status + ": " + body);
-                        resolve(null);
-                    }
-                });
-            } catch(err) {
-                Logger.error(this.loggerName + "::post() << " + postUrl + ":", err);
-                resolve(null);
-            }
+            var result = await this.http(url, "GET", null, overrideToken);
+            resolve(result);
         });
     }
 
-    postMultipart(postUrl, postData, fileParameter, filePaths, overrideToken) {
+    put(url, data, overrideToken) {
+        return new Promise(async (resolve) => {
+            var result = await this.http(url, "PUT", data, overrideToken);
+            resolve(result);
+        });
+    }
+
+    post(url, data, overrideToken) {
+        return new Promise(async (resolve) => {
+            var result = await this.http(url, "POST", data, overrideToken);
+            resolve(result);
+        });
+    }
+
+    postMultipart(postUrl, data, fileParameter, filePaths, overrideToken) {
         return new Promise(async (resolve) => {
             try {
-                var postJson = await this.formatBody(postData);
+                var postJson = await this.formatBody(data);
                 if(overrideToken) {
                     Logger.debug(this.loggerName + "::postMultipart() Using override token >> " + postUrl + " formData: " + postJson + " filePaths: ", filePaths);
                 } else {
                     Logger.debug(this.loggerName + "::postMultipart() >> " + postUrl + " formData: " + postJson + " filePaths: ", filePaths);
                 }
                 var formData = new FormData();
-                if(postData) {
-                    for(var propName in postData) {
-                        formData.append(propName, postData[propName]);
+                if(data) {
+                    for(var propName in data) {
+                        formData.append(propName, data[propName]);
                     }
                 }
                 if(fileParameter && filePaths) {
@@ -233,13 +207,8 @@ class BaseRestClient {
                     }
                 }
                 var headers = formData.getHeaders();
-                var auth;
-                if(overrideToken && overrideToken.length > 0) {
-                    auth = "Bearer " + overrideToken;
-                } else if(this.apiToken && this.apiToken.length > 0) {
-                    auth = "Bearer " + this.apiToken;
-                }
-                if(auth) {
+                var auth = this.authHeader(overrideToken);
+                if(auth && auth.length > 0) {
                     headers["Authorization"] = auth;
                 }
 
@@ -294,38 +263,10 @@ class BaseRestClient {
         });
     }
 
-    delete(deleteUrl, deleteData, overrideToken) {
+    delete(url, deleteData, overrideToken) {
         return new Promise(async (resolve) => {
-            try {
-                var deleteJson = await this.formatBody(deleteData);
-                if(overrideToken) {
-                    Logger.debug(this.loggerName + "::delete() Using override token >> " + deleteUrl);
-                } else {
-                    Logger.debug(this.loggerName + "::delete() >> " + deleteUrl);
-                }
-                this.http(this.apiUrl + deleteUrl, overrideToken).delete(deleteJson)(async (err, resp, body) => {
-                    if(!resp) {
-                        Logger.error(this.loggerName + "::delete() << " + deleteUrl + ":", err);
-                        resolve(null);
-                        return;
-                    }
-                    var status = resp.statusCode;
-                    var result;
-                    if(body && body !== "") {
-                        result = await this.parse(body);
-                    }
-                    if(status === 200 || status === 201 || status === 204 || status === 304) {
-                        Logger.debug(this.loggerName + "::delete() << " + deleteUrl + ": " + status + ": " + body);
-                        resolve(result);
-                    } else {
-                        Logger.error(this.loggerName + "::delete() << " + deleteUrl + ": " + status + ": " + body);
-                        resolve(null);
-                    }
-                });
-            } catch(err) {
-                Logger.error(this.loggerName + "::delete() << " + deleteUrl + ":", err);
-                resolve(null);
-            }
+            var result = await this.http(url, "DELETE", deleteData, overrideToken);
+            resolve(result);
         });
     }
 
@@ -349,16 +290,16 @@ class BaseRestClient {
                 requestData["uri"] = url;
                 requestData["method"] = "get";
                 var headers = {};
-                var token = overrideToken || this.apiToken;
-                if(token && token.length > 0) {
-                    headers["Authorization"] = "Bearer " + token;
+                var auth = this.authHeader(overrideToken);
+                if(auth && auth.length > 0) {
+                    headers["Authorization"] = auth;
                 }
                 headers["Accept"] = mime;
                 if(cookie && cookie.length > 0) {
                     headers["Cookie"] = cookie;
                 }
                 requestData["headers"] = headers;
-                Logger.debug(this.loggerName + "::download() Request data:", await this.formatBody(requestData));
+
                 var req = Request(requestData);
                 var res;
                 req.on('response', (response) => {
@@ -384,7 +325,7 @@ class BaseRestClient {
 
                 req.pipe(FileSystem.createWriteStream(path));
             } catch(err) {
-                Logger.error(this.loggerName + "::getTmpDownloadPath() << " + deleteUrl + ":", err);
+                Logger.error(this.loggerName + "::download() << " + url + ":", err);
                 resolve(null);
             }
         });
@@ -445,6 +386,21 @@ class BaseRestClient {
 
     getContentType() {
         return "text/plain; charset=UTF-8"
+    }
+
+    getEncoding() {
+        return "utf-8";
+    }
+
+    authHeader(overrideToken) {
+        if(overrideToken && overrideToken.length > 0) {
+            return "Bearer " + overrideToken;
+        } else if(this.apiToken && this.apiToken.length > 0) {
+            return "Bearer " + this.apiToken;
+        } else if(this.apiBasicAuth && this.apiBasicAuth.length > 0) {
+            return "Basic " + this.apiBasicAuth;
+        }
+        return "";
     }
 
     formatBody(data) {
