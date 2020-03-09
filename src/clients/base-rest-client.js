@@ -14,13 +14,13 @@ class BaseRestClient {
         this.apiUrl = url;
         this.apiPort = parseInt(port);
         var domain;
-        if(url.startsWith("https://")) {
+        if(this.apiUrl.startsWith("https://")) {
             this.apiProtocol = "https";
-            domain = url.replace("https://", "");
-        } else if(url.startsWith("http://")) {
-            domain = url.replace("http://", "");
+            domain = this.apiUrl.replace("https://", "");
+        } else if(this.apiUrl.startsWith("http://")) {
+            domain = this.apiUrl.replace("http://", "");
         } else {
-            domain = url;
+            domain = this.apiUrl;
         }
         if(this.apiProtocol === "https") {
             this.client = require('https');
@@ -40,7 +40,7 @@ class BaseRestClient {
                 }
             }
         }
-        Logger.debug(this.loggerName + "::constructor() URL: " + url + " Port: " + port + " Protocol: " + this.apiProtocol + " Domain: " + this.apiDomain + " Path: " + this.pathParts);
+        Logger.debug(this.loggerName + "::constructor() URL: " + this.apiUrl + " Port: " + port + " Protocol: " + this.apiProtocol + " Domain: " + this.apiDomain + " Path: " + this.pathParts);
         this.urlCookies = {};
         this.tmpDownloadDir = Path.resolve(OS.tmpdir(), 'messenger-downloads');
         this.tmpUploadDir = Path.resolve(OS.tmpdir(), 'messenger-uploads');
