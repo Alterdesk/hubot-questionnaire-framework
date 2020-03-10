@@ -58,8 +58,8 @@ class PolarQuestion extends Question {
     }
 
     async send(callback) {
+        var msg = this.flow.msg;
         if(this.useButtons) {
-            var msg = this.flow.msg;
             var sendMessageData = new SendMessageData();
             var messageText =  this.getQuestionText();
             sendMessageData.setMessage(messageText);
