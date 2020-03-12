@@ -39,6 +39,7 @@ module.exports = {
     DateCondition : require('./conditions/date-condition.js'),
     DateQuestion : require('./questions/date-question.js'),
     DateTools : require('./utils/date-tools.js'),
+    DownloadAttachmentsAction : require('./actions/download-attachments-action.js'),
     EmailQuestion : require('./questions/email-question.js'),
     EnvironmentCondition : require('./conditions/environment-condition.js'),
     Flow : require('./flow.js'),
