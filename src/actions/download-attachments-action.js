@@ -38,7 +38,7 @@ class DownloadAttachmentsAction extends Action {
         var filePaths = [];
         for(let i in attachments) {
             var attachment = attachments[i];
-            var filePath = await this.flow.control.messengerClient.downloadAttachment(attachment, chatId, isGroup, isAux);
+            var filePath = await this.flow.control.messengerClient.downloadAttachment(attachment, chatId, isGroup, isAux, this.overrideToken);
             if(filePath) {
                 answers.add(answerKey + "_file_path_" + i, filePath);
                 filePaths.push(filePath);
