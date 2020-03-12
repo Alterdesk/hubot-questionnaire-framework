@@ -35,19 +35,19 @@ class DownloadAttachmentsAction extends Action {
             isAux = this.getAnswerValue(this.isAux, answers);
         }
 
-        var filePaths = [];
+        var downloaded = 0;
         for(let i in attachments) {
             var attachment = attachments[i];
             var filePath = await this.flow.control.messengerClient.downloadAttachment(attachment, chatId, isGroup, isAux, this.overrideToken);
             if(filePath) {
                 answers.add(answerKey + "_file_path_" + i, filePath);
-                filePaths.push(filePath);
+                downloaded++;
             }
         }
-        if(filePaths.length === 0) {
+        if(downloaded === 0) {
             Logger.error("DownloadAttachmentsAction::start() No attachments downloaded");
         } else {
-            Logger.debug("DownloadAttachmentsAction::start() Downloaded " + filePaths.length + " attachments");
+            Logger.debug("DownloadAttachmentsAction::start() Downloaded " + downloaded + " attachments");
         }
         flowCallback();
     }
