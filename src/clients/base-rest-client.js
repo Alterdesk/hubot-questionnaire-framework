@@ -42,6 +42,7 @@ class BaseRestClient {
         }
         Logger.debug(this.loggerName + "::constructor() URL: " + this.apiUrl + " Port: " + port + " Protocol: " + this.apiProtocol + " Domain: " + this.apiDomain + " Path: " + this.pathParts);
         this.urlCookies = {};
+        this.customHeaders = {};
         this.tmpDownloadDir = Path.resolve(OS.tmpdir(), 'messenger-downloads');
         this.tmpUploadDir = Path.resolve(OS.tmpdir(), 'messenger-uploads');
     }
@@ -61,11 +62,16 @@ class BaseRestClient {
         }
     }
 
+    setCustomHeader(key, value) {
+        Logger.debug(this.loggerName + "::setCustomHeader()", key, value);
+        this.customHeaders[key] = value;
+    }
+
     http(url, method, data, overrideToken) {
         return new Promise(async (resolve) => {
             try {
                 if(overrideToken) {
-                    Logger.debug(this.loggerName + "::http() Using override token + " + method + " >> " + url);
+                    Logger.debug(this.loggerName + "::http() Using override token " + method + " >> " + url);
                 } else {
                     Logger.debug(this.loggerName + "::http() " + method + " >> " + url);
                 }
@@ -87,6 +93,11 @@ class BaseRestClient {
                 var auth = this.authHeader(overrideToken);
                 if(auth && auth.length > 0) {
                     headers["Authorization"] = auth;
+                }
+                for(let key in this.customHeaders) {
+                    var value = this.customHeaders[key];
+                    headers[key] = value;
+                    Logger.debug(this.loggerName + "::http() Using custom header ", key, value);
                 }
                 options["headers"] = headers;
 
