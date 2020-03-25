@@ -63,18 +63,13 @@ class BaseRestClient {
     }
 
     setCustomHeader(key, value) {
-        Logger.debug(this.loggerName + "::setCustomHeader()", key, value);
+        Logger.debug(this.loggerName + "::setCustomHeader() Key: \"" + key + "\" Value: \"" + value + "\"");
         this.customHeaders[key] = value;
     }
 
     http(url, method, data, overrideToken) {
         return new Promise(async (resolve) => {
             try {
-                if(overrideToken) {
-                    Logger.debug(this.loggerName + "::http() Using override token " + method + " >> " + url);
-                } else {
-                    Logger.debug(this.loggerName + "::http() " + method + " >> " + url);
-                }
                 var options = {};
                 options["hostname"] = this.apiDomain;
                 options["defaultPort"] = this.apiPort;
@@ -84,10 +79,24 @@ class BaseRestClient {
                 options["method"] = method;
                 var headers = {};
                 headers["Content-Type"] = this.getContentType();
+                var formattedBody;
                 if(data) {
-                    var formattedBody = await this.formatBody(data);
+                    formattedBody= await this.formatBody(data);
                     if(formattedBody && formattedBody.length > 0) {
                         headers["Content-Length"] = Buffer.byteLength(formattedBody);
+                    }
+                }
+                if(overrideToken) {
+                    if(formattedBody) {
+                        Logger.debug(this.loggerName + "::http() Using override token " + method + " >> " + url + ": " + formattedBody);
+                    } else {
+                        Logger.debug(this.loggerName + "::http() Using override token " + method + " >> " + url);
+                    }
+                } else {
+                    if(formattedBody) {
+                        Logger.debug(this.loggerName + "::http() " + method + " >> " + url + ": " + formattedBody);
+                    } else {
+                        Logger.debug(this.loggerName + "::http() " + method + " >> " + url);
                     }
                 }
                 var auth = this.authHeader(overrideToken);
