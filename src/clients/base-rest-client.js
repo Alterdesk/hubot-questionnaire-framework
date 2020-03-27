@@ -366,7 +366,7 @@ class BaseRestClient {
                     resolve(tmpDownloadPath);
                 });
             } catch(err) {
-                Logger.error(this.loggerName + "::getTmpDownloadPath() << " + deleteUrl + ":", err);
+                Logger.error(this.loggerName + "::getTmpDownloadPath()", err);
                 resolve(null);
             }
         });
@@ -385,7 +385,7 @@ class BaseRestClient {
                     resolve(tmpUploadPath);
                 });
             } catch(err) {
-                Logger.error(this.loggerName + "::getTmpDownloadPath() << " + deleteUrl + ":", err);
+                Logger.error(this.loggerName + "::getTmpDownloadPath()", err);
                 resolve(null);
             }
         });
