@@ -11,36 +11,29 @@ const Logger = require('./../logger.js');
 class BaseRestClient {
     constructor(url, port, loggerName) {
         this.loggerName = loggerName || "BaseRestClient";
-        this.apiUrl = url;
         this.apiPort = parseInt(port);
         var domain;
-        if(this.apiUrl.startsWith("https://")) {
-            this.apiProtocol = "https";
-            domain = this.apiUrl.replace("https://", "");
-        } else if(this.apiUrl.startsWith("http://")) {
-            domain = this.apiUrl.replace("http://", "");
-        } else {
-            domain = this.apiUrl;
-        }
-        if(this.apiProtocol === "https") {
+        if(url.startsWith("https://")) {
+            domain = url.replace("https://", "");
             this.client = require('https');
+            this.apiProtocol = "https:";
         } else {
-            this.apiProtocol = "http";
+            if(url.startsWith("http://")) {
+                domain = url.replace("http://", "");
+            } else {
+                domain = url;
+            }
+            this.apiProtocol = "http:";
             this.client = require('http');
         }
-        this.pathParts = [];
         var urlParts = domain.split("/");
-        if(urlParts && urlParts.length > 0) {
-            for(let index in urlParts) {
-                var urlPart = urlParts[index];
-                if(!this.apiDomain) {
-                    this.apiDomain = urlPart;
-                } else {
-                    this.pathParts.push(urlPart);
-                }
-            }
+        if(!urlParts || urlParts.length === 0) {
+            Logger.error(this.loggerName + "::constructor() Invalid URL: " + url);
+            return;
         }
-        Logger.debug(this.loggerName + "::constructor() URL: " + this.apiUrl + " Port: " + port + " Protocol: " + this.apiProtocol + " Domain: " + this.apiDomain + " Path: " + this.pathParts);
+        this.apiDomain = urlParts[0];
+        this.pathPrefix = domain.replace(this.apiDomain, "");
+        Logger.debug(this.loggerName + "::constructor() URL: " + url + " Port: " + port + " Protocol: " + this.apiProtocol + " Domain: " + this.apiDomain + " Path prefix: " + this.pathPrefix);
         this.urlCookies = {};
         this.customHeaders = {};
         this.tmpDownloadDir = Path.resolve(OS.tmpdir(), 'messenger-downloads');
@@ -67,15 +60,15 @@ class BaseRestClient {
         this.customHeaders[key] = value;
     }
 
-    http(url, method, data, overrideToken) {
+    http(path, method, data, overrideToken) {
         return new Promise(async (resolve) => {
             try {
                 var options = {};
                 options["hostname"] = this.apiDomain;
                 options["defaultPort"] = this.apiPort;
                 options["port"] = this.apiPort;
-                options["path"] = this.apiUrl + url;
-                options["protocol"] = this.apiProtocol + ":";
+                options["path"] = this.pathPrefix + path;
+                options["protocol"] = this.apiProtocol;
                 options["method"] = method;
                 var headers = {};
                 headers["Content-Type"] = this.getContentType();
@@ -88,15 +81,15 @@ class BaseRestClient {
                 }
                 if(overrideToken) {
                     if(formattedBody) {
-                        Logger.debug(this.loggerName + "::http() Using override token " + method + " >> " + url + ": " + formattedBody);
+                        Logger.debug(this.loggerName + "::http() Using override token " + method + " >> " + path + ": " + formattedBody);
                     } else {
-                        Logger.debug(this.loggerName + "::http() Using override token " + method + " >> " + url);
+                        Logger.debug(this.loggerName + "::http() Using override token " + method + " >> " + path);
                     }
                 } else {
                     if(formattedBody) {
-                        Logger.debug(this.loggerName + "::http() " + method + " >> " + url + ": " + formattedBody);
+                        Logger.debug(this.loggerName + "::http() " + method + " >> " + path + ": " + formattedBody);
                     } else {
-                        Logger.debug(this.loggerName + "::http() " + method + " >> " + url);
+                        Logger.debug(this.loggerName + "::http() " + method + " >> " + path);
                     }
                 }
                 var auth = this.authHeader(overrideToken);
@@ -130,30 +123,30 @@ class BaseRestClient {
                             result = {};
                         }
                         if(status === 302) {
-                            Logger.debug(this.loggerName + "::http() " + method + " << " + url + ": " + status + ": " + body);
+                            Logger.debug(this.loggerName + "::http() " + method + " << " + path + ": " + status + ": " + body);
                             var cookie = res.headers["set-cookie"];
                             if(cookie) {
-                                Logger.debug(this.loggerName + "::http() " + method + " << Got cookie " + url + ": " + cookie);
+                                Logger.debug(this.loggerName + "::http() " + method + " << Got cookie " + path + ": " + cookie);
                                 var cookieUrl;
                                 if(result && result["link"]) {
                                     cookieUrl = result["link"];
                                 } else {
-                                    cookieUrl = getUrl;
+                                    cookieUrl = path;
                                 }
                                 this.urlCookies[cookieUrl] = cookie;
                             }
                             resolve(result);
                         } else if(status === 200 || status === 201 || status === 204 || status === 304) {
-                            Logger.debug(this.loggerName + "::http() " + method + " << " + url + ": " + status + ": " + body);
+                            Logger.debug(this.loggerName + "::http() " + method + " << " + path + ": " + status + ": " + body);
                             resolve(result);
                         } else {
-                            Logger.error(this.loggerName + "::http() " + method + " << " + url + ": " + status + ": " + body);
+                            Logger.error(this.loggerName + "::http() " + method + " << " + path + ": " + status + ": " + body);
                             resolve(null);
                         }
                     });
 
                     res.on('error', (err) => {
-                        Logger.error(this.loggerName + "::http() << " + url + ":", err);
+                        Logger.error(this.loggerName + "::http() << " + path + ":", err);
                         resolve(result);
                     });
                 });
@@ -162,41 +155,41 @@ class BaseRestClient {
                 }
                 request.end();
             } catch(err) {
-                Logger.error(this.loggerName + "::http() << " + url + ":", err);
+                Logger.error(this.loggerName + "::http() << " + path + ":", err);
                 resolve(null);
             }
         });
     }
 
-    get(url, overrideToken) {
+    get(path, overrideToken) {
         return new Promise(async (resolve) => {
-            var result = await this.http(url, "GET", null, overrideToken);
+            var result = await this.http(path, "GET", null, overrideToken);
             resolve(result);
         });
     }
 
-    put(url, data, overrideToken) {
+    put(path, data, overrideToken) {
         return new Promise(async (resolve) => {
-            var result = await this.http(url, "PUT", data, overrideToken);
+            var result = await this.http(path, "PUT", data, overrideToken);
             resolve(result);
         });
     }
 
-    post(url, data, overrideToken) {
+    post(path, data, overrideToken) {
         return new Promise(async (resolve) => {
-            var result = await this.http(url, "POST", data, overrideToken);
+            var result = await this.http(path, "POST", data, overrideToken);
             resolve(result);
         });
     }
 
-    postMultipart(postUrl, data, fileParameter, filePaths, overrideToken) {
+    postMultipart(path, data, fileParameter, filePaths, overrideToken) {
         return new Promise(async (resolve) => {
             try {
                 var postJson = await this.formatBody(data);
                 if(overrideToken) {
-                    Logger.debug(this.loggerName + "::postMultipart() Using override token >> " + postUrl + " formData: " + postJson + " filePaths: ", filePaths);
+                    Logger.debug(this.loggerName + "::postMultipart() Using override token >> " + path + " formData: " + postJson + " filePaths: ", filePaths);
                 } else {
-                    Logger.debug(this.loggerName + "::postMultipart() >> " + postUrl + " formData: " + postJson + " filePaths: ", filePaths);
+                    Logger.debug(this.loggerName + "::postMultipart() >> " + path + " formData: " + postJson + " filePaths: ", filePaths);
                 }
                 var formData = new FormData();
                 if(data) {
@@ -233,28 +226,20 @@ class BaseRestClient {
                 if(auth && auth.length > 0) {
                     headers["Authorization"] = auth;
                 }
-
-                var usePostUrl;
-                if(this.pathParts.length > 0) {
-                    usePostUrl = "";
-                    for(let index in this.pathParts) {
-                        var pathPart = this.pathParts[index];
-                        usePostUrl += pathPart + "/";
-                    }
-                    usePostUrl += postUrl;
-                    Logger.debug(this.loggerName + "::postMultipart() Using post url " + usePostUrl);
-                } else {
-                    usePostUrl = postUrl;
+                for(let key in this.customHeaders) {
+                    var value = this.customHeaders[key];
+                    headers[key] = value;
+                    Logger.debug(this.loggerName + "::postMultipart() Using custom header ", key, value);
                 }
 
                 formData.submit({
                     host: this.apiDomain,
                     port: this.apiPort,
-                    protocol: this.apiProtocol + ":",
-                    path: "/" + usePostUrl,
+                    protocol: this.apiProtocol,
+                    path: this.pathPrefix + path,
                     headers: headers}, (err, res) => {
                     if(err || res == null) {
-                        Logger.debug(this.loggerName + "::postMultipart() << " + postUrl + ": " + err);
+                        Logger.debug(this.loggerName + "::postMultipart() << " + path + ": " + err);
                         resolve(null);
                         return;
                     }
@@ -266,28 +251,28 @@ class BaseRestClient {
                     // Incoming data ended
                     res.on('end', async () => {
                         if(res.statusCode === 200 || res.statusCode === 201 || res.statusCode === 204 || res.statusCode === 304) {
-                            Logger.debug(this.loggerName + "::postMultipart() << " + postUrl + ": " + res.statusCode + ": " + body);
+                            Logger.debug(this.loggerName + "::postMultipart() << " + path + ": " + res.statusCode + ": " + body);
                             var result;
                             if(body && body !== "") {
                                 result = await this.parse(body);
                             }
                             resolve(result);
                         } else {
-                            Logger.error(this.loggerName + "::postMultipart() << " + postUrl + ": " + res.statusCode + ": " + body);
+                            Logger.error(this.loggerName + "::postMultipart() << " + path + ": " + res.statusCode + ": " + body);
                             resolve(null);
                         }
                     });
                 });
             } catch(err) {
-                Logger.error(this.loggerName + "::postMultipart() << " + postUrl + ":", err);
+                Logger.error(this.loggerName + "::postMultipart() << " + path + ":", err);
                 resolve(null);
             }
         });
     }
 
-    delete(url, deleteData, overrideToken) {
+    delete(path, deleteData, overrideToken) {
         return new Promise(async (resolve) => {
-            var result = await this.http(url, "DELETE", deleteData, overrideToken);
+            var result = await this.http(path, "DELETE", deleteData, overrideToken);
             resolve(result);
         });
     }
@@ -366,7 +351,7 @@ class BaseRestClient {
                     resolve(tmpDownloadPath);
                 });
             } catch(err) {
-                Logger.error(this.loggerName + "::getTmpDownloadPath() << " + deleteUrl + ":", err);
+                Logger.error(this.loggerName + "::getTmpDownloadPath()", err);
                 resolve(null);
             }
         });
@@ -385,7 +370,7 @@ class BaseRestClient {
                     resolve(tmpUploadPath);
                 });
             } catch(err) {
-                Logger.error(this.loggerName + "::getTmpDownloadPath() << " + deleteUrl + ":", err);
+                Logger.error(this.loggerName + "::getTmpDownloadPath()", err);
                 resolve(null);
             }
         });
