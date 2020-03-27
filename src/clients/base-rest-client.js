@@ -124,8 +124,10 @@ class BaseRestClient {
 
                     res.on('end', async () => {
                         var result;
-                        if(body && body.length > 0) {
+                        if(body.length > 0) {
                             result = await this.parse(body);
+                        } else {
+                            result = {};
                         }
                         if(status === 302) {
                             Logger.debug(this.loggerName + "::http() " + method + " << " + url + ": " + status + ": " + body);
