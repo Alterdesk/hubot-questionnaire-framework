@@ -42,6 +42,7 @@ class BaseRestClient {
         }
         Logger.debug(this.loggerName + "::constructor() URL: " + this.apiUrl + " Port: " + port + " Protocol: " + this.apiProtocol + " Domain: " + this.apiDomain + " Path: " + this.pathParts);
         this.urlCookies = {};
+        this.customHeaders = {};
         this.tmpDownloadDir = Path.resolve(OS.tmpdir(), 'messenger-downloads');
         this.tmpUploadDir = Path.resolve(OS.tmpdir(), 'messenger-uploads');
     }
@@ -61,14 +62,14 @@ class BaseRestClient {
         }
     }
 
+    setCustomHeader(key, value) {
+        Logger.debug(this.loggerName + "::setCustomHeader() Key: \"" + key + "\" Value: \"" + value + "\"");
+        this.customHeaders[key] = value;
+    }
+
     http(url, method, data, overrideToken) {
         return new Promise(async (resolve) => {
             try {
-                if(overrideToken) {
-                    Logger.debug(this.loggerName + "::http() Using override token + " + method + " >> " + url);
-                } else {
-                    Logger.debug(this.loggerName + "::http() " + method + " >> " + url);
-                }
                 var options = {};
                 options["hostname"] = this.apiDomain;
                 options["defaultPort"] = this.apiPort;
@@ -78,15 +79,34 @@ class BaseRestClient {
                 options["method"] = method;
                 var headers = {};
                 headers["Content-Type"] = this.getContentType();
+                var formattedBody;
                 if(data) {
-                    var formattedBody = await this.formatBody(data);
+                    formattedBody= await this.formatBody(data);
                     if(formattedBody && formattedBody.length > 0) {
                         headers["Content-Length"] = Buffer.byteLength(formattedBody);
+                    }
+                }
+                if(overrideToken) {
+                    if(formattedBody) {
+                        Logger.debug(this.loggerName + "::http() Using override token " + method + " >> " + url + ": " + formattedBody);
+                    } else {
+                        Logger.debug(this.loggerName + "::http() Using override token " + method + " >> " + url);
+                    }
+                } else {
+                    if(formattedBody) {
+                        Logger.debug(this.loggerName + "::http() " + method + " >> " + url + ": " + formattedBody);
+                    } else {
+                        Logger.debug(this.loggerName + "::http() " + method + " >> " + url);
                     }
                 }
                 var auth = this.authHeader(overrideToken);
                 if(auth && auth.length > 0) {
                     headers["Authorization"] = auth;
+                }
+                for(let key in this.customHeaders) {
+                    var value = this.customHeaders[key];
+                    headers[key] = value;
+                    Logger.debug(this.loggerName + "::http() Using custom header ", key, value);
                 }
                 options["headers"] = headers;
 
@@ -104,8 +124,10 @@ class BaseRestClient {
 
                     res.on('end', async () => {
                         var result;
-                        if(body && body.length > 0) {
+                        if(body.length > 0) {
                             result = await this.parse(body);
+                        } else {
+                            result = {};
                         }
                         if(status === 302) {
                             Logger.debug(this.loggerName + "::http() " + method + " << " + url + ": " + status + ": " + body);
