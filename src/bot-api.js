@@ -669,7 +669,7 @@ class BotApi {
 
         var callback = this.overrideCallbacks[command.toUpperCase()];
         if(callback) {
-            Logger.debug("BotApi::executeCommand() Override callback: " + callback);
+            Logger.debug("BotApi::executeCommand() Using override callback");
             callback(chatId, isGroup, userId, answers);
             return;
         }
