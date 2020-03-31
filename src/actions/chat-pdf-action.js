@@ -1,5 +1,6 @@
 const Action = require('./action.js');
 const ChatTools = require('./../utils/chat-tools.js');
+const StringTools = require('./../utils/string-tools.js');
 const Logger = require('./../logger.js');
 const SendMessageData = require('./../containers/send-message-data.js');
 
@@ -25,6 +26,7 @@ class ChatPdfAction extends Action {
             var formatter = this.filenameFormatters[i];
             filename = formatter.execute(filename, this.flow);
         }
+        filename = StringTools.safeFilename(filename);
         if(!filename || filename.length === 0) {
             Logger.error("ChatPdfAction::start() Invalid filename:", this.filename);
             if(this.errorMessage && this.errorMessage.length > 0) {
