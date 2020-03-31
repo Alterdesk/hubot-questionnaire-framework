@@ -112,7 +112,9 @@ class BaseRestClient {
 
                     var body = "";
                     res.on('data', (chunk) => {
-                        body += chunk;
+                        if(chunk != null) {
+                            body += chunk;
+                        }
                     });
 
                     res.on('end', async () => {
@@ -246,7 +248,10 @@ class BaseRestClient {
                     var body = "";
                     // Read incoming data
                     res.on('readable', () => {
-                        body += res.read();
+                        var chunk = res.read();
+                        if(chunk != null) {
+                            body += chunk;
+                        }
                     });
                     // Incoming data ended
                     res.on('end', async () => {
