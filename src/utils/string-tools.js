@@ -181,6 +181,25 @@ class StringTools {
         return user;
     }
 
+    static safeFilename(filename) {
+        if(typeof filename !== "string" || filename.length === 0) {
+            return filename;
+        }
+        var parts = filename.split(".");
+        var maxLength = 255;
+        var extension;
+        if(parts.length > 1) {
+            extension = "." + parts[(parts.length - 1)];
+            maxLength = 255 - extension.length;
+            filename = filename.substring(0, (filename.length - extension.length));
+        }
+        filename = StringTools.safeName(filename, maxLength, false, false);
+        if(extension) {
+            filename = filename + extension;
+        }
+        return filename;
+    }
+
 }
 
 module.exports = StringTools;
