@@ -10,7 +10,7 @@ class RepeatFlowAction extends Action {
         }, 0);
         this.repeatFlow = repeatFlow;
         this.conditions = [];
-        this.iteration = -1;
+        this.iteration = 0;
         this.minIterations = 1;
         this.summaryQuestions = {};
 
@@ -61,40 +61,48 @@ class RepeatFlowAction extends Action {
             }
         }
         var answers = this.flow.answers;
-        var checkIteration = this.iteration;
-        checkIteration++;
         var minIterations = this.getAnswerValue(this.minIterations, answers);
         if(!minIterations) {
             Logger.error("RepeatFlowAction::checkRepeat() Invalid minimal iterations given:", minIterations);
             minIterations = 1;
         }
-        if(checkIteration < minIterations) {
+        if(this.iteration < minIterations) {
             Logger.debug("RepeatFlowAction::checkRepeat() Minimal iterations not met:", minIterations);
             this.nextIteration();
             return;
         }
 
-        if(this.iteration > -1 && this.repeatKey && this.repeatKey !== "") {
-            var repeatKey = ChatTools.getAnswerKey(this.repeatKey, this.flow, this.iteration);
-            var value = answers.get(repeatKey);
-            if(value == null) {
-                Logger.debug("RepeatFlowAction::checkRepeat() Repeat answer not given:", repeatKey, value);
-                this.flowCallback();
-                return;
-            }
-            if(this.repeatValue !== value && this.repeatValue != null) {
-                Logger.debug("RepeatFlowAction::checkRepeat() Repeat answer does not match:", repeatKey, value, this.repeatValue);
-                this.flowCallback();
-                return;
-            }
-            Logger.debug("RepeatFlowAction::checkRepeat() Repeat answer accepted:", repeatKey, value);
+        if(!this.repeatKey || this.repeatKey.length === 0) {
+            Logger.debug("RepeatFlowAction::checkRepeat() No repeat key to check");
+            this.flowCallback();
+            return;
         }
 
+        var previousIteration = this.iteration;
+        previousIteration--;
+        if(previousIteration < 0) {
+            Logger.debug("RepeatFlowAction::checkRepeat() No value to check for repeat key");
+            this.flowCallback();
+            return;
+        }
+
+        var repeatKey = ChatTools.getAnswerKey(this.repeatKey, this.flow, previousIteration);
+        var value = answers.get(repeatKey);
+        if(value == null) {
+            Logger.debug("RepeatFlowAction::checkRepeat() Repeat answer not given:", repeatKey, value);
+            this.flowCallback();
+            return;
+        }
+        if(this.repeatValue !== value && this.repeatValue != null) {
+            Logger.debug("RepeatFlowAction::checkRepeat() Repeat answer does not match:", repeatKey, value, this.repeatValue);
+            this.flowCallback();
+            return;
+        }
+        Logger.debug("RepeatFlowAction::checkRepeat() Repeat answer accepted:", repeatKey, value);
         this.nextIteration();
     }
 
     nextIteration() {
-        this.iteration++;
         Logger.debug("RepeatFlowAction::nextIteration() Iteration:", this.iteration);
         if(this.repeatKey && this.repeatKey !== "") {
             var repeatKey = this.repeatKey.replace("#", "");    // TODO Replace with proper iterationKey as property of action
@@ -102,6 +110,7 @@ class RepeatFlowAction extends Action {
         }
         this.repeatFlow.setRepeatIteration(this.iteration);
         this.flow.startSubFlow(this.repeatFlow, false);
+        this.iteration++;
     }
 
     addCondition(condition) {
@@ -133,7 +142,7 @@ class RepeatFlowAction extends Action {
 
     reset() {
         super.reset();
-        this.iteration = -1;
+        this.iteration = 0;
     }
 }
 
