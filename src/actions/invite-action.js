@@ -23,18 +23,21 @@ class InviteAction extends Action {
             return;
         }
 
+        var inviteTypeValue = this.getAnswerValue(this.inviteType, answers);
         var emailValue = this.getAnswerValue(this.email, answers);
         var firstNameValue = this.getAnswerValue(this.firstName, answers);
         var lastNameValue = this.getAnswerValue(this.lastName, answers);
-        if(!emailValue || emailValue === ""
+        if(!inviteTypeValue || inviteTypeValue === ""
+            || !emailValue || emailValue === ""
             || !firstNameValue || firstNameValue === ""
             || !lastNameValue || lastNameValue === "") {
-            Logger.error("InviteAction::start() Invalid invite: email:" + emailValue + " fistName:" + firstNameValue + " lastName: " + lastNameValue);
+            Logger.error("InviteAction::start() Invalid invite: type:" + inviteTypeValue + " email:" + emailValue + " fistName:" + firstNameValue + " lastName: " + lastNameValue);
             this.done(null);
             return;
         }
 
         var inviteUserData = new InviteUserData();
+        inviteUserData.setInviteType(inviteTypeValue);
         inviteUserData.setEmail(emailValue);
         inviteUserData.setFirstName(firstNameValue);
         inviteUserData.setLastName(lastNameValue);
