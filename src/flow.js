@@ -51,6 +51,7 @@ class Flow {
         this.parsedAnswerKeys = {};
         this.parsedMultiUserAnswers = {};
         this.isRunning = false;
+        this.callSuperOnFinish = true;
         this.name = "NO_NAME";
     }
 
@@ -835,6 +836,7 @@ class Flow {
     start(msg, answers) {
         Logger.info("Flow::start()", this.name);
         if(!this.superFlow) {
+            Logger.info("Flow::start() Adding root flow as active", this.name);
             this.control.addActiveQuestionnaire(msg.message, this);
         }
         this.isRunning = true;
@@ -1184,10 +1186,11 @@ class Flow {
         }
     }
 
-    startSubFlow(subFlow, overrideFinished) {
-        Logger.info("Flow::startSubFlow()", subFlow.name);
+    startSubFlow(subFlow, callSuperOnFinish) {
+        Logger.info("Flow::startSubFlow() " + this.name + " -> " + subFlow.name);
         // Set this instance as the super flow
         subFlow.superFlow = this;
+        subFlow.callSuperOnFinish = callSuperOnFinish || false;
 
         // Set control when null
         if(subFlow.control == null) {
@@ -1226,24 +1229,6 @@ class Flow {
         // Set the repeat iteration value if this was set
         if(this.repeatIteration > -1) {
             subFlow.setRepeatIteration(this.repeatIteration);
-        }
-
-        if(overrideFinished) {
-            // Copy sub flow finished callback
-            var subFlowFinish = subFlow.finishedCallback;
-
-            // Continue current flow when sub flow finishes
-            subFlow.finish((response, answers) => {
-                Logger.debug("Flow::startSubFlow() Sub flow finished()", subFlow.name);
-                var superFlow = subFlow.superFlow;
-                // Call sub flow finished callback if was set
-                if(subFlowFinish) {
-                    Logger.debug("Flow::startSubFlow() Calling finish callback of sub flow", subFlow.name);
-                    subFlowFinish(superFlow.msg, superFlow.answers);
-                    return;
-                }
-                superFlow.next();
-            });
         }
 
         // Start the sub flow
@@ -1298,10 +1283,16 @@ class Flow {
         if(this.currentStep == this.steps.length) {
             Logger.info("Flow::next() Flow finished", this.name);
             if(!this.superFlow) {
+                Logger.info("Flow::start() Removing root flow as active", this.name);
                 this.control.removeActiveQuestionnaire(this.msg.message);
             }
             if(this.finishedCallback != null) {
+                Logger.info("Flow::start() Calling finished callback for", this.name);
                 this.finishedCallback(this.msg, this.answers);
+            }
+            if(this.superFlow && this.callSuperOnFinish) {
+                Logger.info("Flow::next() Calling next on super Flow " + this.superFlow.name + " <- " + this.name);
+                this.superFlow.next();
             }
             return;
         }

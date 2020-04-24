@@ -15,9 +15,11 @@ class Action extends Step {
     execute() {
         // Trigger action callback
         this.callback(() => {
-            if(this.waitMs > 0) {
-                Logger.debug("Action::execute() Waiting after executing action for " + this.waitMs + " milliseconds");
+            if(this.waitMs < 1) {
+                this.flow.actionDone(this);
+                return;
             }
+            Logger.debug("Action::execute() Waiting after executing action for " + this.waitMs + " milliseconds");
             setTimeout(() => {
                 this.flow.actionDone(this);
             }, this.waitMs);

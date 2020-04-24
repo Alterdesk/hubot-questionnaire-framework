@@ -837,6 +837,7 @@ class Control {
             return;
         }
         if(!msg.topic) {
+            Logger.debug("Control:sendComposing() Converting msg to hubot response");
             msg = ChatTools.hubotMessageToResponse(this.robot, msg);
         }
         msg.topic("typing");
