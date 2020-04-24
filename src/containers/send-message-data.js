@@ -3,6 +3,7 @@ const StringTools = require('./../utils/string-tools.js');
 
 class SendMessageData {
     constructor() {
+        this.message = "";
         this.attachmentPaths = [];
         this.requestUserIds = [];
         this.questionOptions = [];
