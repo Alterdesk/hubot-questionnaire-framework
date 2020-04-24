@@ -22,9 +22,11 @@ class Information extends Step {
 
         // Send information message text
         this.flow.msg.send(result);
-        if(this.waitMs > 0) {
-            Logger.debug("Information::execute() Waiting after sending information for " + this.waitMs + " milliseconds");
+        if(this.waitMs < 1) {
+            this.flow.next();
+            return;
         }
+        Logger.debug("Information::execute() Waiting after sending information for " + this.waitMs + " milliseconds");
         setTimeout(() => {
             this.flow.next();
         }, this.waitMs);
