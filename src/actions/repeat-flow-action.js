@@ -109,8 +109,8 @@ class RepeatFlowAction extends Action {
             this.flow.answers.add(repeatKey + "iteration", this.iteration);
         }
         this.repeatFlow.setRepeatIteration(this.iteration);
-        this.flow.startSubFlow(this.repeatFlow, false);
         this.iteration++;
+        this.flow.startSubFlow(this.repeatFlow, false);
     }
 
     addCondition(condition) {
