@@ -14,13 +14,13 @@
   "license": "MIT",
   "dependencies": {
     "express": "^4.17.1",
+    "form-data": "^2.5.0",
     "hubot": "^3.3.2",
+    "js-levenshtein": "^1.1.6",
     "mkdirp": "^0.5.1",
     "moment": "^2.24.0",
     "moment-timezone": "^0.5.26",
-    "js-levenshtein": "^1.1.6",
-    "form-data": "^2.5.0",
-    "node-messenger-log": "https://github.com/Alterdesk/node-messenger-log.git",
+    "node-messenger-log": "^1.0.0",
     "request": "^2.88.0",
     "uuid": "^3.3.3"
   }
