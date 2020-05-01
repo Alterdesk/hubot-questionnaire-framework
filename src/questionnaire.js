@@ -71,6 +71,7 @@ module.exports = {
     Question : require('./questions/question.js'),
     RegexTools : require('./utils/regex-tools.js'),
     RemoveAnswerAction : require('./actions/remove-answer-action.js'),
+    RemoveGroupAction : require('./actions/remove-group-action.js'),
     RepeatFlowAction : require('./actions/repeat-flow-action.js'),
     RepeatFormatter : require('./formatters/repeat-formatter.js'),
     ReplaceAnswerFormatter : require('./formatters/replace-answer-formatter.js'),
