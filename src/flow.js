@@ -786,6 +786,8 @@ class Flow {
         Logger.debug("Flow::setRepeatIteration()", repeatIteration);
         this.repeatIteration = repeatIteration;
         this.currentStep = 0;
+        this.parsedAnswerKeys = {};
+        this.parsedMultiUserAnswers = {};
     }
 
     setName(name) {
