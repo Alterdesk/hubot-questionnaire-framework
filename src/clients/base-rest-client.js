@@ -163,6 +163,11 @@ class BaseRestClient {
                     request.destroy();
                     resolve(null);
                 });
+                request.on('error', (err) => {
+                    Logger.error(this.loggerName + "::http() << " + path + ":", err);
+                    request.destroy();
+                    resolve(null);
+                });
                 if(formattedBody && formattedBody.length > 0) {
                     request.write(formattedBody);
                 }
