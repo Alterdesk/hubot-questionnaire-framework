@@ -12,6 +12,7 @@ class BaseRestClient {
     constructor(url, port, loggerName) {
         this.loggerName = loggerName || "BaseRestClient";
         this.apiPort = parseInt(port);
+        this.timeoutMs = 10000;
         var domain;
         if(url.startsWith("https://")) {
             domain = url.replace("https://", "");
@@ -38,6 +39,10 @@ class BaseRestClient {
         this.customHeaders = {};
         this.tmpDownloadDir = Path.resolve(OS.tmpdir(), 'messenger-downloads');
         this.tmpUploadDir = Path.resolve(OS.tmpdir(), 'messenger-uploads');
+    }
+
+    setTimeoutMs(timeoutMs) {
+        this.timeoutMs = timeoutMs;
     }
 
     setApiToken(apiToken) {
@@ -69,6 +74,7 @@ class BaseRestClient {
                 options["port"] = this.apiPort;
                 options["path"] = this.pathPrefix + path;
                 options["protocol"] = this.apiProtocol;
+                options["timeout"] = this.timeoutMs;
                 options["method"] = method;
                 var headers = {};
                 headers["Content-Type"] = this.getContentType();
@@ -151,6 +157,16 @@ class BaseRestClient {
                         Logger.error(this.loggerName + "::http() << " + path + ":", err);
                         resolve(result);
                     });
+                });
+                request.setTimeout(this.timeoutMs, () => {
+                    Logger.error(this.loggerName + "::http() << " + path + ": Connection timeout: " + this.timeoutMs + " ms");
+                    request.destroy();
+                    resolve(null);
+                });
+                request.on('error', (err) => {
+                    Logger.error(this.loggerName + "::http() << " + path + ":", err);
+                    request.destroy();
+                    resolve(null);
                 });
                 if(formattedBody && formattedBody.length > 0) {
                     request.write(formattedBody);

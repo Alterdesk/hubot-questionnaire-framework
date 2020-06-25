@@ -222,6 +222,18 @@ class MessengerClient extends JsonRestClient {
         return this.delete(methodPrefix + "groupchats/" + encodeURIComponent(groupId), closePostData, overrideToken);
     }
 
+    removeGroupChat(groupId, isAux, sendEmail, overrideToken) {
+        var removePostData = {};
+        removePostData["send_email"] = sendEmail;
+        removePostData["remove"] = true;
+
+        var methodPrefix = "";
+        if(isAux) {
+            methodPrefix += "aux/"
+        }
+        return this.delete(methodPrefix + "groupchats/" + encodeURIComponent(groupId), removePostData, overrideToken);
+    }
+
     getChat(chatId, isGroup, isAux, overrideToken) {
         var methodPrefix = "";
         if(isAux) {
