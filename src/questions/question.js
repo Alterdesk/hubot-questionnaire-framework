@@ -258,8 +258,6 @@ class Question extends Step {
                     }
                     // Mark question as timed out
                     this.timedOut = true;
-                    // Clean up remaining listeners
-                    this.cleanup(msg.message);
                     // Trigger timeout callback
                     if(configuredTimeoutCallback) {
                         configuredTimeoutCallback();
