@@ -884,7 +884,6 @@ class Flow {
             // Check if the stop regex was triggered
             if(listener.stop) {
                 Logger.debug("Flow::callback() stop regex triggered");
-                question.cleanup(response.message);
                 flow.questionStop(question);
                 return;
             }
@@ -892,7 +891,8 @@ class Flow {
             // Check if the back regex was triggered
             if(listener.back) {
                 Logger.debug("Flow::callback() back regex triggered");
-                question.cleanup(response.message);
+                var chatUserKey = ChatTools.messageToChatUserKey(response.message);
+                question.cleanup(chatUserKey);
                 // Send back text message if set
                 if(flow.backText && flow.backText != "") {
                     response.send(flow.backText)
@@ -913,7 +913,8 @@ class Flow {
 
             if(listener.checkpoint) {
                 Logger.debug("Flow::callback() checkpoint regex triggered");
-                question.cleanup(response.message);
+                var chatUserKey = ChatTools.messageToChatUserKey(response.message);
+                question.cleanup(chatUserKey);
                 // Send checkpoint text message if set
                 if(flow.checkpointText && flow.checkpointText != "") {
                     response.send(flow.checkpointText)
@@ -1059,7 +1060,8 @@ class Flow {
 
             // Cleanup on breaking and stop if configured
             if(breaking) {
-                question.cleanup(response.message);
+                var chatUserKey = ChatTools.messageToChatUserKey(response.message);
+                question.cleanup(chatUserKey);
                 if(stopping) {
                     this.questionStop(question);
                     return true;
@@ -1255,7 +1257,8 @@ class Flow {
             var step = this.steps[index];
             if(step instanceof Question) {
                 var question = step;
-                question.cleanup(this.msg.message);
+                var chatUserKey = ChatTools.messageToChatUserKey(this.msg.message);
+                question.cleanup(chatUserKey);
             }
         }
         if(sendMessage) {

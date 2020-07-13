@@ -1,4 +1,4 @@
-const {TextMessage, LeaveMessage, TopicMessage} = require('hubot');
+const {TextMessage, EnterMessage, LeaveMessage, TopicMessage} = require('hubot');
 
 const BotApi = require('./bot-api.js');
 const ChatTools = require('./utils/chat-tools.js');
@@ -18,6 +18,9 @@ class Control {
 
         // Timeout timers for active questionnaires
         this.timeoutTimers = {};
+
+        // Timeout timers for absent users
+        this.presenceTimeoutTimers = {};
 
         // Active questionnaires
         this.activeQuestionnaires = {};
@@ -41,6 +44,11 @@ class Control {
         this.responseTimeoutMs = parseInt(process.env.HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT || 60000);
         // Response timeout text to send on timeout
         this.responseTimeoutText = process.env.HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT_TEXT || "RESPONSE_TIMEOUT_TEXT";
+
+        // Presence timeout milliseconds
+        this.presenceTimeoutMs = parseInt(process.env.HUBOT_QUESTIONNAIRE_PRESENCE_TIMEOUT || 0);
+        // Presence timeout text to send on timeout
+        this.presenceTimeoutText = process.env.HUBOT_QUESTIONNAIRE_PRESENCE_TIMEOUT_TEXT || "PRESENCE_TIMEOUT_TEXT";
 
         // Need to mention robot in group to trigger command
         this.needMentionInGroup = process.env.HUBOT_QUESTIONNAIRE_NEED_MENTION_IN_GROUP || false;
@@ -287,15 +295,35 @@ class Control {
                     }
                 }
 
-            } else if(className === "LeaveMessage" || message instanceof LeaveMessage) {
-                Logger.debug("Control::receive() Leave detected: " + message.user.id);
-                if(this.removeListenerOnLeave) {
-                    var chatUserKey = ChatTools.messageToChatUserKey(message);
-                    if(this.hasListener(chatUserKey)) {
-                        this.removeListener(chatUserKey);
+            } else if(className === "EnterMessage" || message instanceof EnterMessage) {
+                var userId = message.user.id;
+                Logger.debug("Control::receive() Enter detected: " + userId);
+                var chatUserKeys = this.getUserActiveChatUserKeys(userId);
+                for(let index in chatUserKeys) {
+                    var chatUserKey = chatUserKeys[index];
+                    if(this.hasPresenceTimeoutTimer(chatUserKey)) {
+                        this.removePresenceTimeoutTimer(chatUserKey);
                     }
-                    if(this.hasPendingRequest(chatUserKey)) {
-                        this.removePendingRequest(chatUserKey);
+                }
+            } else if(className === "LeaveMessage" || message instanceof LeaveMessage) {
+                var userId = message.user.id;
+                Logger.debug("Control::receive() Leave detected: " + userId);
+                if(this.removeListenerOnLeave) {
+                    var chatUserKeys = this.getUserActiveChatUserKeys(userId);
+                    for(let index in chatUserKeys) {
+                        var chatUserKey = chatUserKeys[index];
+                        if(this.hasListener(chatUserKey)) {
+                            this.removeListener(chatUserKey);
+                        }
+                        if(this.hasPendingRequest(chatUserKey)) {
+                            this.removePendingRequest(chatUserKey);
+                        }
+                    }
+                } else if(this.presenceTimeoutMs > 0) {
+                    var chatUserKeys = this.getUserActiveChatUserKeys(userId);
+                    for(let index in chatUserKeys) {
+                        var chatUserKey = chatUserKeys[index];
+                        this.addPresenceTimeoutTimer(chatUserKey);
                     }
                 }
             }
@@ -311,8 +339,8 @@ class Control {
         listener.configure(this);
         Logger.debug("Control::addListener() key: " + chatUserKey);
         this.pendingListeners[chatUserKey] = listener;
-        if(!this.hasTimeoutTimer(chatUserKey)) {
-            this.addTimeoutTimer(chatUserKey, listener.msg, listener.question);
+        if(!this.hasResponseTimeoutTimer(chatUserKey)) {
+            this.addResponseTimeoutTimer(chatUserKey, listener.msg, listener.question);
         }
     }
 
@@ -324,8 +352,8 @@ class Control {
         Logger.debug("Control::removeListener() key: " + chatUserKey);
         var listener = this.pendingListeners[chatUserKey];
         delete this.pendingListeners[chatUserKey];
-        if(this.hasTimeoutTimer(chatUserKey)) {
-            this.removeTimeoutTimer(chatUserKey, listener.question);
+        if(this.hasResponseTimeoutTimer(chatUserKey)) {
+            this.removeResponseTimeoutTimer(chatUserKey, listener.question);
         }
         return listener;
     }
@@ -339,8 +367,8 @@ class Control {
     addPendingRequest(chatUserKey, pendingRequest) {
         Logger.debug("Control::addPendingRequest() key: " + chatUserKey);
         this.pendingRequests[chatUserKey] = pendingRequest;
-        if(!this.hasTimeoutTimer(chatUserKey)) {
-            this.addTimeoutTimer(chatUserKey, pendingRequest.msg, pendingRequest.question);
+        if(!this.hasResponseTimeoutTimer(chatUserKey)) {
+            this.addResponseTimeoutTimer(chatUserKey, pendingRequest.msg, pendingRequest.question);
         }
     }
 
@@ -352,8 +380,8 @@ class Control {
         Logger.debug("Control::removePendingRequest() key: " + chatUserKey);
         var pendingRequest = this.pendingRequests[chatUserKey];
         delete this.pendingRequests[chatUserKey];
-        if(this.hasTimeoutTimer(chatUserKey)) {
-            this.removeTimeoutTimer(chatUserKey, pendingRequest.question);
+        if(this.hasResponseTimeoutTimer(chatUserKey)) {
+            this.removeResponseTimeoutTimer(chatUserKey, pendingRequest.question);
         }
         return pendingRequest;
     }
@@ -363,9 +391,9 @@ class Control {
         return this.pendingRequests[chatUserKey] != null;
     }
 
-    // Add a timeout timer for a user
-    addTimeoutTimer(chatUserKey, msg, question) {
-        Logger.debug("Control::addTimeoutTimer() key: " + chatUserKey);
+    // Add a response timeout timer for a user
+    addResponseTimeoutTimer(chatUserKey, msg, question) {
+        Logger.debug("Control::addResponseTimeoutTimer() key: " + chatUserKey);
         // Timeout milliseconds and callback
         var useTimeoutMs = question.timeoutMs || this.responseTimeoutMs;
         var useTimeoutText = question.timeoutText;
@@ -374,25 +402,26 @@ class Control {
         }
         var useTimeoutCallback = question.timeoutCallback;
         if(!useTimeoutCallback && useTimeoutText && useTimeoutText.length > 0) {
-            Logger.debug("Control::addTimeoutTimer() ms: " + useTimeoutMs + " text: " + useTimeoutText);
+            Logger.debug("Control::addResponseTimeoutTimer() ms: " + useTimeoutMs + " text: " + useTimeoutText);
             useTimeoutCallback = () => {
                 question.flow.sendRestartMessage(useTimeoutText);
             };
         } else if(useTimeoutCallback != null) {
-            Logger.debug("Control::addTimeoutTimer() Using custom callback");
+            Logger.debug("Control::addResponseTimeoutTimer() Using custom callback");
         }
 
         var timer = setTimeout(() => {
-            Logger.debug("Timer timeout: key: " + chatUserKey);
-            question.cleanup(chatUserKey);
-
-            question.flow.stop(false);
-
-            if(this.questionnaireTimedOutCallback) {
-                var userId = ChatTools.getUserId(msg.message.user);
-                this.questionnaireTimedOutCallback(userId, question.flow.answers);
+            Logger.debug("Response timer timeout: key: " + chatUserKey);
+            var flow = this.getActiveQuestionnaire(chatUserKey);
+            if(!flow) {
+                Logger.error("Unable to retrieve flow on response timer timeout: key: " + chatUserKey);
+                return;
             }
-
+            flow.stop(false);
+            if(this.questionnaireTimedOutCallback) {
+                var userId = ChatTools.getUserId(flow.message.user);
+                this.questionnaireTimedOutCallback(userId, flow.answers);
+            }
             // Call timeout callback
             if(useTimeoutCallback) {
                 useTimeoutCallback();
@@ -402,20 +431,59 @@ class Control {
         this.timeoutTimers[chatUserKey] = timer;
     }
 
-    // Remove a timeout timer for a user
-    removeTimeoutTimer(chatUserKey) {
+    // Remove a response timeout timer for a user
+    removeResponseTimeoutTimer(chatUserKey) {
         if(this.timeoutTimers[chatUserKey] == null) {
             return;
         }
-        Logger.debug("Control::removeTimeoutTimer() key: " + chatUserKey);
+        Logger.debug("Control::removeResponseTimeoutTimer() key: " + chatUserKey);
         var timer = this.timeoutTimers[chatUserKey];
         delete this.timeoutTimers[chatUserKey];
         clearTimeout(timer);
     }
 
-    // Check if a timeout timer is present for a user in a chat
-    hasTimeoutTimer(chatUserKey) {
+    // Check if a response timeout timer is present for a user in a chat
+    hasResponseTimeoutTimer(chatUserKey) {
         return this.timeoutTimers[chatUserKey] != null;
+    }
+
+    // Add a presence timeout timer for a user
+    addPresenceTimeoutTimer(chatUserKey) {
+        Logger.debug("Control::addPresenceTimeoutTimer() key: " + chatUserKey);
+        // Timeout milliseconds and callback
+        var timer = setTimeout(() => {
+            Logger.debug("Presence timer timeout: key: " + chatUserKey);
+            var flow = this.getActiveQuestionnaire(chatUserKey);
+            if(!flow) {
+                Logger.error("Unable to retrieve flow on presence timer timeout: key: " + chatUserKey);
+                return;
+            }
+            flow.stop(false);
+            if(this.questionnaireTimedOutCallback) {
+                var userId = ChatTools.getUserId(flow.msg.message.user);
+                this.questionnaireTimedOutCallback(userId, flow.answers);
+            }
+            flow.sendRestartMessage(this.presenceTimeoutText);
+
+        }, this.presenceTimeoutMs);
+
+        this.presenceTimeoutTimers[chatUserKey] = timer;
+    }
+
+    // Remove a presence timeout timer for a user
+    removePresenceTimeoutTimer(chatUserKey) {
+        if(this.presenceTimeoutTimers[chatUserKey] == null) {
+            return;
+        }
+        Logger.debug("Control::removePresenceTimeoutTimer() key: " + chatUserKey);
+        var timer = this.presenceTimeoutTimers[chatUserKey];
+        delete this.presenceTimeoutTimers[chatUserKey];
+        clearTimeout(timer);
+    }
+
+    // Check if a presence timeout timer is present for a user in a chat
+    hasPresenceTimeoutTimer(chatUserKey) {
+        return this.presenceTimeoutTimers[chatUserKey] != null;
     }
 
     addActiveQuestionnaire(chatUserKey, flow) {
@@ -448,8 +516,9 @@ class Control {
 
     getUserActiveChatUserKeys(userId) {
         var chatUserKeys = [];
+        var suffix = "/" + userId;
         for(let chatUserKey in this.activeQuestionnaires) {
-            if(chatUserKey.endsWith("/" + userId)) {
+            if(chatUserKey.endsWith(suffix)) {
                 chatUserKeys.push(chatUserKey);
             }
         }
@@ -478,7 +547,8 @@ class Control {
         delete this.activeQuestionnaires[chatUserKey];
         this.removeListener(chatUserKey);
         this.removePendingRequest(chatUserKey);
-        this.removeTimeoutTimer(chatUserKey);
+        this.removeResponseTimeoutTimer(chatUserKey);
+        this.removePresenceTimeoutTimer(chatUserKey);
         var count = this.getActiveQuestionnaireCount();
         Logger.debug("Control::removeActiveQuestionnaire() Active questionnaires: " + count)
         if(this.removedActiveQuestionnaireCallback) {
@@ -556,6 +626,14 @@ class Control {
     }
     setResponseTimeoutMs(ms) {
         this.responseTimeoutMs = ms;
+    }
+
+    // Presence timeout configuration
+    setPresenceTimeoutText(t) {
+        this.presenceTimeoutText = t;
+    }
+    setPresenceTimeoutMs(ms) {
+        this.presenceTimeoutMs = ms;
     }
 
     setTypingDelayMs(ms) {
