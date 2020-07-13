@@ -419,7 +419,7 @@ class Control {
             }
             flow.stop(false);
             if(this.questionnaireTimedOutCallback) {
-                var userId = ChatTools.getUserId(flow.message.user);
+                var userId = ChatTools.getUserId(flow.msg.message.user);
                 this.questionnaireTimedOutCallback(userId, flow.answers);
             }
             // Call timeout callback
