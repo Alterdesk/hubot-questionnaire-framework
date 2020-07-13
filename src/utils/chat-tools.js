@@ -169,6 +169,14 @@ class ChatTools {
         return "groupchat/" + chatId + "/" + userId;
     }
 
+    static messageToChatUserKey(message) {
+        var userId = ChatTools.getUserId(message.user);
+        var chatId = message.room;
+        return ChatTools.getChatUserKey(chatId, userId);
+    }
+
+
+
 }
 
 module.exports = ChatTools;

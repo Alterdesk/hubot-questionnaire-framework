@@ -135,10 +135,12 @@ class Control {
                         this.newChatCallback(message.id, message.text === "new_groupchat");
                     }
                 } else if(event === "groupchat_removed") {
+                    this.removeGroupActiveQuestionnaires(message.id);
                     if(this.removedFromChatCallback) {
                         this.removedFromChatCallback(message.id);
                     }
                 } else if(event === "groupchat_closed") {
+                    this.removeGroupActiveQuestionnaires(message.id);
                     if(this.closedChatCallback) {
                         this.closedChatCallback(message.id);
                     }
@@ -156,8 +158,9 @@ class Control {
                     }
                 } else if(event === "conversation_verification_accepted" || event === "conversation_verification_rejected"
                     || event === "groupchat_verification_accepted" || event === "groupchat_verification_rejected") {
-                    if(this.hasPendingRequest(message)) {
-                        var pendingRequest = this.removePendingRequest(message);
+                    var chatUserKey = ChatTools.messageToChatUserKey(message);
+                    if(this.hasPendingRequest(chatUserKey)) {
+                        var pendingRequest = this.removePendingRequest(chatUserKey);
                         pendingRequest.call(message);
                     }
                     if(this.verificationCallback) {
@@ -167,8 +170,9 @@ class Control {
                         this.verificationCallback(userId, message.id, message.room, isGroup, accepted);
                     }
                 } else if(event === "conversation_question_answer" || event === "groupchat_question_answer") {
-                    if(this.hasPendingRequest(message)) {
-                        var pendingRequest = this.removePendingRequest(message);
+                    var chatUserKey = ChatTools.messageToChatUserKey(message);
+                    if(this.hasPendingRequest(chatUserKey)) {
+                        var pendingRequest = this.removePendingRequest(chatUserKey);
                         pendingRequest.call(message);
                     } else if(message.id) {
                         this.checkCommandButton(message);
@@ -183,9 +187,22 @@ class Control {
                         }
                     }
                 } else if(event === "groupchat_members_added" || event === "groupchat_members_removed") {
+                    var userId = ChatTools.getUserId(message.user);
+                    var chatId = message.room;
+                    var users = message.id["users"];
+                    var added = event === "groupchat_members_added";
+                    if(!added) {
+                        for(let index in users) {
+                            var user = users[index];
+                            var chatUserKey = ChatTools.getChatUserKey(chatId, user["id"]);
+                            if(this.hasActiveQuestionnaire(chatUserKey)) {
+                                this.removeActiveQuestionnaire(chatUserKey);
+                            }
+                        }
+                    }
                     if(this.groupMemberCallback) {
                         var data = message.id;
-                        this.groupMemberCallback(message.room, event === "groupchat_members_added", data.user_id, data.users);
+                        this.groupMemberCallback(chatId, added, userId, users);
                     }
                 } else if(event === "groupchat_subscribed" || event === "groupchat_unsubscribed") {
                     if(this.groupSubscribedCallback) {
@@ -197,14 +214,15 @@ class Control {
                 }
             } else if(className === "TextMessage" || message instanceof TextMessage) {
                 Logger.debug("Control::receive() TextMessage: \"" + message.text + "\"");
+                var chatUserKey = ChatTools.messageToChatUserKey(message);
                 // Check for listeners waiting for a message
-                if (this.hasListener(message)) {
-                    var listener = this.removeListener(message);
+                if (this.hasListener(chatUserKey)) {
+                    var listener = this.removeListener(chatUserKey);
                     listener.call(message);
                     return;
                 }
 
-                if(this.hasActiveQuestionnaire(message)) {
+                if(this.hasActiveQuestionnaire(chatUserKey)) {
                     Logger.debug("Control::receive() Ignoring message, has active questionnaire for user in chat");
                     return;
                 }
@@ -272,11 +290,12 @@ class Control {
             } else if(className === "LeaveMessage" || message instanceof LeaveMessage) {
                 Logger.debug("Control::receive() Leave detected: " + message.user.id);
                 if(this.removeListenerOnLeave) {
-                    if(this.hasListener(message)) {
-                        this.removeListener(message);
+                    var chatUserKey = ChatTools.messageToChatUserKey(message);
+                    if(this.hasListener(chatUserKey)) {
+                        this.removeListener(chatUserKey);
                     }
-                    if(this.hasPendingRequest(message)) {
-                        this.removePendingRequest(message);
+                    if(this.hasPendingRequest(chatUserKey)) {
+                        this.removePendingRequest(chatUserKey);
                     }
                 }
             }
@@ -288,84 +307,65 @@ class Control {
     }
 
     // Add a listeners for followup questions
-    addListener(message, listener) {
+    addListener(chatUserKey, listener) {
         listener.configure(this);
-        var userId = ChatTools.getUserId(message.user);
-        var chatId = message.room;
-        var chatUserKey = ChatTools.getChatUserKey(chatId, userId);
-        Logger.debug("Control::addListener() userId: " + userId + " chat: " + chatId);
+        Logger.debug("Control::addListener() key: " + chatUserKey);
         this.pendingListeners[chatUserKey] = listener;
-        if(!this.hasTimeoutTimer(message)) {
-            this.addTimeoutTimer(message, listener.msg, listener.question);
+        if(!this.hasTimeoutTimer(chatUserKey)) {
+            this.addTimeoutTimer(chatUserKey, listener.msg, listener.question);
         }
     }
 
     // Remove a listener that was added before
-    removeListener(message) {
-        var userId = ChatTools.getUserId(message.user);
-        var chatId = message.room;
-        var chatUserKey = ChatTools.getChatUserKey(chatId, userId);
+    removeListener(chatUserKey) {
         if(this.pendingListeners[chatUserKey] == null) {
             return null;
         }
-        Logger.debug("Control::removeListener() userId: " + userId + " chat: " + chatId);
+        Logger.debug("Control::removeListener() key: " + chatUserKey);
         var listener = this.pendingListeners[chatUserKey];
         delete this.pendingListeners[chatUserKey];
-        if(this.hasTimeoutTimer(message)) {
-            this.removeTimeoutTimer(message, listener.question);
+        if(this.hasTimeoutTimer(chatUserKey)) {
+            this.removeTimeoutTimer(chatUserKey, listener.question);
         }
         return listener;
     }
 
     // Check if a listener is present for a user in a chat
-    hasListener(message) {
-        var chatUserKey = ChatTools.getChatUserKey(message.room, ChatTools.getUserId(message.user));
+    hasListener(chatUserKey) {
         return this.pendingListeners[chatUserKey] != null;
     }
 
     // Add a pending request for a user
-    addPendingRequest(message, pendingRequest) {
-        var userId = ChatTools.getUserId(message.user);
-        var chatId = message.room;
-        Logger.debug("Control::addPendingRequest() userId: " + userId + " chat: " + chatId);
-        var chatUserKey = ChatTools.getChatUserKey(chatId, userId);
+    addPendingRequest(chatUserKey, pendingRequest) {
+        Logger.debug("Control::addPendingRequest() key: " + chatUserKey);
         this.pendingRequests[chatUserKey] = pendingRequest;
-        if(!this.hasTimeoutTimer(message)) {
-            this.addTimeoutTimer(message, pendingRequest.msg, pendingRequest.question);
+        if(!this.hasTimeoutTimer(chatUserKey)) {
+            this.addTimeoutTimer(chatUserKey, pendingRequest.msg, pendingRequest.question);
         }
     }
 
     // Remove a pending request for a user
-    removePendingRequest(message) {
-        var userId = ChatTools.getUserId(message.user);
-        var chatId = message.room;
-        var chatUserKey = ChatTools.getChatUserKey(chatId, userId);
+    removePendingRequest(chatUserKey) {
         if(this.pendingRequests[chatUserKey] == null) {
             return null;
         }
-        Logger.debug("Control::removePendingRequest() userId: " + userId + " chat: " + chatId);
+        Logger.debug("Control::removePendingRequest() key: " + chatUserKey);
         var pendingRequest = this.pendingRequests[chatUserKey];
         delete this.pendingRequests[chatUserKey];
-        if(this.hasTimeoutTimer(message)) {
-            this.removeTimeoutTimer(message, pendingRequest.question);
+        if(this.hasTimeoutTimer(chatUserKey)) {
+            this.removeTimeoutTimer(chatUserKey, pendingRequest.question);
         }
         return pendingRequest;
     }
 
     // Check if a pending request is present for a user in a chat
-    hasPendingRequest(message) {
-        var userId = ChatTools.getUserId(message.user);
-        var chatId = message.room;
-        var chatUserKey = ChatTools.getChatUserKey(chatId, userId);
+    hasPendingRequest(chatUserKey) {
         return this.pendingRequests[chatUserKey] != null;
     }
 
     // Add a timeout timer for a user
-    addTimeoutTimer(message, msg, question) {
-        var userId = ChatTools.getUserId(message.user);
-        var chatId = message.room;
-        var chatUserKey = ChatTools.getChatUserKey(chatId, userId);
-        Logger.debug("Control::addTimeoutTimer() userId: " + userId + " chat: " + chatId);
+    addTimeoutTimer(chatUserKey, msg, question) {
+        Logger.debug("Control::addTimeoutTimer() key: " + chatUserKey);
         // Timeout milliseconds and callback
         var useTimeoutMs = question.timeoutMs || this.responseTimeoutMs;
         var useTimeoutText = question.timeoutText;
@@ -383,9 +383,8 @@ class Control {
         }
 
         var timer = setTimeout(() => {
-            var userId = ChatTools.getUserId(msg.message.user);
-            Logger.debug("Timer timeout from user " + userId + " in chat " + chatId);
-            question.cleanup(message);
+            Logger.debug("Timer timeout: key: " + chatUserKey);
+            question.cleanup(chatUserKey);
 
             question.flow.stop(false);
 
@@ -404,45 +403,61 @@ class Control {
     }
 
     // Remove a timeout timer for a user
-    removeTimeoutTimer(message) {
-        var userId = ChatTools.getUserId(message.user);
-        var chatId = message.room;
-        var chatUserKey = ChatTools.getChatUserKey(chatId, userId);
+    removeTimeoutTimer(chatUserKey) {
         if(this.timeoutTimers[chatUserKey] == null) {
             return;
         }
-        Logger.debug("Control::removeTimeoutTimer() userId: " + userId + " chat: " + chatId);
+        Logger.debug("Control::removeTimeoutTimer() key: " + chatUserKey);
         var timer = this.timeoutTimers[chatUserKey];
         delete this.timeoutTimers[chatUserKey];
         clearTimeout(timer);
     }
 
     // Check if a timeout timer is present for a user in a chat
-    hasTimeoutTimer(message) {
-        var chatUserKey = ChatTools.getChatUserKey(message.room, ChatTools.getUserId(message.user));
+    hasTimeoutTimer(chatUserKey) {
         return this.timeoutTimers[chatUserKey] != null;
     }
 
-    addActiveQuestionnaire(message, flow) {
-        var userId = ChatTools.getUserId(message.user);
-        var chatId = message.room;
-        var chatUserKey = ChatTools.getChatUserKey(chatId, userId);
+    addActiveQuestionnaire(chatUserKey, flow) {
         if(this.activeQuestionnaires[chatUserKey]) {
-            Logger.error("Control::addActiveQuestionnaire() Already have an active questionnaire for userId: " + userId + " chat: " + chatId);
+            Logger.error("Control::addActiveQuestionnaire() Already have an active questionnaire for key: " + chatUserKey);
             return;
         }
-        Logger.debug("Control::addActiveQuestionnaire() userId: " + userId + " chat: " + chatId + " flow: " + flow.name);
+        Logger.debug("Control::addActiveQuestionnaire() key: " + chatUserKey + " flow: " + flow.name);
         this.activeQuestionnaires[chatUserKey] = flow;
-        Logger.debug("Control::addActiveQuestionnaire() Active questionnaires: " + this.getActiveQuestionnaireCount());
+        var count = this.getActiveQuestionnaireCount();
+        Logger.debug("Control::addActiveQuestionnaire() Active questionnaires: " + count);
+        if(this.addedActiveQuestionnaireCallback) {
+            this.addedActiveQuestionnaireCallback(chatUserKey, count);
+        }
     }
 
-    getActiveQuestionnaire(message) {
-        var chatUserKey = ChatTools.getChatUserKey(message.room, ChatTools.getUserId(message.user));
+    getActiveQuestionnaire(chatUserKey) {
         return this.activeQuestionnaires[chatUserKey];
     }
 
-    hasActiveQuestionnaire(message) {
-        return this.getActiveQuestionnaire(message) != null;
+    getGroupActiveChatUserKeys(chatId) {
+        var chatUserKeys = [];
+        for(let chatUserKey in this.activeQuestionnaires) {
+            if(chatUserKey.indexOf("groupchat/" + chatId) !== -1) {
+                chatUserKeys.push(chatUserKey);
+            }
+        }
+        return chatUserKeys;
+    }
+
+    getUserActiveChatUserKeys(userId) {
+        var chatUserKeys = [];
+        for(let chatUserKey in this.activeQuestionnaires) {
+            if(chatUserKey.endsWith("/" + userId)) {
+                chatUserKeys.push(chatUserKey);
+            }
+        }
+        return chatUserKeys;
+    }
+
+    hasActiveQuestionnaire(chatUserKey) {
+        return this.getActiveQuestionnaire(chatUserKey) != null;
     }
 
     getActiveQuestionnaires() {
@@ -453,24 +468,49 @@ class Control {
         return this.getActiveQuestionnaires().length;
     }
 
-    removeActiveQuestionnaire(message) {    // TODO Clean up Listeners, PendingRequests and Timers
-        var userId = ChatTools.getUserId(message.user);
-        var chatId = message.room;
-        var chatUserKey = ChatTools.getChatUserKey(chatId, userId);
+    removeActiveQuestionnaire(chatUserKey) {
         var flow = this.activeQuestionnaires[chatUserKey];
         if(!flow) {
-            Logger.error("Control::removeActiveQuestionnaire() No active questionnaire for userId: " + userId + " room: " + chatId);
+            Logger.error("Control::removeActiveQuestionnaire() No active questionnaire for key: " + chatUserKey);
             return null;
         }
-        Logger.debug("Control::removeActiveQuestionnaire() userId: " + userId + " chat: " + chatId + " flow: " + flow.name);
+        Logger.debug("Control::removeActiveQuestionnaire() key: " + chatUserKey + " flow: " + flow.name);
         delete this.activeQuestionnaires[chatUserKey];
+        this.removeListener(chatUserKey);
+        this.removePendingRequest(chatUserKey);
+        this.removeTimeoutTimer(chatUserKey);
         var count = this.getActiveQuestionnaireCount();
-        Logger.debug("Control::removeActiveQuestionnaire() Active questionnaires: " + count);
+        Logger.debug("Control::removeActiveQuestionnaire() Active questionnaires: " + count)
+        if(this.removedActiveQuestionnaireCallback) {
+            this.removedActiveQuestionnaireCallback(chatUserKey, count);
+        }
         if(count === 0 && this.exitOnIdle) {
             Logger.debug("Control::removeActiveQuestionnaire() Exit on idle was armed, exiting");
             process.exit(0);
         }
         return flow;
+    }
+
+    removeGroupActiveQuestionnaires(chatId) {
+        var chatUserKeys = this.getGroupActiveChatUserKeys(chatId);
+        if(chatUserKeys.length === 0) {
+            return;
+        }
+        Logger.debug("Control::removeGroupActiveQuestionnaires() Removing " + chatUserKeys.length + " questionnaires from chat: " + chatId);
+        for(let index in chatUserKeys) {
+            this.removeActiveQuestionnaire(chatUserKeys[index]);
+        }
+    }
+
+    removeUserActiveQuestionnaires(userId) {
+        var chatUserKeys = this.getUserActiveChatUserKeys(userId);
+        if(chatUserKeys.length === 0) {
+            return;
+        }
+        Logger.debug("Control::removeGroupActiveQuestionnaires() Removing " + chatUserKeys.length + " questionnaires from user: " + userId);
+        for(let index in chatUserKeys) {
+            this.removeActiveQuestionnaire(chatUserKeys[index]);
+        }
     }
 
     // Regex to check if user wants to stop the current process
@@ -656,6 +696,16 @@ class Control {
     // Callback that is called when a questionnaire is stopped
     setQuestionnaireStoppedCallback(questionnaireStoppedCallback) {
         this.questionnaireStoppedCallback = questionnaireStoppedCallback;
+    }
+
+    // Callback that is called when a questionnaire is started
+    setAddedActiveQuestionnaireCallback(addedActiveQuestionnaireCallback) {
+        this.addedActiveQuestionnaireCallback = addedActiveQuestionnaireCallback;
+    }
+
+    // Callback that is called when a questionnaire is stopped
+    setRemovedActiveQuestionnaireCallback(removedActiveQuestionnaireCallback) {
+        this.removedActiveQuestionnaireCallback = removedActiveQuestionnaireCallback;
     }
 
     // Should a listener for a user be removed when a leave is detected

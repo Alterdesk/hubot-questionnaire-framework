@@ -839,7 +839,8 @@ class Flow {
         Logger.info("Flow::start()", this.name);
         if(!this.superFlow) {
             Logger.info("Flow::start() Adding root flow as active", this.name);
-            this.control.addActiveQuestionnaire(msg.message, this);
+            var chatUserKey = ChatTools.messageToChatUserKey(msg.message);
+            this.control.addActiveQuestionnaire(chatUserKey, this);
         }
         this.isRunning = true;
         if(this.steps.length === 0) {
@@ -946,12 +947,14 @@ class Flow {
                         question.send(flow.control, response, this.callback);
                     }, flow.control.typingDelayMs);
                 } else {
-                    flow.control.addListener(response.message, new Listener(response, this.callback, question));
+                    var chatUserKey = ChatTools.messageToChatUserKey(response.message);
+                    flow.control.addListener(chatUserKey, new Listener(response, this.callback, question));
                 }
                 return ;
             }
-            if(flow.control.hasPendingRequest(response.message)) {
-                flow.control.removePendingRequest(response.message);
+            var chatUserKey = ChatTools.messageToChatUserKey(response.message);
+            if(flow.control.hasPendingRequest(chatUserKey)) {
+                flow.control.removePendingRequest(chatUserKey);
             }
             flow.onAnswer(response, question, answerValue);
         } else if(listenerOrPendingRequest instanceof PendingRequest) {
@@ -960,10 +963,12 @@ class Flow {
             var answerValue = question.checkAndParseAnswer(pendingRequest.matches, response.message);
             if(answerValue == null) {
                 Logger.debug("Flow::callback() No valid answer value from pending request or wrong request message id, resetting pending request");
-                return flow.control.addPendingRequest(response.message, new PendingRequest(response, this.callback, question));
+                var chatUserKey = ChatTools.messageToChatUserKey(response.message);
+                return flow.control.addPendingRequest(chatUserKey, new PendingRequest(response, this.callback, question));
             }
-            if(flow.control.hasListener(response.message)) {
-                flow.control.removeListener(response.message);
+            var chatUserKey = ChatTools.messageToChatUserKey(response.message);
+            if(flow.control.hasListener(chatUserKey)) {
+                flow.control.removeListener(chatUserKey);
             }
             flow.onAnswer(response, question, answerValue);
         } else {
@@ -1263,7 +1268,8 @@ class Flow {
         if(this.superFlow) {
             this.superFlow.stop(false, error);
         } else {
-            this.control.removeActiveQuestionnaire(this.msg.message);
+            var chatUserKey = ChatTools.messageToChatUserKey(this.msg.message);
+            this.control.removeActiveQuestionnaire(chatUserKey);
             if(this.stoppedCallback) {
                 this.stoppedCallback(this.msg, error, this.answers);
             }
@@ -1286,7 +1292,8 @@ class Flow {
             Logger.info("Flow::next() Flow finished", this.name);
             if(!this.superFlow) {
                 Logger.info("Flow::start() Removing root flow as active", this.name);
-                this.control.removeActiveQuestionnaire(this.msg.message);
+                var chatUserKey = ChatTools.messageToChatUserKey(this.msg.message);
+                this.control.removeActiveQuestionnaire(chatUserKey);
             }
             if(this.finishedCallback != null) {
                 Logger.info("Flow::start() Calling finished callback for", this.name);
