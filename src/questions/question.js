@@ -258,8 +258,6 @@ class Question extends Step {
                     }
                     // Mark question as timed out
                     this.timedOut = true;
-                    // Clean up remaining listeners
-                    this.cleanup(msg.message);
                     // Trigger timeout callback
                     if(configuredTimeoutCallback) {
                         configuredTimeoutCallback();
@@ -291,13 +289,14 @@ class Question extends Step {
                         control.questionAskedCallback(userId, this.answerKey, this.flow.answers, this);
                     }
 
+                    var chatUserKey = ChatTools.messageToChatUserKey(userMessage);
                     if(this.useListeners) {
                         // Add listener for user and wait for answer
-                        control.addListener(userMessage, new Listener(msg, this.flow.callback, this));
+                        control.addListener(chatUserKey, new Listener(msg, this.flow.callback, this));
                     }
                     if(this.usePendingRequests) {
                         // Add listener for user and wait for answer
-                        control.addPendingRequest(userMessage, new PendingRequest(msg, this.flow.callback, this));
+                        control.addPendingRequest(chatUserKey, new PendingRequest(msg, this.flow.callback, this));
                     }
                 }
                 return;
@@ -313,27 +312,29 @@ class Question extends Step {
             control.questionAskedCallback(userId, answerKey, this.flow.answers, this);
         }
 
+        var chatUserKey = ChatTools.messageToChatUserKey(msg.message);
         if(this.useListeners) {
             // Add listener for single user and wait for answer
-            control.addListener(msg.message, new Listener(msg, this.flow.callback, this));
+            control.addListener(chatUserKey, new Listener(msg, this.flow.callback, this));
         }
         if(this.usePendingRequests) {
             // Add a pending request for single user and wait for answer
-            control.addPendingRequest(msg.message, new PendingRequest(msg, this.flow.callback, this));
+            control.addPendingRequest(chatUserKey, new PendingRequest(msg, this.flow.callback, this));
         }
     }
 
     // Clean up question if timed out or stopped
-    cleanup(msg) {
-        if(msg) {
-            this.flow.control.removeListener(msg);
-            this.flow.control.removePendingRequest(msg);
+    cleanup(chatUserKey) {
+        if(chatUserKey) {
+            this.flow.control.removeListener(chatUserKey);
+            this.flow.control.removePendingRequest(chatUserKey);
         }
         if(this.multiUserMessages != null) {
             for(let index in this.multiUserMessages) {
                 var userMessage = this.multiUserMessages[index];
-                this.flow.control.removeListener(userMessage);
-                this.flow.control.removePendingRequest(userMessage);
+                var chatUserKey = ChatTools.messageToChatUserKey(userMessage);
+                this.flow.control.removeListener(chatUserKey);
+                this.flow.control.removePendingRequest(chatUserKey);
             }
         }
     }
