@@ -30,42 +30,42 @@ class FuzzyAction extends Action {
         this.flowCallback = flowCallback;
         this.reset();
         this.askText(this.questionText);
+        this.flow.startSubFlow(this.innerFlow, false);
     }
 
-    askText(text) { // TODO Keep copy of active subflow and expand instead of replace on checkText(), askText(), showIndex() and showIndexOption()
+    askText(text) {
         Logger.debug("FuzzyAction::askText()", text);
+        this.createInnerFlow();
         var answerKey = this.getAnswerKey();
         var textAnswerKey = answerKey + "_text_" + this.textAttempts;
         this.steps.push(textAnswerKey);
         this.textAttempts++;
-        var askTextFlow = this.flow.createInstance()
-        .text(textAnswerKey, text, this.invalidText)
+        this.innerFlow.text(textAnswerKey, text, this.invalidText)
         .action((subFlowCallback) => {
             this.askedQuestions = true;
             this.checkText(textAnswerKey);
             subFlowCallback();
         });
-        this.flow.startSubFlow(askTextFlow, false);
     }
 
     showCandidates(candidates, text, askAgainOnDidNot) {
         Logger.debug("FuzzyAction::showCandidates() Candidates: " + candidates.length);
+        this.createInnerFlow();
         var answerKey = this.getAnswerKey();
         var candidateAnswerKey = answerKey + "_candidate_" + this.candidateAttempts;
         var candidateText = text || "";
         this.steps.push(candidateAnswerKey);
         this.candidateAttempts++;
-        var askDidMeanFlow = this.flow.createInstance()
-        .multiple(candidateAnswerKey, candidateText, this.invalidText);
+        this.innerFlow.multiple(candidateAnswerKey, candidateText, this.invalidText);
         for(let index in candidates) {
             var candidate = candidates[index];
             var name = candidate.name;
             var label = candidate.label;
             var style = candidate.style;
-            askDidMeanFlow.option(RegexTools.getOptionRegex(name))
+            this.innerFlow.option(RegexTools.getOptionRegex(name))
             .button(name, label, style);
         }
-        askDidMeanFlow.option(this.didNotRegex)
+        this.innerFlow.option(this.didNotRegex)
         .button(this.didNotButtonName, this.didNotButtonLabel, this.didNotButtonStyle)
         .action((subFlowCallback) => {
             var answerValue = this.flow.answers.get(candidateAnswerKey);
@@ -94,11 +94,11 @@ class FuzzyAction extends Action {
             this.done(null);
             subFlowCallback();
         });
-        this.flow.startSubFlow(askDidMeanFlow, false);
     }
 
     showIndex() {
         Logger.debug("FuzzyAction::showIndex()");
+        this.createInnerFlow();
         var letters = [];
         var availableOptions = [];
         for(let index in this.candidates) {
@@ -135,21 +135,19 @@ class FuzzyAction extends Action {
         var indexAnswerKey = answerKey + "_index_" + this.indexAttempts;
         this.steps.push(indexAnswerKey);
         this.indexAttempts++;
-        var indexFlow = this.flow.createInstance()
-        indexFlow.multiple(indexAnswerKey, this.indexText, this.invalidText)
+        this.innerFlow.multiple(indexAnswerKey, this.indexText, this.invalidText)
         for(let index in availableOptions) {
             var option = availableOptions[index];
             var label = option.toUpperCase();
             var style = "orange";
-            indexFlow.option(RegexTools.getOptionRegex(option))
+            this.innerFlow.option(RegexTools.getOptionRegex(option))
             .button(option, label, style);
         }
-        indexFlow.action((subFlowCallback) => {
+        this.innerFlow.action((subFlowCallback) => {
             var answerValue = this.flow.answers.get(indexAnswerKey);
             this.showIndexOption(answerValue);
             subFlowCallback();
         });
-        this.flow.startSubFlow(indexFlow, false);
     }
 
     showIndexOption(indexOption) {
@@ -363,6 +361,12 @@ class FuzzyAction extends Action {
 //        }
 
         this.flowCallback();
+    }
+
+    createInnerFlow() {
+        if(!this.innerFlow) {
+            this.innerFlow = this.flow.createInstance();
+        }
     }
 
     addCandidate(name, label, style, aliases, subFlow) {
