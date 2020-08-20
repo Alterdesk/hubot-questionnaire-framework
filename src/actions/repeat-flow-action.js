@@ -110,7 +110,9 @@ class RepeatFlowAction extends Action {
         }
         this.repeatFlow.setRepeatIteration(this.iteration);
         this.iteration++;
-        this.flow.startSubFlow(this.repeatFlow, false);
+        setImmediate(() => {
+            this.flow.startSubFlow(this.repeatFlow, false);
+        })
     }
 
     addCondition(condition) {
