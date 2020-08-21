@@ -49,8 +49,13 @@ class AnswerCondition extends Condition {
                 continue;
             }
             var answerValue = flow.answers.get(answerKey);
-            Logger.debug("AnswerCondition::check() Checking key: " + answerKey + " value: ", answerValue);
-            if(typeof answerValue === "object") {
+            var type = typeof answerValue;
+            var className = "";
+            if(answerValue && answerValue.constructor) {
+                className = answerValue.constructor.name;
+            }
+            Logger.debug("AnswerCondition::check() Checking key: " + answerKey + " type: " + type + " class: " + className + " value: ", answerValue);
+            if(type === "object" && className !== "Date") {
                 if(answerValue.length === 0) {
                     if(this.checkAnswer(checkKey, answerKey, null)) {
                         Logger.debug("AnswerCondition::check() Condition met: inverse: " + inverse + " condition:", this);
