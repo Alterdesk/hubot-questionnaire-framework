@@ -179,6 +179,9 @@ class Control {
                     }
                 } else if(event === "conversation_question_answer" || event === "groupchat_question_answer") {
                     var chatUserKey = ChatTools.messageToChatUserKey(message);
+                    if(this.hasPresenceTimeoutTimer(chatUserKey)) {
+                        this.removePresenceTimeoutTimer(chatUserKey);
+                    }
                     if(this.hasPendingRequest(chatUserKey)) {
                         var pendingRequest = this.removePendingRequest(chatUserKey);
                         pendingRequest.call(message);
@@ -223,6 +226,10 @@ class Control {
             } else if(className === "TextMessage" || message instanceof TextMessage) {
                 Logger.debug("Control::receive() TextMessage: \"" + message.text + "\"");
                 var chatUserKey = ChatTools.messageToChatUserKey(message);
+                if(this.hasPresenceTimeoutTimer(chatUserKey)) {
+                    this.removePresenceTimeoutTimer(chatUserKey);
+                }
+
                 // Check for listeners waiting for a message
                 if (this.hasListener(chatUserKey)) {
                     var listener = this.removeListener(chatUserKey);
@@ -323,7 +330,9 @@ class Control {
                     var chatUserKeys = this.getUserActiveChatUserKeys(userId);
                     for(let index in chatUserKeys) {
                         var chatUserKey = chatUserKeys[index];
-                        this.addPresenceTimeoutTimer(chatUserKey);
+                        if(!this.hasPresenceTimeoutTimer(chatUserKey)) {
+                            this.addPresenceTimeoutTimer(chatUserKey);
+                        }
                     }
                 }
             }
