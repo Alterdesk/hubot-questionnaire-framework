@@ -47,7 +47,7 @@ class CreateGroupAction extends Action {
             groupSettingsData.setCloseAfter(autoCloseAfterValue);
         }
         var autoExpireAfterValue = this.getAnswerValue(this.autoExpireAfter, answers);
-        if(autoCloseAfterValue != null) {
+        if(autoExpireAfterValue != null) {
             groupSettingsData.setExpireAfter(autoExpireAfterValue);
         }
         var hybridMessagingValue = this.getAnswerValue(this.hybridMessaging, answers);
