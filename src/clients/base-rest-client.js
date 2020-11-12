@@ -65,6 +65,16 @@ class BaseRestClient {
         this.customHeaders[key] = value;
     }
 
+    setErrorCallback(errorCallback) {
+        this.errorCallback = errorCallback;
+    }
+
+    sendError(err) {
+        if(this.errorCallback) {
+            this.errorCallback(err);
+        }
+    }
+
     http(path, method, data, overrideToken) {
         return new Promise(async (resolve) => {
             try {
@@ -155,6 +165,7 @@ class BaseRestClient {
 
                     res.on('error', (err) => {
                         Logger.error(this.loggerName + "::http() << " + path + ":", err);
+                        this.sendError(err);
                         resolve(result);
                     });
                 });
@@ -165,6 +176,7 @@ class BaseRestClient {
                 });
                 request.on('error', (err) => {
                     Logger.error(this.loggerName + "::http() << " + path + ":", err);
+                    this.sendError(err);
                     request.destroy();
                     resolve(null);
                 });
@@ -174,6 +186,7 @@ class BaseRestClient {
                 request.end();
             } catch(err) {
                 Logger.error(this.loggerName + "::http() << " + path + ":", err);
+                this.sendError(err);
                 resolve(null);
             }
         });

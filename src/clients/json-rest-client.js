@@ -17,6 +17,7 @@ class JsonRestClient extends BaseRestClient {
                 resolve(result);
             } catch(err) {
                 Logger.error("JsonRestClient::formatBody()", err);
+                this.sendError(err);
                 resolve(null);
             }
         });
@@ -29,6 +30,7 @@ class JsonRestClient extends BaseRestClient {
                 resolve(result);
             } catch(err) {
                 Logger.error("JsonRestClient::parse()", err);
+                this.sendError(err);
                 resolve(null);
             }
         });
