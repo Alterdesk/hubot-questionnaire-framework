@@ -14,6 +14,7 @@ class BotApi {
         this.timers = {};
         this.overrideCallbacks = {};
         this.startDate = DateTools.utcDate();
+        this.customStatsData = {};
 
         var useApi = parseInt(process.env.HUBOT_USE_API || 1);;
         if(useApi === 0) {
@@ -202,7 +203,14 @@ class BotApi {
         data["configured"] = this.isConfigured();
         data["questionnaires"] = this.control.getActiveQuestionnaires();
         data["start_date"] = this.startDate;
+        for(let key in this.customStatsData) {
+            data[key] = this.customStatsData[key];
+        }
         return data;
+    }
+
+    setCustomStat(key, value) {
+        this.customStatsData[key] = value;
     }
 
     getConfigured(req, res) {
