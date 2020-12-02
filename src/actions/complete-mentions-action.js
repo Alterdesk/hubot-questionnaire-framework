@@ -28,17 +28,21 @@ class CompleteMentionsAction extends Action {
         var chatId = this.flow.msg.message.room;
         var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
         var excludeIds;
-
-        if(question && !question.robotAllowed) {
+        if(!question || !question.robotAllowed) {
             excludeIds = [];
             excludeIds.push(this.flow.control.robotUserId);
         }
         Logger.debug("CompleteMentionsAction::start() Completing mention data");
-        var mentionedMembers = await this.flow.control.messengerClient.completeMentions(mentions, excludeIds, chatId, isGroup, false);
+        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+        var mentionedMembers = await this.flow.control.messengerClient.completeMentions(mentions, excludeIds, chatId, isGroup, false, overrideToken);
         if(mentionedMembers) {
             answers.add(this.answerKey, mentionedMembers);
         }
         flowCallback();
+    }
+
+    setOverrideToken(overrideToken) {
+        this.overrideToken = overrideToken;
     }
 }
 
