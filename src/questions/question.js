@@ -145,8 +145,12 @@ class Question extends Step {
                 for(let index in mentions) {
                     var mention = mentions[index];
                     var userId = mention["id"];
+                    if(typeof userId !== "string") {
+                        Logger.error("Question::execute() Invalid mention user id:", userId, mention);
+                        continue;
+                    }
                     if(userId.toUpperCase() === "@ALL") {
-                        Logger.error("Question::execute() Skipping @All tag");
+                        Logger.warn("Question::execute() Skipping @All tag");
                         continue;
                     }
                     if(userId) {
