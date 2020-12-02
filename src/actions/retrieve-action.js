@@ -26,7 +26,8 @@ class RetrieveAction extends Action {
             }
             var isGroupValue = this.getAnswerValue(this.isGroup, answers);
             var isAuxValue = this.getAnswerValue(this.isAux, answers);
-            var json = await this.flow.control.messengerClient.getChat(chatIdValue, isGroupValue, isAuxValue, this.overrideToken);
+            var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+            var json = await this.flow.control.messengerClient.getChat(chatIdValue, isGroupValue, isAuxValue, overrideToken);
             this.done(json);
             return;
         } else if(this.userId) {
@@ -37,7 +38,8 @@ class RetrieveAction extends Action {
                 return;
             }
             var isAuxValue = this.getAnswerValue(this.isAux, answers);
-            var json = await this.flow.control.messengerClient.getUser(userIdValue, isAuxValue, this.overrideToken);
+            var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+            var json = await this.flow.control.messengerClient.getUser(userIdValue, isAuxValue, overrideToken);
             this.done(json);
             return;
         } else {

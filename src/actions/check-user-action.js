@@ -25,8 +25,10 @@ class CheckUserAction extends Action {
             return;
         }
 
+        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+
         if(this.check === "BUSINESS") {
-            var json = await this.flow.control.messengerClient.getUser(userId, false, this.overrideToken);
+            var json = await this.flow.control.messengerClient.getUser(userId, false, overrideToken);
             if(!json) {
                 this.done(null);
                 return;
@@ -46,7 +48,7 @@ class CheckUserAction extends Action {
                 this.done(null);
                 return;
             }
-            var json = await this.flow.control.messengerClient.getUser(userId, false, this.overrideToken);
+            var json = await this.flow.control.messengerClient.getUser(userId, false, overrideToken);
             if(!json) {
                 this.done(null);
                 return;
@@ -54,7 +56,7 @@ class CheckUserAction extends Action {
             var coworker = json["company_id"] === robotCompany;
             this.done(coworker);
         } else if(this.check === "VERIFIED") {
-            var json = await this.flow.control.messengerClient.getUserVerifications(userId, this.overrideToken);
+            var json = await this.flow.control.messengerClient.getUserVerifications(userId, overrideToken);
             if(!json) {
                 this.done(null);
                 return;
