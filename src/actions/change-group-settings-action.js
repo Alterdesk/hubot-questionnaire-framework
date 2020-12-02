@@ -11,7 +11,7 @@ class ChangeGroupSettingsAction extends Action {
     }
 
     async start(flowCallback) {
-        this.answers = this.flow.answers;
+        var answers = this.flow.answers;
         this.flowCallback = flowCallback;
         if(!this.flow || !this.flow.msg || !this.flow.control) {
             Logger.error("ChangeGroupSettingsAction::start() Invalid Flow or Control");

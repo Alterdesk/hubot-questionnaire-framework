@@ -25,6 +25,7 @@ class CheckUserAction extends Action {
             return;
         }
 
+        var answers = this.flow.answers;
         var overrideToken = this.getAnswerValue(this.overrideToken, answers);
 
         if(this.check === "BUSINESS") {
