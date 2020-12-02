@@ -280,7 +280,7 @@ class MessengerClient extends JsonRestClient {
         return this.post(postUrl, postData, overrideToken);
     }
 
-    completeMentions(mentions, excludeIds, chatId, isGroup, isAux, overrideToken) {
+    completeMentions(mentions, excludeIds, chatId, isGroup, isAux) {
         return new Promise(async (resolve) => {
             try {
                 Logger.debug("MessengerClient::completeMentions()");
@@ -299,7 +299,7 @@ class MessengerClient extends JsonRestClient {
                         }
                         if(memberId.toUpperCase() === "@ALL") {
                             Logger.debug("MessengerClient::completeMentions() Retrieving group members");
-                            mentions = await this.getGroupMembers(chatId, isAux, overrideToken);
+                            mentions = await this.getGroupMembers(chatId, isAux);
                             if(!mentions) {
                                 Logger.error("MessengerClient::completeMentions() Invalid group members:", mentions);
                                 resolve(null);
@@ -321,7 +321,7 @@ class MessengerClient extends JsonRestClient {
                         continue;
                     }
                     if(!mention["first_name"] || !mention["last_name"]) {
-                        let memberJson = await this.getUser(memberId, false, overrideToken);
+                        let memberJson = await this.getUser(memberId);
                         if(memberJson) {
                             mentionedMembers.push(memberJson);
                         }

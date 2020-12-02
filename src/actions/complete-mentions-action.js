@@ -33,16 +33,11 @@ class CompleteMentionsAction extends Action {
             excludeIds.push(this.flow.control.robotUserId);
         }
         Logger.debug("CompleteMentionsAction::start() Completing mention data");
-        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
-        var mentionedMembers = await this.flow.control.messengerClient.completeMentions(mentions, excludeIds, chatId, isGroup, false, overrideToken);
+        var mentionedMembers = await this.flow.control.messengerClient.completeMentions(mentions, excludeIds, chatId, isGroup, false);
         if(mentionedMembers) {
             answers.add(this.answerKey, mentionedMembers);
         }
         flowCallback();
-    }
-
-    setOverrideToken(overrideToken) {
-        this.overrideToken = overrideToken;
     }
 }
 
