@@ -34,11 +34,12 @@ class DownloadAttachmentsAction extends Action {
             isGroup = this.getAnswerValue(this.isGroup, answers);
             isAux = this.getAnswerValue(this.isAux, answers);
         }
+        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
 
         var downloaded = 0;
         for(let i in attachments) {
             var attachment = attachments[i];
-            var filePath = await this.flow.control.messengerClient.downloadAttachment(attachment, chatId, isGroup, isAux, this.overrideToken);
+            var filePath = await this.flow.control.messengerClient.downloadAttachment(attachment, chatId, isGroup, isAux, overrideToken);
             if(filePath) {
                 answers.add(answerKey + "_file_path_" + i, filePath);
                 downloaded++;

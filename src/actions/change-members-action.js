@@ -48,10 +48,11 @@ class ChangeMembersAction extends Action {
             }
         }
 
+        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
         if(this.add) {
-            await this.flow.control.messengerClient.addGroupMembers(chatId, isAux, memberIds, this.overrideToken);
+            await this.flow.control.messengerClient.addGroupMembers(chatId, isAux, memberIds, overrideToken);
         } else {
-            await this.flow.control.messengerClient.removeGroupMembers(chatId, isAux, memberIds, this.overrideToken);
+            await this.flow.control.messengerClient.removeGroupMembers(chatId, isAux, memberIds, overrideToken);
         }
         flowCallback();
     }

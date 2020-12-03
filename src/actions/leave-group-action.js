@@ -38,8 +38,9 @@ class LeaveGroupAction extends Action {
             return;
         }
         var robotUserId = this.flow.control.robotUserId;
+        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
 
-        await this.flow.control.messengerClient.removeGroupMembers(chatId, isAux, [robotUserId], this.overrideToken);
+        await this.flow.control.messengerClient.removeGroupMembers(chatId, isAux, [robotUserId], overrideToken);
         flowCallback();
     }
 

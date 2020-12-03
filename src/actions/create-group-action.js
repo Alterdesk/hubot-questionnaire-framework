@@ -85,8 +85,9 @@ class CreateGroupAction extends Action {
 
         createGroupData.setSendEmail(this.getAnswerValue(this.sendEmail, answers, true));
         createGroupData.setAuxId(this.getAnswerValue(this.auxId, answers));
-        if(this.overrideToken) {
-            createGroupData.setOverrideToken(this.overrideToken);
+        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+        if(overrideToken) {
+            createGroupData.setOverrideToken(overrideToken);
         }
         var json = await this.flow.control.messengerClient.createGroup(createGroupData);
         this.done(json);

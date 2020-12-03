@@ -11,7 +11,7 @@ class ChangeGroupSettingsAction extends Action {
     }
 
     async start(flowCallback) {
-        this.answers = this.flow.answers;
+        var answers = this.flow.answers;
         this.flowCallback = flowCallback;
         if(!this.flow || !this.flow.msg || !this.flow.control) {
             Logger.error("ChangeGroupSettingsAction::start() Invalid Flow or Control");
@@ -67,8 +67,9 @@ class ChangeGroupSettingsAction extends Action {
             groupSettingsData.setMembersCanInvite(membersCanInviteValue);
         }
 
-        if(this.overrideToken) {
-            groupSettingsData.setOverrideToken(this.overrideToken);
+        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+        if(overrideToken) {
+            groupSettingsData.setOverrideToken(overrideToken);
         }
 
         await this.flow.control.messengerClient.changeGroupSettings(groupSettingsData);

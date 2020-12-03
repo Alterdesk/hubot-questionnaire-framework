@@ -39,8 +39,9 @@ class CloseGroupAction extends Action {
         }
 
         var sendEmail = this.getAnswerValue(this.sendEmail, answers, true);
+        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
 
-        await this.flow.control.messengerClient.closeGroupChat(chatId, isAux, sendEmail, this.overrideToken);
+        await this.flow.control.messengerClient.closeGroupChat(chatId, isAux, sendEmail, overrideToken);
         flowCallback();
     }
 

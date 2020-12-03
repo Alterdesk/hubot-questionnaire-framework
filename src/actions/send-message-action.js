@@ -71,8 +71,9 @@ class SendMessageAction extends Action {
             }
         }
 
-        if(this.overrideToken) {
-            sendMessageData.setOverrideToken(this.overrideToken);
+        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+        if(overrideToken) {
+            sendMessageData.setOverrideToken(overrideToken);
         }
 
         var json = await messengerClient.sendMessage(sendMessageData);

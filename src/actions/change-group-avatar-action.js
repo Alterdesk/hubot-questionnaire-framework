@@ -53,7 +53,8 @@ class ChangeGroupAvatarAction extends Action {
             flowCallback();
             return;
         }
-        await this.flow.control.messengerClient.changeGroupAvatar(chatId, isAux, avatarPath, this.overrideToken);
+        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+        await this.flow.control.messengerClient.changeGroupAvatar(chatId, isAux, avatarPath, overrideToken);
         flowCallback();
     }
 

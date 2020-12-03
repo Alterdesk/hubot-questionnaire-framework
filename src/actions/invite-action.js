@@ -57,6 +57,11 @@ class InviteAction extends Action {
         var sendEmailValue = this.getAnswerValue(this.sendEmail, answers, true);
         inviteUserData.setSendEmail(sendEmailValue);
 
+        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+        if(overrideToken) {
+            inviteUserData.setOverrideToken(overrideToken);
+        }
+
         var result = await this.flow.control.messengerClient.inviteUser(inviteUserData);
         this.done(result)
     }

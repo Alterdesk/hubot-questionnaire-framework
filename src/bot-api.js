@@ -1,4 +1,4 @@
-const {User, Message, TextMessage} = require('hubot');
+const {User, TextMessage} = require('hubot');
 const FileSystem = require('fs');
 const Path = require('path');
 const UuidV1 = require('uuid/v1');
@@ -46,40 +46,43 @@ class BotApi {
                 };
                 var https = require('https');
                 https.createServer(options, app).listen(port, host, () => {
-                    Logger.debug("BotApi::constructor() Started HTTPS schedule API server on port " + port);
+                    Logger.debug("BotApi::constructor() Started HTTPS bot API server on port " + port);
                 });
             } else {
                 var http = require('http');
                 http.createServer(app).listen(port, host, () => {
-                    Logger.debug("BotApi::constructor() Started HTTP schedule API server on port " + port);
+                    Logger.debug("BotApi::constructor() Started HTTP bot API server on port " + port);
                 });
             }
-        } else {
+        } else if(robot.router.use) {
             // Use Hubot default express instance
-            Logger.debug("BotApi::constructor() Using default Hubot HTTP server for schedule API");
+            Logger.debug("BotApi::constructor() Using default Hubot HTTP server for bot API");
             app = robot.router;
+        } else {
+            Logger.debug("BotApi::constructor() Not using HTTP server for bot API");
         }
 
-        app.get("/stats/configured", (req, res) => {this.getConfigured(req, res)});
-        app.get("/stats/connected", (req, res) => {this.getConnected(req, res)});
-        app.get("/stats/questionnaires", (req, res) => {this.getQuestionnaires(req, res)});
-        app.get("/stats/start_date", (req, res) => {this.getStartDate(req, res)});
-        app.get("/stats", (req, res) => {this.getStats(req, res)});
+        if(app) {
+            app.get("/stats/configured", (req, res) => {this.getConfigured(req, res)});
+            app.get("/stats/connected", (req, res) => {this.getConnected(req, res)});
+            app.get("/stats/questionnaires", (req, res) => {this.getQuestionnaires(req, res)});
+            app.get("/stats/start_date", (req, res) => {this.getStartDate(req, res)});
+            app.get("/stats", (req, res) => {this.getStats(req, res)});
 
-        app.get("/actions/stop", (req, res) => {this.getStop(req, res)});
-        app.get("/actions/kill", (req, res) => {this.getKill(req, res)});
+            app.get("/actions/stop", (req, res) => {this.getStop(req, res)});
+            app.get("/actions/kill", (req, res) => {this.getKill(req, res)});
 
-        app.get("/conversations/:chat_id/schedule/:event_id", (req, res) => {this.getEvent(req, res)});
-        app.get("/groupchats/:chat_id/schedule/:event_id", (req, res) => {this.getEvent(req, res)});
-        app.delete("/conversations/:chat_id/schedule/:event_id", (req, res) => {this.deleteEvent(req, res)});
-        app.delete("/groupchats/:chat_id/schedule/:event_id", (req, res) => {this.deleteEvent(req, res)});
-        app.post("/conversations/:chat_id/schedule", (req, res) => {this.postEvent(req, res)});
-        app.post("/groupchats/:chat_id/schedule", (req, res) => {this.postEvent(req, res)});
-        app.post("/conversations/:chat_id/trigger", (req, res) => {this.postTrigger(req, res)});
-        app.post("/groupchats/:chat_id/trigger", (req, res) => {this.postTrigger(req, res)});
+            app.get("/conversations/:chat_id/schedule/:event_id", (req, res) => {this.getEvent(req, res)});
+            app.get("/groupchats/:chat_id/schedule/:event_id", (req, res) => {this.getEvent(req, res)});
+            app.delete("/conversations/:chat_id/schedule/:event_id", (req, res) => {this.deleteEvent(req, res)});
+            app.delete("/groupchats/:chat_id/schedule/:event_id", (req, res) => {this.deleteEvent(req, res)});
+            app.post("/conversations/:chat_id/schedule", (req, res) => {this.postEvent(req, res)});
+            app.post("/groupchats/:chat_id/schedule", (req, res) => {this.postEvent(req, res)});
+            app.post("/conversations/:chat_id/trigger", (req, res) => {this.postTrigger(req, res)});
+            app.post("/groupchats/:chat_id/trigger", (req, res) => {this.postTrigger(req, res)});
+        }
 
         this.scheduleFilePath = process.env.HUBOT_ALTERDESK_FILE_PATH || Path.join(process.cwd(), 'schedule.json');
-        this.schedule;
         try {
             if (FileSystem.existsSync(this.scheduleFilePath)) {
                 this.schedule = JSON.parse(FileSystem.readFileSync(this.scheduleFilePath));

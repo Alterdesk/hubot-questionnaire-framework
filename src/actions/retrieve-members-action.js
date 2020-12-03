@@ -37,8 +37,9 @@ class RetrieveMembersAction extends Action {
             this.done(null);
             return;
         }
+        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
 
-        var json = await this.flow.control.messengerClient.getGroupMembers(chatId, isAux, this.overrideToken);
+        var json = await this.flow.control.messengerClient.getGroupMembers(chatId, isAux, overrideToken);
         this.done(json);
     }
 

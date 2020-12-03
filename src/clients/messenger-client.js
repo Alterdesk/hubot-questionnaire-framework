@@ -284,63 +284,52 @@ class MessengerClient extends JsonRestClient {
         return new Promise(async (resolve) => {
             try {
                 Logger.debug("MessengerClient::completeMentions()");
+                if(!mentions) {
+                    Logger.error("MessengerClient::completeMentions() Invalid mentions to complete:", mentions);
+                    resolve(null);
+                    return;
+                }
                 var mentionedMembers = [];
-                var userIds = [];
-                var mentionedAll = false;
-                for(var index in mentions) {
-                    var mention = mentions[index];
-                    var id = mention["id"];
-                    if(id.toUpperCase() === "@ALL") {
-                        mentionedAll = true;
-                        break;
+                if(isGroup) {
+                    for(let mention of mentions) {
+                        let memberId = mention["id"];
+                        if(typeof memberId !== "string") {
+                            Logger.error("MessengerClient::completeMentions() Invalid mention user id:", memberId, mention);
+                            continue;
+                        }
+                        if(memberId.toUpperCase() === "@ALL") {
+                            Logger.debug("MessengerClient::completeMentions() Retrieving group members");
+                            mentions = await this.getGroupMembers(chatId, isAux);
+                            if(!mentions) {
+                                Logger.error("MessengerClient::completeMentions() Invalid group members:", mentions);
+                                resolve(null);
+                                return;
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                for(let mention of mentions) {
+                    let memberId = mention["id"];
+                    if(typeof memberId !== "string") {
+                        Logger.error("MessengerClient::completeMentions() Invalid mention user id:", memberId, mention);
+                        continue;
+                    }
+                    if(excludeIds != null && excludeIds.includes(memberId)) {
+                        Logger.debug("MessengerClient::completeMentions() Excluded user as mention:", memberId);
+                        continue;
                     }
                     if(!mention["first_name"] || !mention["last_name"]) {
-                        var exclude = false;
-                        if(excludeIds != null) {
-                            for(var i in excludeIds) {
-                                if(mention["id"] === excludeIds[i]) {
-                                    exclude = true;
-                                    break;
-                                }
-                            }
-                            if(exclude) {
-                                continue;
-                            }
+                        let memberJson = await this.getUser(memberId);
+                        if(memberJson) {
+                            mentionedMembers.push(memberJson);
                         }
-                        userIds.push(id);
                     } else {
                         mentionedMembers.push(mention);
                     }
                 }
-                if(mentionedAll && isGroup) {
-                    var json = await this.getGroupMembers(chatId, isAux);
-                    if(json) {
-                        for(var index in json) {
-                            var member = json[index];
-                            var exclude = false;
-                            if(excludeIds != null) {
-                                for(var i in excludeIds) {
-                                    if(member["id"] === excludeIds[i]) {
-                                        exclude = true;
-                                        break;
-                                    }
-                                }
-                                if(exclude) {
-                                    Logger.debug("MessengerClient::completeMentions() Ignored message user member as mention");
-                                    continue;
-                                }
-                            }
-                            mentionedMembers.push(member);
-                        }
-                    }
-                } else if(userIds.length > 0) {
-                    for(var index in userIds) {
-                        var json = await this.getUser(userIds[index]);
-                        if(json) {
-                            mentionedMembers.push(json);
-                        }
-                    }
-                }
+
                 resolve(mentionedMembers);
             } catch(err) {
                 Logger.error(err);

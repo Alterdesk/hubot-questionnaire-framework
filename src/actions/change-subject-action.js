@@ -49,7 +49,8 @@ class ChangeSubjectAction extends Action {
             flowCallback();
             return;
         }
-        await this.flow.control.messengerClient.changeGroupSubject(chatId, isAux, subjectValue, this.overrideToken);
+        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+        await this.flow.control.messengerClient.changeGroupSubject(chatId, isAux, subjectValue, overrideToken);
         flowCallback();
     }
 
