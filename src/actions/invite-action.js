@@ -63,14 +63,17 @@ class InviteAction extends Action {
         }
 
         var result = await this.flow.control.messengerClient.inviteUser(inviteUserData);
-        this.done(result)
+        if(!result) {
+            this.done(null);
+            return;
+        }
+        this.done(result["id"])
     }
 
     done(value) {
         var answerKey = this.getAnswerKey();
         if(answerKey && value != null) {
             this.flow.answers.add(answerKey, value);
-            this.flow.answers.addObject(answerKey, value);
         }
         if(value) {
             if(this.positiveSubFlow) {
