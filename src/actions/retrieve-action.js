@@ -93,6 +93,14 @@ class RetrieveAction extends Action {
                     answers.add(answerKey + "_members", members.length);
                     answers.add(answerKey + "_member_ids", memberIds);
                 }
+                var dialInInfo = value["dial_in_info"];
+                if(dialInInfo) {
+                    answers.addObject(answerKey + "_dial_in_info", dialInInfo);
+                }
+                var guestAccess = value["guest_access"];
+                if(guestAccess) {
+                    answers.addObject(answerKey + "_guest_access", guestAccess);
+                }
             } else if(this.userId) {
                 answers.addObject(answerKey, value);
             }
