@@ -11,7 +11,7 @@ class RetrieveAction extends Action {
     async start(flowCallback) {
         this.flowCallback = flowCallback;
         if(!this.flow || !this.flow.msg || !this.flow.control) {
-            Logger.error("RetrieveAction::start() Invalid Flow or Control");
+            this.onError("RetrieveAction::start() Invalid Flow or Control");
             this.done(null);
             return;
         }
@@ -20,7 +20,7 @@ class RetrieveAction extends Action {
         if(this.chatId) {
             var chatIdValue = this.getAnswerValue(this.chatId, answers);
             if(!chatIdValue) {
-                Logger.error("RetrieveAction::start() Invalid chat id");
+                this.onError("RetrieveAction::start() Invalid chat id");
                 this.done(null);
                 return;
             }
@@ -33,7 +33,7 @@ class RetrieveAction extends Action {
         } else if(this.userId) {
             var userIdValue = this.getAnswerValue(this.userId, answers);
             if(!userIdValue) {
-                Logger.error("RetrieveAction::start() Invalid user id");
+                this.onError("RetrieveAction::start() Invalid user id");
                 this.done(null);
                 return;
             }
@@ -43,7 +43,7 @@ class RetrieveAction extends Action {
             this.done(json);
             return;
         } else {
-            Logger.error("RetrieveAction::start() Invalid retrieve data");
+            this.onError("RetrieveAction::start() Invalid retrieve data");
             this.done(null);
             return;
         }

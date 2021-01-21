@@ -21,13 +21,13 @@ class GenerateNumberAction extends Action {
         var min = this.getAnswerValue(this.min, answers, 0);
         var max = this.getAnswerValue(this.max, answers, Number.MAX_SAFE_INTEGER);
         if(min >= max) {
-            Logger.error("GenerateNumberAction::start() Invalid range: min: " + min + " max: " + max);
+            this.onError("GenerateNumberAction::start() Invalid range: min: " + min + " max: " + max);
             flowCallback();
             return;
         }
         Logger.debug("GenerateNumberAction::start() Using range: min: " + min + " max: " + max);
 
-        var num = this.generate(min, max);
+        this.generate(min, max);
         while(!this.checkNumberConditions()) {
             this.failOperations++;
             if(this.failOperations < this.maxFailOperations) {

@@ -18,7 +18,7 @@ class InviteAction extends Action {
         var answers = this.flow.answers;
         this.flowCallback = flowCallback;
         if(!this.flow || !this.flow.msg || !this.flow.control) {
-            Logger.error("InviteAction::start() Invalid Flow or Control");
+            this.onError("InviteAction::start() Invalid Flow or Control");
             this.done(null);
             return;
         }
@@ -31,7 +31,7 @@ class InviteAction extends Action {
             || !emailValue || emailValue === ""
             || !firstNameValue || firstNameValue === ""
             || !lastNameValue || lastNameValue === "") {
-            Logger.error("InviteAction::start() Invalid invite: type:" + inviteTypeValue + " email:" + emailValue + " fistName:" + firstNameValue + " lastName: " + lastNameValue);
+            this.onError("InviteAction::start() Invalid invite: type:" + inviteTypeValue + " email:" + emailValue + " fistName:" + firstNameValue + " lastName: " + lastNameValue);
             this.done(null);
             return;
         }

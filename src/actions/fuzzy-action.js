@@ -90,7 +90,7 @@ class FuzzyAction extends Action {
                     return;
                 }
             }
-            Logger.error("FuzzyAction::showCandidates() Unable to find matching candidate: ", answerValue)
+            this.onError("FuzzyAction::showCandidates() Unable to find matching candidate: ", answerValue)
             this.done(null);
             subFlowCallback();
         });

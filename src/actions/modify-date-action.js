@@ -25,14 +25,14 @@ class ModifyDateAction extends Action {
         }
         var timeValue = this.getAnswerValue(this.timeValue, answers);
         if(timeValue < 0) {
-            Logger.error("ModifyDateAction::start() Invalid time value:", timeValue);
+            this.onError("ModifyDateAction::start() Invalid time value:", timeValue);
             flowCallback();
             return;
         }
         var timeScale = this.getAnswerValue(this.timeScale, answers);
         var useScale = DateTools.getTimeScale(timeScale);
         if(!useScale) {
-            Logger.error("ModifyDateAction::start() Invalid time scale:", timeScale);
+            this.onError("ModifyDateAction::start() Invalid time scale:", timeScale);
             flowCallback();
             return;
         }
@@ -47,14 +47,14 @@ class ModifyDateAction extends Action {
         if(this.dateConditions.length > 0) {
             var failTimeValue = this.getAnswerValue(this.failTimeValue, answers);
             if(failTimeValue < 1) {
-                Logger.error("ModifyDateAction::start() Invalid fail time value:", failTimeValue);
+                this.onError("ModifyDateAction::start() Invalid fail time value:", failTimeValue);
                 flowCallback();
                 return;
             }
             var failTimeScale = this.getAnswerValue(this.failTimeScale, answers);
             var useFailScale = DateTools.getTimeScale(failTimeScale);
             if(!useFailScale) {
-                Logger.error("ModifyDateAction::start() Invalid fail time scale:", failTimeScale);
+                this.onError("ModifyDateAction::start() Invalid fail time scale:", failTimeScale);
                 flowCallback();
                 return;
             }
@@ -62,7 +62,7 @@ class ModifyDateAction extends Action {
             while(!this.checkDateConditions()) {
                 this.failOperations++;
                 if(this.failOperations >= this.maxFailOperations) {
-                    Logger.error("ModifyDateAction::start() Maximum fail operations reached:", this.maxFailOperations);
+                    Logger.warn("ModifyDateAction::start() Maximum fail operations reached:", this.maxFailOperations);
                     if(this.failFlow) {
                         this.setSubFlow(this.failFlow);
                     }
@@ -88,7 +88,7 @@ class ModifyDateAction extends Action {
             } else if(operation === "SUBTRACT") {
                 moment.subtract(timeValue, timeScale);
             } else {
-                Logger.error("ModifyDateAction::doOperation() Invalid operation: " + operation);
+                this.onError("ModifyDateAction::doOperation() Invalid operation: " + operation);
                 return false;
             }
         }

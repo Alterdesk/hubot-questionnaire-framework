@@ -18,7 +18,7 @@ class CreateGroupAction extends Action {
     async start(flowCallback) {
         this.flowCallback = flowCallback;
         if(!this.flow || !this.flow.msg || !this.flow.control) {
-            Logger.error("CreateGroupAction::start() Invalid Flow or Control");
+            this.onError("CreateGroupAction::start() Invalid Flow or Control");
             this.done(null);
             return;
         }
@@ -29,7 +29,7 @@ class CreateGroupAction extends Action {
             subjectValue = formatter.execute(subjectValue, this.flow);
         }
         if(!subjectValue || subjectValue === "") {
-            Logger.error("CreateGroupAction::start() Invalid subject:" + subjectValue);
+            this.onError("CreateGroupAction::start() Invalid subject:" + subjectValue);
             this.done(null);
             return;
         }

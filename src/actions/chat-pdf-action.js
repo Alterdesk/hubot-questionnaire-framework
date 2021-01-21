@@ -28,7 +28,7 @@ class ChatPdfAction extends Action {
         }
         filename = StringTools.safeFilename(filename);
         if(!filename || filename.length === 0) {
-            Logger.error("ChatPdfAction::start() Invalid filename:", this.filename);
+            this.onError("ChatPdfAction::start() Invalid filename:", this.filename);
             if(this.errorMessage && this.errorMessage.length > 0) {
                 this.flow.msg.send(this.errorMessage);
             }
@@ -42,7 +42,7 @@ class ChatPdfAction extends Action {
         var sourceChatId = msg.message.room;
         var sourceIsGroup = ChatTools.isUserInGroup(msg.message.user);
         if(!sourceChatId) {
-            Logger.error("ChatPdfAction::start() Invalid source chat id");
+            this.onError("ChatPdfAction::start() Invalid source chat id");
             flowCallback();
             return;
         }
@@ -60,7 +60,7 @@ class ChatPdfAction extends Action {
             destinationIsAux = false;
         }
         if(!destinationChatId) {
-            Logger.error("ChatPdfAction::start() Invalid destination chat id");
+            this.onError("ChatPdfAction::start() Invalid destination chat id");
             flowCallback();
             return;
         }
@@ -76,7 +76,7 @@ class ChatPdfAction extends Action {
 
         var filePath = await messengerClient.downloadChatPdf(filename, startDate, endDate, sourceChatId, sourceIsGroup, false);
         if(!filePath) {
-            Logger.error("ChatPdfAction::start() Unable to generate PDF");
+            this.onError("ChatPdfAction::start() Unable to generate PDF: chatId: " + sourceChatId + " isGroup: " + sourceIsGroup);
             if(this.answerKey) {
                 answers.add(this.answerKey, false);
             }
@@ -108,7 +108,7 @@ class ChatPdfAction extends Action {
         if(messageSuccess) {
             Logger.debug("ChatPdfAction::start() PDF message sent successfully");
         } else {
-            Logger.error("ChatPdfAction::start() Unable to send PDF");
+            this.onError("ChatPdfAction::start() Unable to send PDF");
             if(this.errorMessage && this.errorMessage.length > 0) {
                 this.flow.msg.send(this.errorMessage);
             }

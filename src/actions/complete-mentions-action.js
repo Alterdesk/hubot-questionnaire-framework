@@ -13,7 +13,7 @@ class CompleteMentionsAction extends Action {
 
     async start(flowCallback) {
         if(!this.flow.msg || !this.flow.control) {
-            Logger.error("CompleteMentionsAction::start() Invalid Flow or Control");
+            this.onError("CompleteMentionsAction::start() Invalid Flow or Control");
             flowCallback();
             return;
         }

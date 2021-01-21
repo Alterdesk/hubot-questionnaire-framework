@@ -12,7 +12,7 @@ class RetrieveMembersAction extends Action {
     async start(flowCallback) {
         this.flowCallback = flowCallback;
         if(!this.flow || !this.flow.msg || !this.flow.control) {
-            Logger.error("RetrieveMembersAction::start() Invalid Flow or Control");
+            this.onError("RetrieveMembersAction::start() Invalid Flow or Control");
             this.done(null);
             return;
         }
@@ -25,7 +25,7 @@ class RetrieveMembersAction extends Action {
         } else {
             var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
-                Logger.error("RetrieveMembersAction::start() Not a group chat");
+                Logger.warn("RetrieveMembersAction::start() Not a group chat");
                 flowCallback();
                 return;
             }
@@ -33,7 +33,7 @@ class RetrieveMembersAction extends Action {
             isAux = false;
         }
         if(!chatId) {
-            Logger.error("RetrieveMembersAction::start() Invalid chat id");
+            this.onError("RetrieveMembersAction::start() Invalid chat id");
             this.done(null);
             return;
         }

@@ -14,7 +14,7 @@ class ChangeGroupSettingsAction extends Action {
         var answers = this.flow.answers;
         this.flowCallback = flowCallback;
         if(!this.flow || !this.flow.msg || !this.flow.control) {
-            Logger.error("ChangeGroupSettingsAction::start() Invalid Flow or Control");
+            this.onError("ChangeGroupSettingsAction::start() Invalid Flow or Control");
             flowCallback();
             return;
         }
@@ -27,7 +27,7 @@ class ChangeGroupSettingsAction extends Action {
         } else {
             var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
-                Logger.error("ChangeGroupSettingsAction::start() Not a group chat");
+                Logger.warn("ChangeGroupSettingsAction::start() Not a group chat");
                 flowCallback();
                 return;
             }
@@ -36,7 +36,7 @@ class ChangeGroupSettingsAction extends Action {
         }
 
         if(!chatId) {
-            Logger.error("ChangeGroupSettingsAction::start() Invalid chat id");
+            this.onError("ChangeGroupSettingsAction::start() Invalid chat id");
             flowCallback();
             return;
         }
