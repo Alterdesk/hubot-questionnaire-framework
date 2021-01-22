@@ -39,9 +39,10 @@ class Action extends Step {
     }
 
     onError() {
-        Logger.error(arguments);
+        let errorMessage = Logger.argumentsToString(arguments);
+        Logger.error(errorMessage);
         if(this.errorCallback) {
-            this.errorCallback(arguments);
+            this.errorCallback(errorMessage);
         }
     }
 
