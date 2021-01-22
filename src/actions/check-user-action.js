@@ -13,14 +13,14 @@ class CheckUserAction extends Action {
     async start(flowCallback) {
         this.flowCallback = flowCallback;
         if(!this.flow || !this.flow.msg || !this.flow.control) {
-            Logger.error("CheckUserAction::start() Invalid Flow or Control");
+            this.onError("CheckUserAction::start() Invalid Flow or Control");
             this.done(null);
             return;
         }
 
         var userId = ChatTools.getUserId(this.flow.msg.message.user);
-        if(!userId || userId.length == 0) {
-            Logger.error("CheckUserAction::start() Invalid user id:", userId);
+        if(!userId || userId.length === 0) {
+            this.onError("CheckUserAction::start() Invalid user id:", userId);
             this.done(null);
             return;
         }
@@ -39,13 +39,13 @@ class CheckUserAction extends Action {
         } else if(this.check === "COWORKER") {
             var robotUser = this.flow.control.robotUser;
             if(!robotUser) {
-                Logger.error("CheckUserAction::start() Robot user invalid:", robotUser);
+                this.onError("CheckUserAction::start() Robot user invalid:", robotUser);
                 this.done(null);
                 return;
             }
             var robotCompany = robotUser["company_id"];
             if(!robotCompany || robotCompany.length === 0) {
-                Logger.error("CheckUserAction::start() Robot company id invalid:", robotCompany);
+                this.onError("CheckUserAction::start() Robot company id invalid:", robotCompany);
                 this.done(null);
                 return;
             }
@@ -81,7 +81,7 @@ class CheckUserAction extends Action {
             this.done(null);
             return;
         } else {
-            Logger.error("CheckUserAction::start() Unknown check:", this.check);
+            this.onError("CheckUserAction::start() Unknown check:", this.check);
             this.done(null);
         }
     }

@@ -43,7 +43,7 @@ class SendMessageAction extends Action {
             messageText = formatter.execute(messageText, this.flow);
         }
         if(!messageText || messageText === "") {
-            Logger.error("SendMessageAction::start() Invalid message text:", messageText);
+            this.onError("SendMessageAction::start() Invalid message text:", messageText);
             flowCallback();
             return;
         }
@@ -59,14 +59,14 @@ class SendMessageAction extends Action {
                 var attachmentPath = this.getAnswerValue(this.attachmentPaths[index], answers);
                 Logger.debug("SendMessageAction::start() Got attachment path:", attachmentPath);
                 if(typeof attachmentPath !== "string") {
-                    Logger.error("SendMessageAction::start() Invalid attachment path:", attachmentPath);
+                    this.onError("SendMessageAction::start() Invalid attachment path:", attachmentPath);
                     continue;
                 }
                 if(attachmentPath.match(filePathRegex)) {
                     Logger.debug("SendMessageAction::start() Adding attachment path:", attachmentPath);
                     sendMessageData.addAttachmentPath(attachmentPath);
                 } else {
-                    Logger.error("SendMessageAction::start() Illegal attachment path:", attachmentPath);
+                    this.onError("SendMessageAction::start() Illegal attachment path:", attachmentPath);
                 }
             }
         }
@@ -80,7 +80,7 @@ class SendMessageAction extends Action {
         if(json) {
             Logger.debug("SendMessageAction::start() Message sent successfully");
         } else {
-            Logger.error("SendMessageAction::start() Unable to send message");
+            this.onError("SendMessageAction::start() Unable to send message");
         }
         flowCallback();
     }

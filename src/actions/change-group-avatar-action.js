@@ -15,7 +15,7 @@ class ChangeGroupAvatarAction extends Action {
         var answers = this.flow.answers;
         this.flowCallback = flowCallback;
         if(!this.flow || !this.flow.msg || !this.flow.control) {
-            Logger.error("ChangeGroupAvatarAction::start() Invalid Flow or Control");
+            this.onError("ChangeGroupAvatarAction::start() Invalid Flow or Control");
             flowCallback();
             return;
         }
@@ -23,12 +23,12 @@ class ChangeGroupAvatarAction extends Action {
         var avatarPath = this.getAnswerValue(this.avatarPath, answers);
 
         if(!avatarPath || avatarPath === "") {
-            Logger.error("ChangeGroupAvatarAction::start() Invalid avatar path:", avatarPath);
+            this.onError("ChangeGroupAvatarAction::start() Invalid avatar path:", avatarPath);
             flowCallback();
             return;
         }
         if(!avatarPath.match(RegexTools.getFilePathRegex())) {
-            Logger.error("ChangeGroupAvatarAction::start() Illegal avatar path:", avatarPath);
+            this.onError("ChangeGroupAvatarAction::start() Illegal avatar path:", avatarPath);
             flowCallback();
             return;
         }
@@ -41,7 +41,7 @@ class ChangeGroupAvatarAction extends Action {
         } else {
             var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
-                Logger.error("ChangeGroupAvatarAction::start() Not a group chat");
+                Logger.warn("ChangeGroupAvatarAction::start() Not a group chat");
                 flowCallback();
                 return;
             }
@@ -49,7 +49,7 @@ class ChangeGroupAvatarAction extends Action {
             isAux = false;
         }
         if(!chatId) {
-            Logger.error("ChangeGroupAvatarAction::start() Invalid chat id");
+            this.onError("ChangeGroupAvatarAction::start() Invalid chat id");
             flowCallback();
             return;
         }

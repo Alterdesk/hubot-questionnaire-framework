@@ -12,7 +12,7 @@ class DownloadAttachmentsAction extends Action {
 
     async start(flowCallback) {
         if(!this.flow || !this.flow.msg || !this.flow.control) {
-            Logger.error("DownloadAttachmentsAction::start() Invalid Flow or Control");
+            this.onError("DownloadAttachmentsAction::start() Invalid Flow or Control");
             flowCallback();
             return;
         }
@@ -46,7 +46,7 @@ class DownloadAttachmentsAction extends Action {
             }
         }
         if(downloaded === 0) {
-            Logger.error("DownloadAttachmentsAction::start() No attachments downloaded");
+            this.onError("DownloadAttachmentsAction::start() No attachments downloaded");
         } else {
             Logger.debug("DownloadAttachmentsAction::start() Downloaded " + downloaded + " attachments");
         }

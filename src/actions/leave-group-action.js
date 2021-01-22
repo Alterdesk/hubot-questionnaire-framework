@@ -12,7 +12,7 @@ class LeaveGroupAction extends Action {
 
     async start(flowCallback) {
         if(!this.flow || !this.flow.msg || !this.flow.control) {
-            Logger.error("LeaveGroupAction::start() Invalid Flow or Control");
+            this.onError("LeaveGroupAction::start() Invalid Flow or Control");
             flowCallback();
             return;
         }
@@ -25,7 +25,7 @@ class LeaveGroupAction extends Action {
         } else {
             var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
-                Logger.error("LeaveGroupAction::start() Not a group chat");
+                Logger.warn("LeaveGroupAction::start() Not a group chat");
                 flowCallback();
                 return;
             }
@@ -33,7 +33,7 @@ class LeaveGroupAction extends Action {
             isAux = false;
         }
         if(!chatId) {
-            Logger.error("LeaveGroupAction::start() Invalid chat id");
+            this.onError("LeaveGroupAction::start() Invalid chat id");
             flowCallback();
             return;
         }

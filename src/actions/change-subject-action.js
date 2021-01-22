@@ -13,7 +13,7 @@ class ChangeSubjectAction extends Action {
 
     async start(flowCallback) {
         if(!this.flow || !this.flow.msg || !this.flow.control) {
-            Logger.error("ChangeSubjectAction::start() Invalid Flow or Control");
+            this.onError("ChangeSubjectAction::start() Invalid Flow or Control");
             flowCallback();
             return;
         }
@@ -24,7 +24,7 @@ class ChangeSubjectAction extends Action {
             subjectValue = formatter.execute(subjectValue, this.flow);
         }
         if(!subjectValue || subjectValue === "") {
-            Logger.error("ChangeSubjectAction::start() Invalid subject:" + subjectValue);
+            this.onError("ChangeSubjectAction::start() Invalid subject:" + subjectValue);
             flowCallback();
             return;
         }
@@ -37,7 +37,7 @@ class ChangeSubjectAction extends Action {
         } else {
             var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
-                Logger.error("ChangeSubjectAction::start() Not a group chat");
+                Logger.warn("ChangeSubjectAction::start() Not a group chat");
                 flowCallback();
                 return;
             }
@@ -45,7 +45,7 @@ class ChangeSubjectAction extends Action {
             isAux = false;
         }
         if(!chatId) {
-            Logger.error("ChangeSubjectAction::start() Invalid chat id");
+            this.onError("ChangeSubjectAction::start() Invalid chat id");
             flowCallback();
             return;
         }
