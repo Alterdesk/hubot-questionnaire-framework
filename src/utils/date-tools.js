@@ -205,7 +205,7 @@ class DateTools {
         return HOUR_IN_MS;
     }
 
-    static getMinuteMs() {
+    static getMinuteInMs() {
         return MINUTE_IN_MS;
     }
 
