@@ -212,7 +212,6 @@ class Control {
                         }
                     }
                     if(this.groupMemberCallback) {
-                        var data = message.id;
                         this.groupMemberCallback(chatId, added, userId, users);
                     }
                 } else if(event === "groupchat_subscribed" || event === "groupchat_unsubscribed") {
