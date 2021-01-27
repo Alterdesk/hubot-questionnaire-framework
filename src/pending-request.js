@@ -50,11 +50,11 @@ class PendingRequest {
                 if(responseMessage.id && responseMessage.id["options"]) {
                     var options = responseMessage.id["options"];
                     var optionText = "";
-                    for(let index in options) {
+                    for(let option of options) {
                         if(optionText.length > 0) {
                             optionText += "|";
                         }
-                        optionText += options[index];
+                        optionText += option;
                     }
                     text = optionText;
                 }

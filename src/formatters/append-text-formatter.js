@@ -28,8 +28,7 @@ class AppendTextFormatter extends Formatter {
         if(this.suffixText && this.suffixText.length > 0) {
             result = result + this.suffixText;
         }
-        for(let i in this.formatters) {
-            var formatter = this.formatters[i];
+        for(let formatter of this.formatters) {
             formatter.setEscapeHtml(this.escapeHtml);
             result = formatter.execute(result, flow);
         }

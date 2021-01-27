@@ -43,8 +43,8 @@ class VerificationQuestion extends Question {
         if(this.isMultiUser && this.userIds && this.userIds.length > 0) {
             let remainingUserIds = this.getRemainingUserIds();
             if(remainingUserIds && remainingUserIds.length > 0) {
-                for(let index in remainingUserIds) {
-                    this.sendForUserId(callback, remainingUserIds[index]);
+                for(let userId of remainingUserIds) {
+                    this.sendForUserId(callback, userId);
                 }
             } else {
                 Logger.error("VerificationQuestion:send() Got no remaining user ids for multi-user question: " + this.answerKey);
@@ -65,8 +65,7 @@ class VerificationQuestion extends Question {
             return;
         }
         var providerId;
-        for(let i in providerJson) {
-            var provider = providerJson[i];
+        for(let provider of providerJson) {
             if(provider["name"] === this.provider) {
                 providerId = provider["provider_id"];
                 break;
@@ -97,8 +96,7 @@ class VerificationQuestion extends Question {
             }
             var isVerified = false;
             var userVerifications = verificationsJson["user"];
-            for(let i in userVerifications) {
-                var verification = userVerifications[i];
+            for(let verification of userVerifications) {
                 if(verification["name"] === this.provider) {
                     isVerified = true;
                     break;
@@ -106,11 +104,10 @@ class VerificationQuestion extends Question {
             }
             if(isVerified) {
                 this.setSubFlow(this.verifiedSubFlow);
-                this.flow.onAnswer(msg, this, true);
+                this.flow.onAnswer(this.flow.msg, this, true);
             } else {
                 Logger.error("VerificationQuestion:sendForUserId() Provider not available for user and not verified: provider: " + this.provider + " user: " + userId);
                 this.flow.stop(true, true);
-                return;
             }
         }
     }

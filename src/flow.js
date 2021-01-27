@@ -744,7 +744,7 @@ class Flow {
         }
         var condition = new AnswerCondition();
         condition.addKey(answerKey);
-        condition.setValue(answerKey, answerValue);
+        condition.addValue(answerKey, answerValue);
         this.lastAddedAction.addCondition(condition);
         return this;
     }
@@ -858,8 +858,7 @@ class Flow {
                 var preAnswers = msg.message.answers;
                 var keys = preAnswers.keys();
                 if(keys) {
-                    for(let index in keys) {
-                        var key = keys[index];
+                    for(let key of keys) {
                         answers.add(key, preAnswers.get(key))
                     }
                 }
@@ -894,7 +893,7 @@ class Flow {
                 var chatUserKey = ChatTools.messageToChatUserKey(response.message);
                 question.cleanup(chatUserKey);
                 // Send back text message if set
-                if(flow.backText && flow.backText != "") {
+                if(flow.backText && flow.backText !== "") {
                     response.send(flow.backText)
                 }
                 setTimeout(() => {
@@ -916,7 +915,7 @@ class Flow {
                 var chatUserKey = ChatTools.messageToChatUserKey(response.message);
                 question.cleanup(chatUserKey);
                 // Send checkpoint text message if set
-                if(flow.checkpointText && flow.checkpointText != "") {
+                if(flow.checkpointText && flow.checkpointText !== "") {
                     response.send(flow.checkpointText)
                 }
                 setTimeout(() => {
@@ -945,7 +944,7 @@ class Flow {
                 if(question.resendOnInvalid) {
                     response.send(question.invalidText);
                     setTimeout(() => {
-                        question.send(flow.control, response, this.callback);
+                        question.send();
                     }, flow.control.typingDelayMs);
                 } else {
                     var chatUserKey = ChatTools.messageToChatUserKey(response.message);
@@ -959,9 +958,7 @@ class Flow {
             }
             flow.onAnswer(response, question, answerValue);
         } else if(listenerOrPendingRequest instanceof PendingRequest) {
-            var pendingRequest = listenerOrPendingRequest;
-
-            var answerValue = question.checkAndParseAnswer(pendingRequest.matches, response.message);
+            var answerValue = question.checkAndParseAnswer(listenerOrPendingRequest.matches, response.message);
             if(answerValue == null) {
                 Logger.debug("Flow::callback() No valid answer value from pending request or wrong request message id, resetting pending request");
                 var chatUserKey = ChatTools.messageToChatUserKey(response.message);
@@ -1019,8 +1016,8 @@ class Flow {
             }
 
             var answerCount = 0;
-            for(let index in question.userIds) {
-                if(multiAnswers.get(question.userIds[index]) != null) {
+            for(let userId of question.userIds) {
+                if(multiAnswers.get(userId) != null) {
                     answerCount++;
                 }
             }
@@ -1046,7 +1043,7 @@ class Flow {
             } else if(question.breakOnRegex != null && answerValue.match(question.breakOnRegex) != null) {
                 breaking = true;
                 stopping = question.stopOnBreak;
-            } else if(question.breakOnCount != null && answerCount != question.userIds.length && answerCount >= question.breakOnCount) {
+            } else if(question.breakOnCount != null && answerCount !== question.userIds.length && answerCount >= question.breakOnCount) {
                 breaking = true;
             }
 
@@ -1127,7 +1124,7 @@ class Flow {
             return;
         }
         Logger.info("Flow::questionExecute() answerKey: \"" + question.getAnswerKey() + "\"");
-        question.execute(this.control, this.msg, this.callback, this.answers);
+        question.execute();
     }
 
     questionStop(question) {
@@ -1253,8 +1250,7 @@ class Flow {
         }
         Logger.info("Flow::stop()", this.name);
         this.isRunning = false;
-        for(let index in this.steps) {
-            var step = this.steps[index];
+        for(let step of this.steps) {
             if(step instanceof Question) {
                 var question = step;
                 var chatUserKey = ChatTools.messageToChatUserKey(this.msg.message);
@@ -1291,7 +1287,7 @@ class Flow {
         }
         Logger.debug("Flow::next()", this.name);
         // Check if has more steps or flow is finished
-        if(this.currentStep == this.steps.length) {
+        if(this.currentStep === this.steps.length) {
             Logger.info("Flow::next() Flow finished", this.name);
             if(!this.superFlow) {
                 Logger.info("Flow::start() Removing root flow as active", this.name);
@@ -1335,28 +1331,25 @@ class Flow {
                     var multiAnswers = answerValue;
                     var checkUserIds = [];
                     if(question.userIds != null) {
-                        for(let index in question.userIds) {
-                            var userId = question.userIds[index];
+                        for(let userId of question.userIds) {
                             if(!checkUserIds.includes(userId)) {
                                 checkUserIds.push(userId);
                             }
                         }
                     }
                     var multiUserIds = multiAnswers.keys();
-                    for(let index in multiUserIds) {
-                        var userId = multiUserIds[index];
+                    for(let userId of multiUserIds) {
                         if(!checkUserIds.includes(userId)) {
                             checkUserIds.push(userId);
                         }
                     }
                     if(checkUserIds.length > 0 && !question.isMultiUser) {
-                        Control.warning("Flow::next() Got pre-filled multi-user answers for single user question \"" + answerKey + "\", forcing question to be multi-user");
+                        Logger.warn("Flow::next() Got pre-filled multi-user answers for single user question \"" + answerKey + "\", forcing question to be multi-user");
                         question.isMultiUser = true;
                     }
                     let parsedUserIds = this.parsedMultiUserAnswers[answerKey];
                     let parsedAnswers = 0;
-                    for(let index in checkUserIds) {
-                        var userId = checkUserIds[index];
+                    for(let userId of checkUserIds) {
                         var userAnswer = multiAnswers.get(userId);
                         if(userAnswer == null) {
                             continue;
@@ -1383,7 +1376,7 @@ class Flow {
                             Logger.error("Flow::next() Rejected pre-filled multi-user answer \"" + userAnswer + "\" for \"" + answerKey + "\" matches: ", matches);
                         }
                     }
-                    if(parsedAnswers > 0 && parsedAnswers == checkUserIds.length) {
+                    if(parsedAnswers > 0 && parsedAnswers === checkUserIds.length) {
                         Logger.debug("Flow::next() Parsed all pre-filled user answers for multi-user question \"" + answerKey + "\", skipping question");
                         this.questionAnswered(question);
                         return;
@@ -1418,15 +1411,8 @@ class Flow {
             } else {
                 this.questionExecute(question);
             }
-        } else if(step instanceof Information) {
-            var information = step;
-            information.execute();
-        } else if(step instanceof Action) {
-            var action = step;
-            action.execute();
-            if(action.controlsFlow) {
-                return;
-            }
+        } else if(step instanceof Information || step instanceof Action) {
+            step.execute();
         } else {
             Logger.error("Flow::next() Invalid step: ", stepIndex, step, this.steps);
             this.next();
@@ -1518,8 +1504,7 @@ class Flow {
 
     getQuestion(answerKey, checkSuperFlow) {
         Logger.info("Flow::getQuestion()", answerKey, this.name);
-        for(let index in this.steps) {
-            var step = this.steps[index];
+        for(let step of this.steps) {
             if(step instanceof Question) {
                 if(step.getAnswerKey() === answerKey) {
                     Logger.info("Flow::getQuestion() Found question:", answerKey, step);
@@ -1548,10 +1533,9 @@ class Flow {
     getQuestions(answerKeys, checkSuperFlow) {
         Logger.info("Flow::getQuestions()", answerKeys, this.name);
         var questions = [];
-        for(let index in this.steps) {
-            var step = this.steps[index];
+        for(let step of this.steps) {
             if(step instanceof Question) {
-                var answerKey = question.getAnswerKey();
+                var answerKey = step.getAnswerKey();
                 if(answerKeys.indexOf(answerKey) !== -1) {
                     Logger.info("Flow::getQuestion() Found question:", answerKey);
                     questions.push(step);
@@ -1578,8 +1562,7 @@ class Flow {
     getSummaryQuestions(limitToTitles, excludeTitles, checkSuperFlow) {
         Logger.info("Flow::getSummaryQuestions() " + this.name + " limit: " + limitToTitles + " exclude: " + excludeTitles);
         var questions = [];
-        for(let index in this.steps) {
-            var step = this.steps[index];
+        for(let step of this.steps) {
             Logger.info("Flow::getSummaryQuestions() Checking:", step);
             if(step instanceof Question) {
                 var question = step;
@@ -1587,8 +1570,7 @@ class Flow {
                     questions.push(question);
                 }
             } else if(step instanceof Action) {
-                var action = step;
-                var actionQuestions = action.getSummaryQuestions(limitToTitles, excludeTitles, false);
+                var actionQuestions = step.getSummaryQuestions(limitToTitles, excludeTitles, false);
                 if(actionQuestions && actionQuestions.length > 0) {
                     questions = questions.concat(actionQuestions);
                 }

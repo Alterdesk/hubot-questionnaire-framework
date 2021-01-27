@@ -61,9 +61,9 @@ class InviteUserData {
     }
 
     getPostUrl() {
-        if(this.inviteType == "coworker") {
+        if(this.inviteType === "coworker") {
             return "users/invite/coworker";
-        } else if(this.inviteType == "contact") {
+        } else if(this.inviteType === "contact") {
             return "users/invite/contact";
         } else {
             return "users/invite/private";

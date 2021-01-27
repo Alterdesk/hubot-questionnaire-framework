@@ -14,8 +14,7 @@ class Formatter {
     }
 
     checkConditions(flow) {
-        for(let i in this.conditions) {
-            var condition = this.conditions[i];
+        for(let condition of this.conditions) {
             if(this.forceRepeatIteration > -1) {
                 condition.setForceRepeatIteration(this.forceRepeatIteration);
             }

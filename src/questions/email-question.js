@@ -18,8 +18,8 @@ class EmailQuestion extends Question {
         if(this.allowedDomains.length === 0) {
             return email;
         }
-        for(let index in this.allowedDomains) {
-            if(email.endsWith(this.allowedDomains[index])) {
+        for(let domain of this.allowedDomains) {
+            if(email.endsWith(domain)) {
                 return email;
             }
         }
@@ -37,8 +37,8 @@ class EmailQuestion extends Question {
 
     // Add a list of accepted domains
     addAllowedDomains(domains) {
-        for(let index in domains) {
-            this.addAllowedDomain(domains[index]);
+        for(let domain of domains) {
+            this.addAllowedDomain(domain);
         }
     }
 }

@@ -41,8 +41,8 @@ class ChangeMembersAction extends Action {
         }
 
         var memberIds = [];
-        for(let index in this.memberIds) {
-            var memberId = this.getAnswerValue(this.memberIds[index], answers);
+        for(let id of this.memberIds) {
+            var memberId = this.getAnswerValue(id, answers);
             if(memberId && memberId.length > 0) {
                 memberIds.push(memberId);
             }

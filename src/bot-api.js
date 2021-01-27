@@ -16,7 +16,7 @@ class BotApi {
         this.startDate = DateTools.utcDate();
         this.customStatsData = {};
 
-        var useApi = parseInt(process.env.HUBOT_USE_API || 1);;
+        var useApi = parseInt(process.env.HUBOT_USE_API || 1);
         if(useApi === 0) {
             Logger.info("BotApi::constructor() API disabled");
             return;
@@ -34,7 +34,7 @@ class BotApi {
             app = express();
             app.use(express.json());
 
-            var port = process.env.HUBOT_API_PORT || 8443;
+            var port = parseInt(process.env.HUBOT_API_PORT || 8443);
             var host = process.env.HUBOT_API_HOST || "0.0.0.0";
             var keyPath = process.env.HUBOT_API_KEY_PATH;
             var certPath = process.env.HUBOT_API_CERT_PATH;
@@ -706,7 +706,7 @@ class BotApi {
             return date;
         }
         var times = event["times"];
-        if(!times || times.length == 0) {
+        if(!times || times.length === 0) {
             Logger.error("BotApi::calculateNextDate() Event has no valid time configuration", event);
             return null;
         }
@@ -717,8 +717,7 @@ class BotApi {
             var year = checkMoment.year();
             var month = checkMoment.month();
             var day = checkMoment.date();
-            for(var index in times) {
-                var time = times[index];
+            for(let time of times) {
                 var timeSplit = time.split(":");
                 var hours = timeSplit[0];
                 var minutes = timeSplit[1];
@@ -744,8 +743,7 @@ class BotApi {
         Logger.debug("BotApi::checkDateForEvent() " + checkDate);
         var excludes = event["exclude_dates"];
         if(excludes && excludes.length > 0) {
-            for(var index in excludes) {
-                var exclude = excludes[index];
+            for(let exclude of excludes) {
                 if(checkDate === exclude) {
                     Logger.debug("BotApi::checkDateForEvent() Excluded date: " + exclude);
                     return false;
@@ -755,8 +753,7 @@ class BotApi {
         var days = event["week_days"];
         if(days && days.length > 0) {
             var checkDay = checkMoment.isoWeekday();
-            for(var index in days) {
-                var day = days[index];
+            for(let day of days) {
                 if(checkDay === day) {
                     Logger.debug("BotApi::checkDateForEvent() Accepted day of the week: " + day);
                     return true;
@@ -831,11 +828,7 @@ class BotApi {
         if(!this.setEventTimer(event)) {
             return true;
         }
-        FileSystem.writeFileSync(this.scheduleFilePath, JSON.stringify(this.schedule), (error) => {
-            if(error) {
-                Logger.error("BotApi::addToSchedule() Unable to write schedule file", error);
-            }
-        });
+        FileSystem.writeFileSync(this.scheduleFilePath, JSON.stringify(this.schedule));
         return true;
     }
 
@@ -847,11 +840,7 @@ class BotApi {
         Logger.debug("BotApi::removeFromSchedule() eventId: " + eventId);
         this.removeEventTimer(eventId);
         delete this.schedule[eventId];
-        FileSystem.writeFileSync(this.scheduleFilePath, JSON.stringify(this.schedule), (error) => {
-            if(error) {
-                Logger.error("Schedule:removeFromSchedule() Unable to write schedule file", error);
-            }
-        });
+        FileSystem.writeFileSync(this.scheduleFilePath, JSON.stringify(this.schedule));
         return true;
     }
 
@@ -859,6 +848,6 @@ class BotApi {
         Logger.debug("BotApi::setOverrideCallback() trigger: " + trigger);
         this.overrideCallbacks[trigger.toUpperCase()] = callback;
     }
-};
+}
 
 module.exports = BotApi;

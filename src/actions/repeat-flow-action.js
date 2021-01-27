@@ -1,5 +1,4 @@
 const Action = require('./action.js');
-const AnswerCondition = require('./../conditions/answer-condition.js');
 const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
 
@@ -19,8 +18,7 @@ class RepeatFlowAction extends Action {
                 Logger.debug("RepeatFlowAction::finish() Iteration finished:", this.iteration);
                 var questions = this.repeatFlow.getSummaryQuestions(null, null, false);
                 if(questions && questions.length !== 0) {
-                    for(let i in questions) {
-                        var question = questions[i];
+                    for(let question of questions) {
                         var repeatKey = question.getRepeatKey();
                         if(!repeatKey || repeatKey === "") {
                             continue;
@@ -52,8 +50,7 @@ class RepeatFlowAction extends Action {
     checkRepeat() {
         Logger.debug("RepeatFlowAction::checkRepeat() Iteration:", this.iteration);
 
-        for(let i in this.conditions) {
-            var condition = this.conditions[i];
+        for(let condition of this.conditions) {
             if(!condition.check(this.flow)) {
                 Logger.debug("RepeatFlowAction::checkRepeat() Condition not met: ", condition);
                 this.flowCallback();
@@ -133,8 +130,7 @@ class RepeatFlowAction extends Action {
             return null;
         }
         var questions = [];
-        for(let i in this.summaryQuestions) {
-            var question = this.summaryQuestions[i];
+        for(let question of this.summaryQuestions) {
             if(ChatTools.filterSummaryQuestion(question, limitToTitles, excludeTitles)) {
                 questions.push(question);
             }

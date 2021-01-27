@@ -57,8 +57,7 @@ class FuzzyAction extends Action {
         this.steps.push(candidateAnswerKey);
         this.candidateAttempts++;
         this.innerFlow.multiple(candidateAnswerKey, candidateText, this.invalidText);
-        for(let index in candidates) {
-            var candidate = candidates[index];
+        for(let candidate of candidates) {
             var name = candidate.name;
             var label = candidate.label;
             var style = candidate.style;
@@ -82,8 +81,7 @@ class FuzzyAction extends Action {
                 return;
             }
             subFlowCallback();
-            for(let index in candidates) {
-                var candidate = candidates[index];
+            for(let candidate of candidates) {
                 if(candidate.name === answerValue) {
                     this.done(candidate);
                     subFlowCallback();
@@ -101,8 +99,7 @@ class FuzzyAction extends Action {
         this.createInnerFlow();
         var letters = [];
         var availableOptions = [];
-        for(let index in this.candidates) {
-            var candidate = this.candidates[index];
+        for(let candidate of this.candidates) {
             var name = candidate.name;
             if(!name || name === "") {
                 continue;
@@ -113,8 +110,7 @@ class FuzzyAction extends Action {
             }
         }
 
-        for(let index in this.indexOptions) {
-            var option = this.indexOptions[index];
+        for(let option of this.indexOptions) {
             for(let i = 0 ; i < option.length ; i++) {
                 var c  = option.charAt(i);
                 if(letters.indexOf(c) !== -1) {
@@ -136,8 +132,7 @@ class FuzzyAction extends Action {
         this.steps.push(indexAnswerKey);
         this.indexAttempts++;
         this.innerFlow.multiple(indexAnswerKey, this.indexText, this.invalidText)
-        for(let index in availableOptions) {
-            var option = availableOptions[index];
+        for(let option of availableOptions) {
             var label = option.toUpperCase();
             var style = "orange";
             this.innerFlow.option(RegexTools.getOptionRegex(option))
@@ -153,8 +148,7 @@ class FuzzyAction extends Action {
     showIndexOption(indexOption) {
         Logger.debug("FuzzyAction::showIndexOption() Index option " + indexOption);
         var availableCandidates = [];
-        for(let index in this.candidates) {
-            var candidate = this.candidates[index];
+        for(let candidate of this.candidates) {
             var name = candidate.name;
             if(!name || name === "") {
                 continue;
@@ -180,8 +174,7 @@ class FuzzyAction extends Action {
         var checkWords = [];
 
         var words = answerValue.match(RegexTools.getTextRegex());
-        for(let i in words) {
-            var word = words[i];
+        for(let word of words) {
             if(word.length < this.minWordLength) {
 //                Logger.debug("FuzzyAction::checkText() Skipping word, too short: " + word);
                 continue;
@@ -200,15 +193,12 @@ class FuzzyAction extends Action {
 
         var matches = [];
 
-        for(let i in checkWords) {
-            var word = checkWords[i];
+        for(let word of checkWords) {
             Logger.debug("FuzzyAction::checkText() Checking word: " + word);
 
             let removeCandidates = [];
 
-            for(let i in checkCandidates) {
-                var candidate = checkCandidates[i];
-
+            for(let candidate of checkCandidates) {
                 var name = candidate.getName();
                 var nameDistance = Levenshtein(word, name);
 //                Logger.debug("FuzzyAction::checkText() word: " + word + " name: " + name + " distance: " + nameDistance);
@@ -217,8 +207,7 @@ class FuzzyAction extends Action {
                 var aliasDistance = Number.MAX_SAFE_INTEGER;
 
                 var aliases = candidate.getAliases();
-                for(let index in aliases) {
-                    var alias = aliases[index];
+                for(let alias of aliases) {
                     var d = Levenshtein(word, alias);
 //                    Logger.debug("FuzzyAction::checkText() word: " + word + " alias: " + alias + " distance: " + d);
                     if(d < aliasDistance) {
@@ -266,8 +255,7 @@ class FuzzyAction extends Action {
             }
 
             // Remove exact matches, don't need to check again
-            for(let i in removeCandidates) {
-                var removeCandidate = removeCandidates[i];
+            for(let removeCandidate of removeCandidates) {
                 var index = checkCandidates.indexOf(removeCandidate);
                 checkCandidates.splice(index, 1);
             }
@@ -282,14 +270,12 @@ class FuzzyAction extends Action {
 
         if(this.combineMatches && matchedCandidates.length > 0 && possibleCandidates.length > 0) {
             var optionCandidates = [];
-            for(let i in matchedCandidates) {
-                var candidate = matchedCandidates[i];
+            for(let candidate of matchedCandidates) {
                 if(optionCandidates.indexOf(candidate) === -1) {
                     optionCandidates.push(candidate);
                 }
             }
-            for(let i in possibleCandidates) {
-                var candidate = possibleCandidates[i];
+            for(let candidate of possibleCandidates) {
                 if(optionCandidates.indexOf(candidate) === -1) {
                     optionCandidates.push(candidate);
                 }
@@ -441,8 +427,7 @@ class FuzzyAction extends Action {
         var answers = this.flow.answers;
         var answerKey = this.getAnswerKey();
         var keys = answers.getKeysWithPrefix(answerKey);
-        for(let i in keys) {
-            var key = keys[i];
+        for(let key of keys) {
             answers.remove(key);
         }
     }
@@ -467,8 +452,8 @@ class FuzzyCandidate {
     }
 
     addAliases(aliases) {
-        for(let index in aliases) {
-            this.addAlias(aliases[index]);
+        for(let alias of aliases) {
+            this.addAlias(alias);
         }
     }
 

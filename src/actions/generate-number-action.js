@@ -1,5 +1,4 @@
 const Action = require('./action.js');
-const Answers = require('./../answers.js');
 const Logger = require('./../logger.js');
 const NumberTools = require('./../utils/number-tools.js');
 
@@ -43,8 +42,7 @@ class GenerateNumberAction extends Action {
     }
 
     checkNumberConditions() {
-        for(let i in this.numberConditions) {
-            var condition = this.numberConditions[i];
+        for(let condition of this.numberConditions) {
             if(!condition.check(this.flow)) {
                 Logger.debug("GenerateNumberAction::checkNumberConditions() Condition not met: ", condition);
                 return false;

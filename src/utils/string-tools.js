@@ -13,14 +13,14 @@ class StringTools {
     }
 
     static escapeRegex(string) {
-        if(typeof string !== "string" || string == "") {
+        if(typeof string !== "string" || string === "") {
             return string;
         }
         return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
     }
 
     static replaceAll(string, search, replace) {
-        if(typeof string !== "string" || string == "" || search == null || replace == null) {
+        if(typeof string !== "string" || string === "" || search == null || replace == null) {
             return string;
         }
         return string.replace(new RegExp(StringTools.escapeRegex(search), 'g'), replace);
@@ -113,7 +113,7 @@ class StringTools {
 
     // String to lowercase
     static lowercase(string) {
-        if(typeof string !== "string" || string == "") {
+        if(typeof string !== "string" || string === "") {
             return string;
         }
         return string.toLowerCase();
@@ -121,7 +121,7 @@ class StringTools {
 
     // String to uppercase
     static uppercase(string) {
-        if(typeof string !== "string" || string == "") {
+        if(typeof string !== "string" || string === "") {
             return string;
         }
         return string.toUpperCase();
@@ -129,7 +129,7 @@ class StringTools {
 
     // Capitalize first letter in the string
     static capitalizeFirstLetter(string) {
-        if(typeof string !== "string" || string == "") {
+        if(typeof string !== "string" || string === "") {
             return string;
         }
         return string.charAt(0).toUpperCase() + string.slice(1);
@@ -137,7 +137,7 @@ class StringTools {
 
     // Only capitalize last word in the name: "de Boer"
     static capitalizeLastName(string) {
-        if(typeof string !== "string" || string == "") {
+        if(typeof string !== "string" || string === "") {
             return string;
         }
         var words = string.split(" ");

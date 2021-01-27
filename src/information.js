@@ -15,8 +15,7 @@ class Information extends Step {
         var result = this.text;
 
         // Format text with formatters if set
-        for(let i in this.formatters) {
-            var formatter = this.formatters[i];
+        for(let formatter of this.formatters) {
             result = formatter.execute(result, this.flow);
         }
 

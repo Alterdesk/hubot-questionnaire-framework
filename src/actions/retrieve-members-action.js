@@ -50,13 +50,10 @@ class RetrieveMembersAction extends Action {
             this.flow.answers.addObject(answerKey, value);
 
             var memberIds = [];
-            for(let i in value) {
-                var member = value[i];
-                if(member) {
-                    var memberId = member["id"];
-                    if(memberId) {
-                        memberIds.push(memberId);
-                    }
+            for(let member of value) {
+                var memberId = member["id"];
+                if(memberId) {
+                    memberIds.push(memberId);
                 }
             }
             this.flow.answers.add(answerKey + "_ids", memberIds);

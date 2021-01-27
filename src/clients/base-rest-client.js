@@ -166,7 +166,7 @@ class BaseRestClient {
                     res.on('error', (err) => {
                         Logger.error(this.loggerName + "::http() << " + path + ":", err);
                         this.sendError(err);
-                        resolve(result);
+                        resolve(null);
                     });
                 });
                 request.setTimeout(this.timeoutMs, () => {
@@ -229,8 +229,7 @@ class BaseRestClient {
                     }
                 }
                 if(fileParameter && filePaths) {
-                    for(var i in filePaths) {
-                        var filePath = filePaths[i];
+                    for(let filePath of filePaths) {
                         try {
                             if(!FileSystem.existsSync(filePath)) {
                                 Logger.error(this.loggerName + "::postMultipart() File does not exist: " + filePath);
@@ -355,7 +354,7 @@ class BaseRestClient {
                 req.on('end', () => {
                     if(res == null) {
                         resolve(null);
-                    } else if(res.statusCode == 200) {
+                    } else if(res.statusCode === 200) {
                         Logger.debug(this.loggerName + "::download() << " + url + ": " + res.statusCode);
                         resolve(path);
                     } else {
@@ -391,7 +390,7 @@ class BaseRestClient {
         });
     }
 
-    getTmpUploadPath(callback) {
+    getTmpUploadPath() {
         return new Promise(async (resolve) => {
             try {
                 var tmpUploadPath = this.tmpUploadDir + "/" + UuidV1();
@@ -415,13 +414,13 @@ class BaseRestClient {
         var parameters = "";
         var index = 0;
         for(var field in data) {
-            if(index++ == 0) {
+            if(index++ === 0) {
                 parameters += "?";
             } else {
                 parameters += "&";
             }
             parameters += encodeURIComponent(field) + "=" + encodeURIComponent(data[field]);
-        };
+        }
         return parameters;
     }
 

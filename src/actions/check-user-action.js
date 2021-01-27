@@ -1,6 +1,5 @@
 const Action = require('./action.js');
 const ChatTools = require('./../utils/chat-tools.js');
-const Logger = require('./../logger.js');
 
 class CheckUserAction extends Action {
     constructor(check) {
@@ -71,15 +70,13 @@ class CheckUserAction extends Action {
                 this.done(true);
                 return;
             }
-            for(let i in userVerifications) {
-                var userVerification = userVerifications[i];
+            for(let userVerification of userVerifications) {
                 if(this.provider === userVerification["name"]) {
                     this.done(true);
                     return;
                 }
             }
             this.done(null);
-            return;
         } else {
             this.onError("CheckUserAction::start() Unknown check:", this.check);
             this.done(null);

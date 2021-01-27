@@ -41,8 +41,7 @@ class AnswerCondition extends Condition {
 
     check(flow) {
         var inverse = this.getAnswerValue(this.inverse, flow.answers, false);
-        for(let i in this.answerKeys) {
-            var checkKey = this.answerKeys[i];
+        for(let checkKey of this.answerKeys) {
             var answerKey = ChatTools.getAnswerKey(checkKey, flow, this.forceRepeatIteration);
             if(!flow.answers.has(answerKey)) {
                 Logger.debug("AnswerCondition::check() Key not available: " + answerKey);
@@ -62,8 +61,8 @@ class AnswerCondition extends Condition {
                         return !inverse;
                     }
                 }
-                for(let i in answerValue) {
-                    if(this.checkAnswer(checkKey, answerKey, answerValue[i])) {
+                for(let value of answerValue) {
+                    if(this.checkAnswer(checkKey, answerKey, value)) {
                         Logger.debug("AnswerCondition::check() Condition met: inverse: " + inverse + " condition:", this);
                         return !inverse;
                     }
@@ -96,8 +95,7 @@ class AnswerCondition extends Condition {
             Logger.debug("AnswerCondition::checkAnswer() Not matched by regex: key: " + answerKey + " value: " + answerValue + " regex: " + regex);
         }
         if(values && values.length > 0) {
-            for(let i in values) {
-                var checkValue = values[i];
+            for(let checkValue of values) {
                 if(answerValue === checkValue) {
                     Logger.debug("AnswerCondition::checkAnswer() Equals value: key: " + answerKey + " value: " + answerValue);
                     return true;

@@ -1,6 +1,3 @@
-
-const Logger = require('./../logger.js');
-
 const USE_LOCALE = process.env.HUBOT_QUESTIONNAIRE_USE_LOCALE || process.env.USE_LOCALE || "en-US";
 
 class LocaleTools {

@@ -106,8 +106,7 @@ class Answers {
             return;
         }
         var keys = answers.keys();
-        for(let index in keys) {
-            var key = keys[index];
+        for(let key of keys) {
             if(skipExistingKeys && this.has(key)) {
                 continue;
             }

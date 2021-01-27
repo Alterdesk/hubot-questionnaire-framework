@@ -37,8 +37,7 @@ class RepeatFormatter extends Formatter {
 
         if(this.startText && this.startText.length > 0) {
             result = result + this.startText;
-            for(let i in this.startFormatters) {
-                var formatter = this.startFormatters[i];
+            for(let formatter of this.startFormatters) {
                 formatter.setEscapeHtml(this.escapeHtml);
                 result = formatter.execute(result, this.flow);
             }
@@ -50,8 +49,7 @@ class RepeatFormatter extends Formatter {
 
         if(this.endText && this.endText.length > 0) {
             result = result + this.endText;
-            for(let i in this.endFormatters) {
-                var formatter = this.endFormatters[i];
+            for(let formatter of this.endFormatters) {
                 formatter.setEscapeHtml(this.escapeHtml);
                 result = formatter.execute(result, this.flow);
             }
@@ -95,8 +93,7 @@ class RepeatFormatter extends Formatter {
 
         if(this.iteration > 0 && this.dividerText && this.dividerText.length > 0) {
             result = result + this.dividerText;
-            for(let i in this.dividerFormatters) {
-                var formatter = this.dividerFormatters[i];
+            for(let formatter of this.dividerFormatters) {
                 formatter.setEscapeHtml(this.escapeHtml);
                 formatter.setForceRepeatIteration(iteration);
                 result = formatter.execute(result, this.flow);
@@ -104,8 +101,7 @@ class RepeatFormatter extends Formatter {
         }
 
         result = result + this.to;
-        for(let i in this.formatters) {
-            var formatter = this.formatters[i];
+        for(let formatter of this.formatters) {
             formatter.setEscapeHtml(this.escapeHtml);
             formatter.setForceRepeatIteration(iteration);
             result = formatter.execute(result, this.flow);

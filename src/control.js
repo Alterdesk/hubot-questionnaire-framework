@@ -37,8 +37,8 @@ class Control {
         this.backRegex = null;//new RegExp(/^[ \n\r\t]*back[ \n\r\t]*$/, 'gi');
         this.checkpointRegex = null;//new RegExp(/^[ \n\r\t]*checkpoint[ \n\r\t]*$/, 'gi');
         this.helpRegex = new RegExp(/^[ \n\r\t]*help[ \n\r\t]*$/, 'gi');
-        this.robotUserId;
-        this.robotMentionRegex;
+        this.robotUserId = null;
+        this.robotMentionRegex = null;
 
         // Response timeout milliseconds
         this.responseTimeoutMs = parseInt(process.env.HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT || 60000);
@@ -203,8 +203,7 @@ class Control {
                     var users = message.id["users"];
                     var added = event === "groupchat_members_added";
                     if(!added) {
-                        for(let index in users) {
-                            var user = users[index];
+                        for(let user of users) {
                             var chatUserKey = ChatTools.getChatUserKey(chatId, user["id"]);
                             if(this.hasActiveQuestionnaire(chatUserKey)) {
                                 this.removeActiveQuestionnaire(chatUserKey);
@@ -272,8 +271,8 @@ class Control {
 
                 // Check if an accepted command was sent
                 var unknownCommand = true;
-                for(let index in this.acceptedRegex) {
-                    var match = commandString.match(this.acceptedRegex[index]);
+                for(let regex of this.acceptedRegex) {
+                    var match = commandString.match(regex);
                     if(match != null) {
                         unknownCommand = false;
                         Logger.debug("Control::receive() Command detected: \"" + match + "\"");
@@ -305,8 +304,7 @@ class Control {
                 var userId = message.user.id;
                 Logger.debug("Control::receive() Enter detected: " + userId);
                 var chatUserKeys = this.getUserActiveChatUserKeys(userId);
-                for(let index in chatUserKeys) {
-                    var chatUserKey = chatUserKeys[index];
+                for(let chatUserKey of chatUserKeys) {
                     if(this.hasPresenceTimeoutTimer(chatUserKey)) {
                         this.removePresenceTimeoutTimer(chatUserKey);
                     }
@@ -316,8 +314,7 @@ class Control {
                 Logger.debug("Control::receive() Leave detected: " + userId);
                 if(this.removeListenerOnLeave) {
                     var chatUserKeys = this.getUserActiveChatUserKeys(userId);
-                    for(let index in chatUserKeys) {
-                        var chatUserKey = chatUserKeys[index];
+                    for(let chatUserKey of chatUserKeys) {
                         if(this.hasListener(chatUserKey)) {
                             this.removeListener(chatUserKey);
                         }
@@ -327,8 +324,7 @@ class Control {
                     }
                 } else if(this.presenceTimeoutMs > 0) {
                     var chatUserKeys = this.getUserActiveChatUserKeys(userId);
-                    for(let index in chatUserKeys) {
-                        var chatUserKey = chatUserKeys[index];
+                    for(let chatUserKey of chatUserKeys) {
                         if(!this.hasPresenceTimeoutTimer(chatUserKey)) {
                             this.addPresenceTimeoutTimer(chatUserKey);
                         }
@@ -418,7 +414,7 @@ class Control {
             Logger.debug("Control::addResponseTimeoutTimer() Using custom callback");
         }
 
-        var timer = setTimeout(() => {
+        this.timeoutTimers[chatUserKey] = setTimeout(() => {
             Logger.debug("Response timer timeout: key: " + chatUserKey);
             var flow = this.getActiveQuestionnaire(chatUserKey);
             if(!flow) {
@@ -435,8 +431,6 @@ class Control {
                 useTimeoutCallback();
             }
         }, useTimeoutMs);
-
-        this.timeoutTimers[chatUserKey] = timer;
     }
 
     // Remove a response timeout timer for a user
@@ -459,7 +453,7 @@ class Control {
     addPresenceTimeoutTimer(chatUserKey) {
         Logger.debug("Control::addPresenceTimeoutTimer() key: " + chatUserKey);
         // Timeout milliseconds and callback
-        var timer = setTimeout(() => {
+        this.presenceTimeoutTimers[chatUserKey] = setTimeout(() => {
             Logger.debug("Presence timer timeout: key: " + chatUserKey);
             var flow = this.getActiveQuestionnaire(chatUserKey);
             if(!flow) {
@@ -474,8 +468,6 @@ class Control {
             flow.sendRestartMessage(this.presenceTimeoutText);
 
         }, this.presenceTimeoutMs);
-
-        this.presenceTimeoutTimers[chatUserKey] = timer;
     }
 
     // Remove a presence timeout timer for a user
@@ -575,8 +567,8 @@ class Control {
             return;
         }
         Logger.debug("Control::removeGroupActiveQuestionnaires() Removing " + chatUserKeys.length + " questionnaires from chat: " + chatId);
-        for(let index in chatUserKeys) {
-            this.removeActiveQuestionnaire(chatUserKeys[index]);
+        for(let chatUserKey of chatUserKeys) {
+            this.removeActiveQuestionnaire(chatUserKey);
         }
     }
 
@@ -586,8 +578,8 @@ class Control {
             return;
         }
         Logger.debug("Control::removeGroupActiveQuestionnaires() Removing " + chatUserKeys.length + " questionnaires from user: " + userId);
-        for(let index in chatUserKeys) {
-            this.removeActiveQuestionnaire(chatUserKeys[index]);
+        for(let chatUserKey of chatUserKeys) {
+            this.removeActiveQuestionnaire(chatUserKey);
         }
     }
 
@@ -801,24 +793,19 @@ class Control {
 
     // Add commands that the overridden receiver will accept
     addAcceptedCommands(commands) {
-        for(let index in commands) {
-            this.addAcceptedCommand(commands[index]);
+        for(let command of commands) {
+            this.addAcceptedCommand(command);
         }
     }
 
     // Add a command that the overridden receiver will accept
     addAcceptedCommand(command, helpText, buttonLabel, buttonStyle) {
         var c = command.toLowerCase();
-        var configured = false;
-        for(let index in this.acceptedCommands) {
-            if(c === this.acceptedCommands[index]) {
-                configured = true;
-                break;
+        for(let accepted of this.acceptedCommands) {
+            if(c === accepted) {
+                Logger.error("Control::addAcceptedCommand() Command already configured as accepted: " + c);
+                return;
             }
-        }
-        if(configured) {
-            Logger.error("Control::addAcceptedCommand() Command already configured as accepted: " + c);
-            return;
         }
         Logger.debug("Control::addAcceptedCommand() Command configured as accepted: " + c);
         this.acceptedCommands.push(c);
@@ -852,16 +839,16 @@ class Control {
         var acceptedCommand = false;
         var options = message.id["options"];
         var optionText = "";
-        for(let index in options) {
+        for(let option of options) {
             if(optionText.length > 0) {
                 optionText += ",";
             }
-            optionText += options[index];
+            optionText += option;
         }
         var helpCommand = optionText.match(this.helpRegex);
         if(!helpCommand) {
-            for(let index in this.acceptedCommands) {
-                if(optionText === this.acceptedCommands[index]) {
+            for(let command of this.acceptedCommands) {
+                if(optionText === command) {
                     acceptedCommand = true;
                     break;
                 }

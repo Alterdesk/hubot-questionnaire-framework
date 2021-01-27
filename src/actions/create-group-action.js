@@ -2,7 +2,6 @@ const Action = require('./action.js');
 const CreateGroupData = require('./../containers/create-group-data.js');
 const GroupSettingsData = require('./../containers/group-settings-data.js');
 const InviteUserData = require('./../containers/invite-user-data.js');
-const Logger = require('./../logger.js');
 
 class CreateGroupAction extends Action {
     constructor(subject) {
@@ -24,8 +23,7 @@ class CreateGroupAction extends Action {
         }
         var answers = this.flow.answers;
         var subjectValue = this.getAnswerValue(this.subject, answers, "");
-        for(let i in this.subjectFormatters) {
-            var formatter = this.subjectFormatters[i];
+        for(let formatter of this.subjectFormatters) {
             subjectValue = formatter.execute(subjectValue, this.flow);
         }
         if(!subjectValue || subjectValue === "") {
@@ -60,8 +58,7 @@ class CreateGroupAction extends Action {
         }
         createGroupData.setGroupSettings(groupSettingsData);
 
-        for(let index in this.memberIds) {
-            var member = this.memberIds[index];
+        for(let member of this.memberIds) {
             var id = this.getAnswerValue(member, answers);
             if(id && id.length > 0) {
                 createGroupData.addMemberId(id);
@@ -69,9 +66,7 @@ class CreateGroupAction extends Action {
         }
 
         // Invite user data
-        var inviteUsersData = [];
-        for(let index in this.invites) {
-            var invite = this.invites[index];
+        for(let invite of this.invites) {
             var inviteUserData = new InviteUserData();
             inviteUserData.setCreateConversation(this.getAnswerValue(invite.createConversation, answers, false));
             inviteUserData.setEmail(this.getAnswerValue(invite.email, answers));

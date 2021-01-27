@@ -38,8 +38,7 @@ class SendMessageAction extends Action {
         }
 
         var messageText = this.getAnswerValue(this.messageText, answers, "");
-        for(let i in this.messageFormatters) {
-            var formatter = this.messageFormatters[i];
+        for(let formatter of this.messageFormatters) {
             messageText = formatter.execute(messageText, this.flow);
         }
         if(!messageText || messageText === "") {
@@ -55,8 +54,8 @@ class SendMessageAction extends Action {
             Logger.debug("SendMessageAction::start() Got " + this.attachmentPaths.length + " attachments:", this.attachmentPaths);
             var filePathRegex = RegexTools.getFilePathRegex();
             Logger.debug("SendMessageAction::start() Using file path regex:", filePathRegex);
-            for(let index in this.attachmentPaths) {
-                var attachmentPath = this.getAnswerValue(this.attachmentPaths[index], answers);
+            for(let path of this.attachmentPaths) {
+                var attachmentPath = this.getAnswerValue(path, answers);
                 Logger.debug("SendMessageAction::start() Got attachment path:", attachmentPath);
                 if(typeof attachmentPath !== "string") {
                     this.onError("SendMessageAction::start() Invalid attachment path:", attachmentPath);

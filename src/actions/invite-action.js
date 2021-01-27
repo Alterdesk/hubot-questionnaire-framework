@@ -1,6 +1,5 @@
 const Action = require('./action.js');
 const InviteUserData = require('./../containers/invite-user-data.js');
-const Logger = require('./../logger.js');
 
 class InviteAction extends Action {
     constructor(inviteType, firstName, lastName, email, auxId) {
@@ -11,6 +10,7 @@ class InviteAction extends Action {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
+        this.auxId = auxId;
         this.inviteFormatters = [];
     }
 
@@ -25,6 +25,7 @@ class InviteAction extends Action {
 
         var inviteTypeValue = this.getAnswerValue(this.inviteType, answers);
         var emailValue = this.getAnswerValue(this.email, answers);
+        var auxId = this.getAnswerValue(this.auxId, answers);
         var firstNameValue = this.getAnswerValue(this.firstName, answers);
         var lastNameValue = this.getAnswerValue(this.lastName, answers);
         if(!inviteTypeValue || inviteTypeValue === ""
@@ -41,14 +42,16 @@ class InviteAction extends Action {
         inviteUserData.setEmail(emailValue);
         inviteUserData.setFirstName(firstNameValue);
         inviteUserData.setLastName(lastNameValue);
+        if(auxId && auxId !== "") {
+            inviteUserData.setAuxId(auxId);
+        }
 
         var inviteTextValue = this.getAnswerValue(this.inviteText, answers);
-        for(let i in this.inviteFormatters) {
-            var formatter = this.inviteFormatters[i];
+        for(let formatter of this.inviteFormatters) {
             inviteTextValue = formatter.execute(inviteTextValue, this.flow);
         }
         if(inviteTextValue && inviteTextValue !== "") {
-            inviteUserData.set(inviteTextValue);    // Only used when creating conversation
+            inviteUserData.setInviteMessage(inviteTextValue);    // Only used when creating conversation
         }
         var auxId = this.getAnswerValue(this.auxId, answers);
         if(auxId) {
@@ -96,7 +99,7 @@ class InviteAction extends Action {
     }
 
     setInviteText(inviteText) {
-        this.inviteText;
+        this.inviteText = inviteText;
     }
 
     addInviteFormatter(formatter) {
@@ -104,7 +107,7 @@ class InviteAction extends Action {
     }
 
     setSendEmail(sendEmail) {
-        this.sendEmail;
+        this.sendEmail = sendEmail;
     }
 
     setPositiveSubFlow(positiveSubFlow) {

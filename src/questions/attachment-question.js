@@ -23,8 +23,7 @@ class AttachmentQuestion extends Question {
         }
         var value = [];
 
-        for(let index in message.attachments) {
-            var attachment = message.attachments[index];
+        for(let attachment of message.attachments) {
             if(this.minSize !== null || this.maxSize !== null) {
                 var size = parseFloat(attachment["size"]);
                 if(typeof size !== "number") {
@@ -44,8 +43,8 @@ class AttachmentQuestion extends Question {
                 }
                 name = name.toUpperCase();
                 var allowed = false;
-                for(let i in this.allowedExtensions) {
-                    if(name.endsWith(this.allowedExtensions[i])) {
+                for(let extension of this.allowedExtensions) {
+                    if(name.endsWith(extension)) {
                         allowed = true;
                         break;
                     }
@@ -63,8 +62,8 @@ class AttachmentQuestion extends Question {
                 }
                 mime = mime.toUpperCase();
                 var allowed = false;
-                for(let i in this.allowedMimeTypes) {
-                    if(mime === this.allowedMimeTypes[i]) {
+                for(let allowedMime of this.allowedMimeTypes) {
+                    if(mime === allowedMime) {
                         allowed = true;
                         break;
                     }
@@ -145,8 +144,8 @@ class AttachmentQuestion extends Question {
 
     // Add a list of accepted extensions
     addAllowedExtensions(extensions) {
-        for(let index in extensions) {
-            this.addAllowedExtension(extensions[index]);
+        for(let extension of extensions) {
+            this.addAllowedExtension(extension);
         }
     }
 
@@ -161,8 +160,8 @@ class AttachmentQuestion extends Question {
 
     // Add a list of accepted extensions
     addAllowedMimeTypes(mimeTypes) {
-        for(let index in mimeTypes) {
-            this.addAllowedMimeType(mimeTypes[index]);
+        for(let mime of mimeTypes) {
+            this.addAllowedMimeType(mime);
         }
     }
 }

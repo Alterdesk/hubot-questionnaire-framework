@@ -46,8 +46,7 @@ class MultipleChoiceQuestion extends Question {
     getOptionForAnswer(answerValue) {
         var optionMatch = null;
         var longestMatch = null;
-        for(let index in this.options) {
-            var option = this.options[index];
+        for(let option of this.options) {
             var match = answerValue.match(option.regex);
             if(match) {
                 var matchString = match[0];
@@ -67,8 +66,7 @@ class MultipleChoiceQuestion extends Question {
         }
         if(this.multiAnswer && typeof answerValue === "object") {
             var labels = [];
-            for(let i in answerValue) {
-                var label = this.getLabelForAnswer(answerValue[i]);
+            for(let label of answerValue) {
                 if(!label) {
                     continue;
                 }
@@ -92,8 +90,7 @@ class MultipleChoiceQuestion extends Question {
         }
         if(this.multiAnswer && typeof answerValue === "object") {
             var values = [];
-            for(let i in answerValue) {
-                var label = this.getValueForAnswer(answerValue[i]);
+            for(let label of answerValue) {
                 if(!label) {
                     continue;
                 }
@@ -115,11 +112,11 @@ class MultipleChoiceQuestion extends Question {
         return this.requestMessageId;
     }
 
-    async send(callback) {
+    async send() {
         var msg = this.flow.msg;
         if(this.useButtons) {
             var sendMessageData = new SendMessageData();
-            var messageText =  this.getQuestionText();
+            var messageText = this.getQuestionText();
             sendMessageData.setMessage(messageText);
             sendMessageData.setHubotMessage(msg.message);
             var requestStyle = this.questionStyle || "horizontal";
@@ -160,7 +157,7 @@ class MultipleChoiceQuestion extends Question {
             }
 
             this.usePendingRequests = true;
-            this.setListenersAndPendingRequests(callback);
+            this.setListenersAndPendingRequests();
 
             this.flow.control.sendComposing(msg);
 
@@ -173,15 +170,14 @@ class MultipleChoiceQuestion extends Question {
                 this.requestMessageId = messageId;
             } else {
                 var fallbackText = messageText;
-                for(let i in this.options) {
-                    var option = this.options[i];
+                for(let option of this.options) {
                     fallbackText += "\n • \"" + option.name + "\" - " + option.label;
                 }
                 msg.send(fallbackText);
             }
         } else {
-            this.setListenersAndPendingRequests(callback);
-            msg.send(messageText);
+            this.setListenersAndPendingRequests();
+            msg.send(this.getQuestionText());
         }
     }
 
@@ -193,8 +189,7 @@ class MultipleChoiceQuestion extends Question {
         if(this.multiAnswer) {
             var choices = message.text.split("|");
             var options = [];
-            for(let index in choices) {
-                var choice = choices[index];
+            for(let choice of choices) {
                 var option = this.checkAndParseChoice(choice);
                 if(option && option !== "") {
                     options.push(option);
@@ -213,8 +208,7 @@ class MultipleChoiceQuestion extends Question {
     checkAndParseChoice(choice) {
         var optionMatch = null;
         var longestMatch = null;
-        for(let index in this.options) {
-            var option = this.options[index];
+        for(let option of this.options) {
             if(!option.isAvailable(this.flow)) {
                 continue;
             }
@@ -256,8 +250,7 @@ class MultipleChoiceOption {
         }
         this.available = true;
         if(this.conditions && this.conditions.length > 0) {
-            for(let i in this.conditions) {
-                var condition = this.conditions[i];
+            for(let condition of this.conditions) {
                 if(!condition.check(flow)) {
                     Logger.debug("MultipleChoiceOption::isAvailable() Condition not met: ", condition);
                     this.available = false;

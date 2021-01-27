@@ -1,4 +1,3 @@
-const AnswerCondition = require('./../conditions/answer-condition.js');
 const Formatter = require('./formatter.js');
 const Logger = require('./../logger.js');
 const StringTools = require('./../utils/string-tools.js');

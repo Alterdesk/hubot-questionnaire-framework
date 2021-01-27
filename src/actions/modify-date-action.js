@@ -100,8 +100,7 @@ class ModifyDateAction extends Action {
     }
 
     checkDateConditions() {
-        for(let i in this.dateConditions) {
-            var condition = this.dateConditions[i];
+        for(let condition of this.dateConditions) {
             if(!condition.check(this.flow)) {
                 Logger.debug("ModifyDateAction::checkDateConditions() Condition not met: ", condition);
                 return false;

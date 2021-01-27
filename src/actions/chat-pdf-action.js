@@ -22,8 +22,7 @@ class ChatPdfAction extends Action {
         }
         var answers = this.flow.answers;
         var filename = this.getAnswerValue(this.filename, answers, "");
-        for(let i in this.filenameFormatters) {
-            var formatter = this.filenameFormatters[i];
+        for(let formatter of this.filenameFormatters) {
             filename = formatter.execute(filename, this.flow);
         }
         filename = StringTools.safeFilename(filename);
@@ -66,8 +65,7 @@ class ChatPdfAction extends Action {
         }
 
         var messageText = this.getAnswerValue(this.messageText, answers, "");
-        for(let i in this.messageFormatters) {
-            var formatter = this.messageFormatters[i];
+        for(let formatter of this.messageFormatters) {
             messageText = formatter.execute(messageText, this.flow);
         }
 

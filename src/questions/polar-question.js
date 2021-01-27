@@ -61,7 +61,7 @@ class PolarQuestion extends Question {
         var msg = this.flow.msg;
         if(this.useButtons) {
             var sendMessageData = new SendMessageData();
-            var messageText =  this.getQuestionText();
+            var messageText = this.getQuestionText();
             sendMessageData.setMessage(messageText);
             sendMessageData.setHubotMessage(msg.message);
             var requestStyle = this.questionStyle || "horizontal";
@@ -126,7 +126,7 @@ class PolarQuestion extends Question {
             }
         } else {
             this.setListenersAndPendingRequests(callback);
-            msg.send(messageText);
+            msg.send(this.getQuestionText());
         }
     }
 

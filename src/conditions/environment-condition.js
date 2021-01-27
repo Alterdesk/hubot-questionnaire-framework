@@ -34,8 +34,7 @@ class EnvironmentCondition extends Condition {
 
     check(flow) {
         var inverse = this.getAnswerValue(this.inverse, flow.answers, false);
-        for(let i in this.checkKeys) {
-            var checkKey = this.checkKeys[i];
+        for(let checkKey of this.checkKeys) {
             var value = this.overrideEnvValues[checkKey];
             if(value == null) {
                 value = process.env[checkKey];
@@ -50,8 +49,7 @@ class EnvironmentCondition extends Condition {
                 Logger.debug("EnvironmentCondition::check() Condition met: inverse: " + inverse + " key: " + checkKey);
                 return !inverse;
             }
-            for(let i in values) {
-                var checkValue = values[i];
+            for(let checkValue of values) {
                 if(checkValue === value) {
                     Logger.debug("EnvironmentCondition::check() Condition met: inverse: " + inverse + " key: " + checkKey + " value: " + value);
                     return !inverse;

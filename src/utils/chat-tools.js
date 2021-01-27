@@ -97,8 +97,7 @@ class ChatTools {
         }
         var numberRegex = RegexTools.getNumberOnlyRegex();
         var filteredKeys = [];
-        for(let index in result) {
-            var key = result[index];
+        for(let key of result) {
             var replaceResult = key.replace(keySubstring, "");
             if(typeof replaceResult === "string" && replaceResult.match(numberRegex)) {
                 filteredKeys.push(key);
@@ -130,8 +129,7 @@ class ChatTools {
         }
         var numberRegex = RegexTools.getNumberOnlyRegex();
         var maxIteration = 0;
-        for(let index in result) {
-            var key = result[index];
+        for(let key of result) {
             var replaceResult = key.replace(keySubstring, "");
             if(typeof replaceResult === "string" && replaceResult.match(numberRegex)) {
                 var iteration = parseInt(replaceResult);

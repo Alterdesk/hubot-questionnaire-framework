@@ -15,8 +15,7 @@ class StopConditionAction extends Action {
         if(this.conditions.length === 0) {
             Logger.debug("StopConditionAction::start() No conditions are set, stopping flow");
         } else {
-            for(let i in this.conditions) {
-                var condition = this.conditions[i];
+            for(let condition of this.conditions) {
                 if(!condition.check(this.flow)) {
                     Logger.debug("StopConditionAction::start() Condition not met: ", condition);
                     flowCallback();

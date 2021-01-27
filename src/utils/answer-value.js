@@ -18,10 +18,10 @@ class AnswerValue {
             result = AnswerValue.get(value, answers, defaultValue, flow, forceRepeatIteration);
         } else if(data instanceof Date) {
             result = data;
-        } else if(typeof data === "object") {
+        } else if(data instanceof Array) {
             result = "";
-            for(let index in data) {
-                result += AnswerValue.get(data[index], answers);
+            for(let value of data) {
+                result += AnswerValue.get(value, answers);
             }
         } else if(data != null) {
             result = data;

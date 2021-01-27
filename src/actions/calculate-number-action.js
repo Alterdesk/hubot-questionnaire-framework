@@ -1,5 +1,4 @@
 const Action = require('./action.js');
-const DateTools = require('./../utils/date-tools.js');
 const Logger = require('./../logger.js');
 
 class CalculateNumberAction extends Action {
@@ -21,8 +20,8 @@ class CalculateNumberAction extends Action {
         }
         var operation = this.getAnswerValue(this.operation, answers);
         Logger.debug("CalculateNumberAction::start() Starting with value:", result);
-        for(let index in this.values) {
-            var value = this.getAnswerValue(this.values[index], answers);
+        for(let v of this.values) {
+            var value = this.getAnswerValue(v, answers);
             if(typeof value !== "number") {
                 Logger.debug("CalculateNumberAction::start() Invalid value: " + value);
                 continue;

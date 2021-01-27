@@ -26,8 +26,8 @@ class CreateGroupData {
     }
 
     addMemberIds(ids) {
-        for(var index in ids) {
-            this.addMemberId.push(ids[index]);
+        for(let id of ids) {
+            this.addMemberId.push(id);
         }
     }
 
@@ -36,8 +36,8 @@ class CreateGroupData {
     }
 
     addInvites(invites) {
-        for(var index in invites) {
-            this.addInvite.push(invites[index]);
+        for(let invite of invites) {
+            this.addInvite.push(invite);
         }
     }
 
@@ -65,8 +65,7 @@ class CreateGroupData {
         var data = {};
 
         if(this.groupSettingsData) {
-            var settingsPostData = this.groupSettingsData.getPutData();
-            data["settings"] = settingsPostData;
+            data["settings"] = this.groupSettingsData.getPutData();
         }
 
         var hasAuxMembers = false;
@@ -74,8 +73,7 @@ class CreateGroupData {
         // Invite user data
         var inviteUsersData = [];
 
-        for(let index in this.inviteUsers) {
-            var inviteUser = this.inviteUsers[index];
+        for(let inviteUser of this.inviteUsers) {
             if(inviteUser.getAuxId()) {
                 hasAuxMembers = true;
             }

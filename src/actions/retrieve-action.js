@@ -1,5 +1,4 @@
 const Action = require('./action.js');
-const Logger = require('./../logger.js');
 
 class RetrieveAction extends Action {
     constructor() {
@@ -29,7 +28,6 @@ class RetrieveAction extends Action {
             var overrideToken = this.getAnswerValue(this.overrideToken, answers);
             var json = await this.flow.control.messengerClient.getChat(chatIdValue, isGroupValue, isAuxValue, overrideToken);
             this.done(json);
-            return;
         } else if(this.userId) {
             var userIdValue = this.getAnswerValue(this.userId, answers);
             if(!userIdValue) {
@@ -41,11 +39,9 @@ class RetrieveAction extends Action {
             var overrideToken = this.getAnswerValue(this.overrideToken, answers);
             var json = await this.flow.control.messengerClient.getUser(userIdValue, isAuxValue, overrideToken);
             this.done(json);
-            return;
         } else {
             this.onError("RetrieveAction::start() Invalid retrieve data");
             this.done(null);
-            return;
         }
     }
 

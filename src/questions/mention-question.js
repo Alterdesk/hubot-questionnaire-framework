@@ -78,8 +78,7 @@ class MentionQuestion extends Question {
         }
 
         // Check for duplicates and robot mention
-        for(let index in mentions) {
-            var mention = mentions[index];
+        for(let mention of mentions) {
             var userId = mention["id"];
             // Skip robot mention if not allowed
             if(!this.robotAllowed && robotId !== null && userId === robotId) {
@@ -87,8 +86,8 @@ class MentionQuestion extends Question {
                 continue;
             }
             var add = true;
-            for(let index in value) {
-                if(userId === value[index]["id"]) {
+            for(let user of value) {
+                if(userId === user["id"]) {
                     Logger.debug("MentionQuestion::checkAndParseAnswer() User id already mentioned: " + userId);
                     add = false;
                     break;
@@ -101,14 +100,13 @@ class MentionQuestion extends Question {
         }
 
         // If a valid answer has been given, add the include mention list
-        if(value.length != 0) {
+        if(value.length !== 0) {
             if(this.includeMentions != null) {
-                for(let index in this.includeMentions) {
-                    var includeMention = this.includeMentions[index];
+                for(let includeMention of this.includeMentions) {
                     var userId = includeMention["id"];
                     var add = true;
-                    for(let i in value) {
-                        if(userId === value[i]["id"]) {
+                    for(let user of value) {
+                        if(userId === user["id"]) {
                             add = false;
                             break;
                         }

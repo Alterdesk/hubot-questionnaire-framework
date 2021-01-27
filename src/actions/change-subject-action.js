@@ -19,8 +19,7 @@ class ChangeSubjectAction extends Action {
         }
         var answers = this.flow.answers;
         var subjectValue = this.getAnswerValue(this.subject, answers, "");
-        for(let i in this.subjectFormatters) {
-            var formatter = this.subjectFormatters[i];
+        for(let formatter of this.subjectFormatters) {
             subjectValue = formatter.execute(subjectValue, this.flow);
         }
         if(!subjectValue || subjectValue === "") {
