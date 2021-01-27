@@ -49,8 +49,8 @@ class DateTools {
     }
 
     static addTimeMoment(date, timeScale, timeValue) {
-        var moment = DateTools.getUTCMoment(date);
-        var useScale = DateTools.getTimeScale(timeScale);
+        let moment = DateTools.getUTCMoment(date);
+        let useScale = DateTools.getTimeScale(timeScale);
         if(!useScale) {
             return null;
         }
@@ -59,7 +59,7 @@ class DateTools {
     }
 
     static addTimeDate(date, timeScale, timeValue) {
-        var moment = DateTools.addTimeMoment(date, timeScale, timeValue);
+        let moment = DateTools.addTimeMoment(date, timeScale, timeValue);
         if(!moment) {
             Logger.error("DateTools::addTimeDate() Invalid moment:", moment);
             return null;
@@ -68,7 +68,7 @@ class DateTools {
     }
 
     static timePassed(date, timeScale, timeValue) {
-        var moment = DateTools.addTimeMoment(date, timeScale, timeValue);
+        let moment = DateTools.addTimeMoment(date, timeScale, timeValue);
         if(!moment) {
             Logger.error("DateTools::timePassed() Invalid moment:", moment);
             return false;
@@ -77,32 +77,32 @@ class DateTools {
     }
 
     static isBefore(date, compareDate) {
-        var moment = DateTools.getUTCMoment(date);
+        let moment = DateTools.getUTCMoment(date);
         return moment.isBefore(compareDate);
     }
 
     static isAfter(date, compareDate) {
-        var moment = DateTools.getUTCMoment(date);
+        let moment = DateTools.getUTCMoment(date);
         return moment.isAfter(compareDate);
     }
 
     static isDate(date, year, month, day) {
-        var moment = DateTools.getUTCMoment(date);
+        let moment = DateTools.getUTCMoment(date);
         if(year > 0) {
-            var currentYear = moment.year();
+            let currentYear = moment.year();
             if(year !== currentYear) {
                 return false;
             }
         }
         if(month > 0) {
             // Months are zero indexed
-            var currentMonth = (moment.month() + 1);
+            let currentMonth = (moment.month() + 1);
             if(month !== currentMonth) {
                 return false;
             }
         }
         if(day > 0) {
-            var currentDay = moment.date();
+            let currentDay = moment.date();
             if(day !== currentDay) {
                 return false;
             }
@@ -111,7 +111,7 @@ class DateTools {
     }
 
     static dateBetween(date, min, max, precisionScale) {
-        var timeScale;
+        let timeScale;
         if(precisionScale) {
             timeScale = DateTools.getTimeScale(precisionScale);
         }
@@ -119,13 +119,13 @@ class DateTools {
     }
 
     static timeInRange(date, min, max) {
-        var parsedDate = DateTools.getUTCMoment(date);
-        var currentTime = DateTools.getUTCMoment();
+        let parsedDate = DateTools.getUTCMoment(date);
+        let currentTime = DateTools.getUTCMoment();
         currentTime.hours(parsedDate.hours());
         currentTime.minutes(parsedDate.minutes());
         currentTime.seconds(30);
-        var minTime = DateTools.parseLocalToUTC(min + ":00", "HH:mm:ss");
-        var maxTime = DateTools.parseLocalToUTC(max + ":59", "HH:mm:ss");
+        let minTime = DateTools.parseLocalToUTC(min + ":00", "HH:mm:ss");
+        let maxTime = DateTools.parseLocalToUTC(max + ":59", "HH:mm:ss");
         return currentTime.isBetween(minTime, maxTime, "second");
     }
 
@@ -134,12 +134,12 @@ class DateTools {
     }
 
     static weekdayInRange(date, min, max) {
-        var weekday = DateTools.getUTCMoment(date).isoWeekday();
+        let weekday = DateTools.getUTCMoment(date).isoWeekday();
         return weekday >= min && weekday <= max;
     }
 
     static weekInRange(date, min, max) {
-        var week = DateTools.getWeekNumber(date);
+        let week = DateTools.getWeekNumber(date);
         return week >= min && week <= max;
     }
 
@@ -153,17 +153,17 @@ class DateTools {
 
     static monthInRange(date, min, max) {
         // Months are zero indexed
-        var month = (DateTools.getUTCMoment(date).month() + 1);
+        let month = (DateTools.getUTCMoment(date).month() + 1);
         return month >= min && month <= max;
     }
 
     static getDiffMs(minDate, maxDate) {
-        var moment = DateTools.getUTCMoment(maxDate);
+        let moment = DateTools.getUTCMoment(maxDate);
         return moment.diff(minDate);
     }
 
     static epochSeconds(date) {
-        var moment = DateTools.getUTCMoment(date);
+        let moment = DateTools.getUTCMoment(date);
         return moment.unix();
     }
 

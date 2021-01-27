@@ -9,12 +9,12 @@ class DateCondition extends Condition {
     }
 
     check(flow) {
-        var date = this.getAnswerValue(this.checkDate, flow.answers);
+        let date = this.getAnswerValue(this.checkDate, flow.answers);
         if(!date) {
             date = DateTools.utcDate();
         }
         Logger.debug("DateCondition::check() Checking date:", date);
-        var inverse = this.getAnswerValue(this.inverse, flow.answers, false);
+        let inverse = this.getAnswerValue(this.inverse, flow.answers, false);
         for(let c of this.checks) {
             if(c.check(date)) {
                 Logger.debug("DateCondition::check() Condition met: inverse: " + inverse + " check:", c);

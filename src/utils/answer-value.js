@@ -7,14 +7,14 @@ class AnswerValue {
     }
 
     getValue(answers, flow, forceRepeatIteration) {
-        var answerKey = ChatTools.getAnswerKey(this.answerKey, flow, forceRepeatIteration);
+        let answerKey = ChatTools.getAnswerKey(this.answerKey, flow, forceRepeatIteration);
         return answers.get(answerKey);
     }
 
     static get(data, answers, defaultValue, flow, forceRepeatIteration) {
-        var result = null;
+        let result = null;
         if(data instanceof AnswerValue) {
-            var value = data.getValue(answers, flow, forceRepeatIteration);
+            let value = data.getValue(answers, flow, forceRepeatIteration);
             result = AnswerValue.get(value, answers, defaultValue, flow, forceRepeatIteration);
         } else if(data instanceof Date) {
             result = data;

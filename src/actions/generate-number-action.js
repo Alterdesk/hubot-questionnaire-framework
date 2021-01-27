@@ -16,9 +16,9 @@ class GenerateNumberAction extends Action {
     }
 
     start(flowCallback) {
-        var answers = this.flow.answers;
-        var min = this.getAnswerValue(this.min, answers, 0);
-        var max = this.getAnswerValue(this.max, answers, Number.MAX_SAFE_INTEGER);
+        let answers = this.flow.answers;
+        let min = this.getAnswerValue(this.min, answers, 0);
+        let max = this.getAnswerValue(this.max, answers, Number.MAX_SAFE_INTEGER);
         if(min >= max) {
             this.onError("GenerateNumberAction::start() Invalid range: min: " + min + " max: " + max);
             flowCallback();
@@ -52,9 +52,9 @@ class GenerateNumberAction extends Action {
     }
 
     generate(min, max) {
-        var num = NumberTools.generate(min, max);
+        let num = NumberTools.generate(min, max);
         Logger.debug("GenerateNumberAction::start() Generated number: " + num);
-        var answerKey = this.getAnswerKey();
+        let answerKey = this.getAnswerKey();
         this.flow.answers.add(answerKey, num);
     }
 

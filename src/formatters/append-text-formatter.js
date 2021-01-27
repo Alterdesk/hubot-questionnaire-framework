@@ -21,7 +21,7 @@ class AppendTextFormatter extends Formatter {
         }
         Logger.debug("AppendTextFormatter::execute() Using text: \"" + this.appendText + "\"");
 
-        var result = this.appendText;
+        let result = this.appendText;
         if(this.prefixText && this.prefixText.length > 0) {
             result = this.prefixText + result;
         }

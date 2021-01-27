@@ -21,11 +21,11 @@ class AttachmentQuestion extends Question {
             Logger.error("AttachmentQuestion::checkAndParseAnswer() Invalid attachments: ", message.attachments);
             return null;
         }
-        var value = [];
+        let value = [];
 
         for(let attachment of message.attachments) {
             if(this.minSize !== null || this.maxSize !== null) {
-                var size = parseFloat(attachment["size"]);
+                let size = parseFloat(attachment["size"]);
                 if(typeof size !== "number") {
                     Logger.error("AttachmentQuestion::checkAndParseAnswer() Unable to parse size: ", attachment);
                     continue;
@@ -36,13 +36,13 @@ class AttachmentQuestion extends Question {
                 }
             }
             if(this.allowedExtensions.length > 0) {
-                var name = attachment["name"];
+                let name = attachment["name"];
                 if(typeof name !== "string") {
                     Logger.debug("AttachmentQuestion::checkAndParseAnswer() Invalid attachment name:", attachment);
                     continue;
                 }
                 name = name.toUpperCase();
-                var allowed = false;
+                let allowed = false;
                 for(let extension of this.allowedExtensions) {
                     if(name.endsWith(extension)) {
                         allowed = true;
@@ -55,13 +55,13 @@ class AttachmentQuestion extends Question {
                 }
             }
             if(this.allowedMimeTypes.length > 0) {
-                var mime = attachment["mime_type"];
+                let mime = attachment["mime_type"];
                 if(typeof mime !== "string") {
                     Logger.debug("AttachmentQuestion::checkAndParseAnswer() Invalid attachment mime:", attachment);
                     continue;
                 }
                 mime = mime.toUpperCase();
-                var allowed = false;
+                let allowed = false;
                 for(let allowedMime of this.allowedMimeTypes) {
                     if(mime === allowedMime) {
                         allowed = true;
@@ -91,8 +91,8 @@ class AttachmentQuestion extends Question {
     // Check if the value is in range
     inCountRange(value) {
         Logger.debug("AttachmentQuestion::inCountRange() Value: " + value + " min: " + this.minCount + " max: " + this.maxCount);
-        var minValid = typeof this.minCount === "number" && this.minCount > 0;
-        var maxValid = typeof this.maxCount === "number" && this.maxCount > 0;
+        let minValid = typeof this.minCount === "number" && this.minCount > 0;
+        let maxValid = typeof this.maxCount === "number" && this.maxCount > 0;
         if(minValid && maxValid) {
             return value >= this.minCount && value <= this.maxCount;
         } else if(minValid) {
@@ -106,8 +106,8 @@ class AttachmentQuestion extends Question {
     // Check if the value is in range
     inSizeRange(value) {
         Logger.debug("AttachmentQuestion::inSizeRange() Value: " + value + " min: " + this.minSize + " max: " + this.maxSize);
-        var minValid = typeof this.minSize === "number" && this.minSize > 0;
-        var maxValid = typeof this.maxSize === "number" && this.maxSize > 0;
+        let minValid = typeof this.minSize === "number" && this.minSize > 0;
+        let maxValid = typeof this.maxSize === "number" && this.maxSize > 0;
         if(minValid && maxValid) {
             return value >= this.minSize && value <= this.maxSize;
         } else if(minValid) {

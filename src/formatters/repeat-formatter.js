@@ -33,7 +33,7 @@ class RepeatFormatter extends Formatter {
         this.repeatCount = this.getRepeatCount(flow);
         Logger.debug("RepeatFormatter::execute() Repeat count:", this.repeatCount);
 
-        var result = "";
+        let result = "";
 
         if(this.startText && this.startText.length > 0) {
             result = result + this.startText;
@@ -68,10 +68,10 @@ class RepeatFormatter extends Formatter {
             Logger.error("RepeatFormatter::getRepeatCount() Repeat answer key not set:", this.repeatKey);
             return 0;
         }
-        var count = 0;
+        let count = 0;
         while(true) {
-            var key = ChatTools.getAnswerKey(this.repeatKey, flow, count);
-            var value = flow.answers.get(key);
+            let key = ChatTools.getAnswerKey(this.repeatKey, flow, count);
+            let value = flow.answers.get(key);
             if(value == null) {
                 Logger.debug("RepeatFormatter::getRepeatCount() Repeat answer not given:", key, value);
                 break;

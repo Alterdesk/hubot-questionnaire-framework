@@ -13,15 +13,15 @@ class CalculateNumberAction extends Action {
     }
 
     start(flowCallback) {
-        var answers = this.flow.answers;
-        var result = this.getAnswerValue(this.startValue, answers);
+        let answers = this.flow.answers;
+        let result = this.getAnswerValue(this.startValue, answers);
         if(!result) {
             result = 0;
         }
-        var operation = this.getAnswerValue(this.operation, answers);
+        let operation = this.getAnswerValue(this.operation, answers);
         Logger.debug("CalculateNumberAction::start() Starting with value:", result);
         for(let v of this.values) {
-            var value = this.getAnswerValue(v, answers);
+            let value = this.getAnswerValue(v, answers);
             if(typeof value !== "number") {
                 Logger.debug("CalculateNumberAction::start() Invalid value: " + value);
                 continue;
@@ -38,7 +38,7 @@ class CalculateNumberAction extends Action {
         }
 
         Logger.debug("CalculateNumberAction::start() Result:", result);
-        var answerKey = this.getAnswerKey();
+        let answerKey = this.getAnswerKey();
         answers.add(answerKey, result);
         flowCallback();
     }

@@ -17,8 +17,8 @@ class ChangeSubjectAction extends Action {
             flowCallback();
             return;
         }
-        var answers = this.flow.answers;
-        var subjectValue = this.getAnswerValue(this.subject, answers, "");
+        let answers = this.flow.answers;
+        let subjectValue = this.getAnswerValue(this.subject, answers, "");
         for(let formatter of this.subjectFormatters) {
             subjectValue = formatter.execute(subjectValue, this.flow);
         }
@@ -28,13 +28,13 @@ class ChangeSubjectAction extends Action {
             return;
         }
 
-        var chatId;
-        var isAux;
+        let chatId;
+        let isAux;
         if(this.chatId) {
             chatId = this.getAnswerValue(this.chatId, answers);
             isAux = this.getAnswerValue(this.isAux, answers);
         } else {
-            var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
+            let isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
                 Logger.warn("ChangeSubjectAction::start() Not a group chat");
                 flowCallback();
@@ -48,7 +48,7 @@ class ChangeSubjectAction extends Action {
             flowCallback();
             return;
         }
-        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+        let overrideToken = this.getAnswerValue(this.overrideToken, answers);
         await this.flow.control.messengerClient.changeGroupSubject(chatId, isAux, subjectValue, overrideToken);
         flowCallback();
     }

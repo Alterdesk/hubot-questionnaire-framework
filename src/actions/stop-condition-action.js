@@ -26,10 +26,10 @@ class StopConditionAction extends Action {
         }
 
         if(this.setAnswers) {
-            var keys = this.setAnswers.keys();
+            let keys = this.setAnswers.keys();
             for(let i in keys) {
-                var key = keys[i];
-                var value = this.setAnswers.get(key);
+                let key = keys[i];
+                let value = this.setAnswers.get(key);
                 this.flow.answers.add(key, value);
             }
         }

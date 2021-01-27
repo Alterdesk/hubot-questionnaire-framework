@@ -71,7 +71,7 @@ class InviteUserData {
     }
 
     getPostData(isGroupInvite) {
-        var data = {};
+        let data = {};
 
         if(this.email && this.email.length > 0) {
             data["email"] = this.email;

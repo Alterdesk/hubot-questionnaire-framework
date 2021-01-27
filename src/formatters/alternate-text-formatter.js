@@ -10,7 +10,7 @@ class AlternateTextFormatter extends Formatter {
     }
 
     execute(text, flow) {
-        var alternateText = this.alternateText;
+        let alternateText = this.alternateText;
         if(!alternateText || alternateText.length === 0) {
             Logger.debug("AlternateTextFormatter::execute() Invalid alternate text: \"" + this.alternateText + "\"");
             return text;

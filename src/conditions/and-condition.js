@@ -9,7 +9,7 @@ class AndCondition extends Condition {
 
     check(flow) {
         Logger.debug("AndCondition::check() Condition count:", this.conditions.length);
-        var inverse = this.getAnswerValue(this.inverse, flow.answers, false);
+        let inverse = this.getAnswerValue(this.inverse, flow.answers, false);
         for(let condition of this.conditions) {
             if(!condition.check(flow)) {
                 Logger.debug("AndCondition::check() Condition not met: inverse: " + inverse + " condition:", condition);

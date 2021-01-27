@@ -18,14 +18,14 @@ class ChangeMembersAction extends Action {
             flowCallback();
             return;
         }
-        var answers = this.flow.answers;
-        var chatId;
-        var isAux;
+        let answers = this.flow.answers;
+        let chatId;
+        let isAux;
         if(this.chatId) {
             chatId = this.getAnswerValue(this.chatId, answers);
             isAux = this.getAnswerValue(this.isAux, answers);
         } else {
-            var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
+            let isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
                 Logger.warn("ChangeMembersAction::start() Not a group chat");
                 flowCallback();
@@ -40,15 +40,15 @@ class ChangeMembersAction extends Action {
             return;
         }
 
-        var memberIds = [];
+        let memberIds = [];
         for(let id of this.memberIds) {
-            var memberId = this.getAnswerValue(id, answers);
+            let memberId = this.getAnswerValue(id, answers);
             if(memberId && memberId.length > 0) {
                 memberIds.push(memberId);
             }
         }
 
-        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+        let overrideToken = this.getAnswerValue(this.overrideToken, answers);
         if(this.add) {
             await this.flow.control.messengerClient.addGroupMembers(chatId, isAux, memberIds, overrideToken);
         } else {

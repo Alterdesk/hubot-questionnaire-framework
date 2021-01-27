@@ -50,7 +50,7 @@ class Step {
 
     reset() {
         this.subFlow = null;
-        var answerKey = this.getAnswerKey();
+        let answerKey = this.getAnswerKey();
         if(answerKey) {
             this.flow.answers.remove(answerKey);
         }

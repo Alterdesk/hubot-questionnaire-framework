@@ -16,7 +16,7 @@ class MultipleChoiceQuestion extends Question {
 
     // Add an option answer regex and optional sub flow
     addOption(regex, subFlow, value, conditions) {
-        var option = new MultipleChoiceOption(regex, subFlow, value, conditions);
+        let option = new MultipleChoiceOption(regex, subFlow, value, conditions);
         this.options.push(option);
     }
 
@@ -24,7 +24,7 @@ class MultipleChoiceQuestion extends Question {
     addButton(name, label, style) {
         this.useButtons = true;
         if(this.options && this.options.length > 0) {
-            var option = this.options[this.options.length - 1];
+            let option = this.options[this.options.length - 1];
             if(option) {
                 option.name = name;
                 option.label = label;
@@ -44,12 +44,12 @@ class MultipleChoiceQuestion extends Question {
     }
 
     getOptionForAnswer(answerValue) {
-        var optionMatch = null;
-        var longestMatch = null;
+        let optionMatch = null;
+        let longestMatch = null;
         for(let option of this.options) {
-            var match = answerValue.match(option.regex);
+            let match = answerValue.match(option.regex);
             if(match) {
-                var matchString = match[0];
+                let matchString = match[0];
                 if(longestMatch && longestMatch.length > matchString.length) {
                     continue;
                 }
@@ -65,7 +65,7 @@ class MultipleChoiceQuestion extends Question {
             return null;
         }
         if(this.multiAnswer && typeof answerValue === "object") {
-            var labels = [];
+            let labels = [];
             for(let label of answerValue) {
                 if(!label) {
                     continue;
@@ -77,7 +77,7 @@ class MultipleChoiceQuestion extends Question {
             }
             return labels;
         }
-        var option = this.getOptionForAnswer(answerValue);
+        let option = this.getOptionForAnswer(answerValue);
         if(option) {
             return option.label;
         }
@@ -89,7 +89,7 @@ class MultipleChoiceQuestion extends Question {
             return null;
         }
         if(this.multiAnswer && typeof answerValue === "object") {
-            var values = [];
+            let values = [];
             for(let label of answerValue) {
                 if(!label) {
                     continue;
@@ -101,7 +101,7 @@ class MultipleChoiceQuestion extends Question {
             }
             return values;
         }
-        var option = this.getOptionForAnswer(answerValue);
+        let option = this.getOptionForAnswer(answerValue);
         if(option) {
             return option.value;
         }
@@ -113,29 +113,29 @@ class MultipleChoiceQuestion extends Question {
     }
 
     async send() {
-        var msg = this.flow.msg;
+        let msg = this.flow.msg;
         if(this.useButtons) {
-            var sendMessageData = new SendMessageData();
-            var messageText = this.getQuestionText();
+            let sendMessageData = new SendMessageData();
+            let messageText = this.getQuestionText();
             sendMessageData.setMessage(messageText);
             sendMessageData.setHubotMessage(msg.message);
-            var requestStyle = this.questionStyle || "horizontal";
+            let requestStyle = this.questionStyle || "horizontal";
             sendMessageData.setRequestOptions(this.multiAnswer, requestStyle);
 
             for(let i in this.options) {
-                var option = this.options[i];
+                let option = this.options[i];
 
                 if(!option.isAvailable(this.flow)) {
                     continue;
                 }
 
-                var label = option.label || option.regex;
+                let label = option.label || option.regex;
                 if(!label) {
                     label = "Label" + i;
                 }
-                var style = option.style || "theme";
+                let style = option.style || "theme";
 
-                var name = option.name || option.regex;
+                let name = option.name || option.regex;
                 if(name) {
                     name = name.toLowerCase();
                     sendMessageData.addQuestionButtonWithName(name, label, style);
@@ -161,15 +161,15 @@ class MultipleChoiceQuestion extends Question {
 
             this.flow.control.sendComposing(msg);
 
-            var json = await this.flow.control.messengerClient.sendMessage(sendMessageData);
-            var success = json != null;
+            let json = await this.flow.control.messengerClient.sendMessage(sendMessageData);
+            let success = json != null;
             Logger.debug("MultipleChoiceQuestion::send() Successful: " + success);
             if(json != null) {
-                var messageId = json["id"];
+                let messageId = json["id"];
                 Logger.debug("MultipleChoiceQuestion::send() Question message id: " + messageId);
                 this.requestMessageId = messageId;
             } else {
-                var fallbackText = messageText;
+                let fallbackText = messageText;
                 for(let option of this.options) {
                     fallbackText += "\n • \"" + option.name + "\" - " + option.label;
                 }
@@ -187,10 +187,10 @@ class MultipleChoiceQuestion extends Question {
             return null;
         }
         if(this.multiAnswer) {
-            var choices = message.text.split("|");
-            var options = [];
+            let choices = message.text.split("|");
+            let options = [];
             for(let choice of choices) {
-                var option = this.checkAndParseChoice(choice);
+                let option = this.checkAndParseChoice(choice);
                 if(option && option !== "") {
                     options.push(option);
                 }
@@ -200,21 +200,21 @@ class MultipleChoiceQuestion extends Question {
             }
             return null;
         } else {
-            var choice = matches[0];
+            let choice = matches[0];
             return this.checkAndParseChoice(choice);
         }
     }
 
     checkAndParseChoice(choice) {
-        var optionMatch = null;
-        var longestMatch = null;
+        let optionMatch = null;
+        let longestMatch = null;
         for(let option of this.options) {
             if(!option.isAvailable(this.flow)) {
                 continue;
             }
-            var match = choice.match(option.regex);
+            let match = choice.match(option.regex);
             if(match) {
-                var matchString = match[0];
+                let matchString = match[0];
                 if(longestMatch && longestMatch.length > matchString.length) {
                     continue;
                 }
@@ -227,7 +227,7 @@ class MultipleChoiceQuestion extends Question {
             return null;
         }
         // Set the sub flow if available
-        var subFlow = optionMatch.subFlow;
+        let subFlow = optionMatch.subFlow;
         if(subFlow) {
             this.setSubFlow(subFlow);
         }

@@ -4,10 +4,10 @@ const Logger = require('./../logger.js');
 
 class MessengerClient extends JsonRestClient {
     constructor(control) {
-        var url = process.env.HUBOT_ALTERDESK_URL || process.env.NODE_ALTERDESK_URL || "https://api.alterdesk.com/v1/";
-        var port = process.env.HUBOT_ALTERDESK_PORT || process.env.NODE_ALTERDESK_PORT || 443;
+        let url = process.env.HUBOT_ALTERDESK_URL || process.env.NODE_ALTERDESK_URL || "https://api.alterdesk.com/v1/";
+        let port = process.env.HUBOT_ALTERDESK_PORT || process.env.NODE_ALTERDESK_PORT || 443;
         super(url, port, "MessengerClient");
-        var token = process.env.HUBOT_ALTERDESK_TOKEN || process.env.NODE_ALTERDESK_TOKEN;
+        let token = process.env.HUBOT_ALTERDESK_TOKEN || process.env.NODE_ALTERDESK_TOKEN;
         if(token) {
             this.setApiToken(token);
         }
@@ -17,17 +17,17 @@ class MessengerClient extends JsonRestClient {
     sendMessage(sendMessageData) {
         Logger.debug("MessengerClient::sendMessage() ", sendMessageData);
 
-        var postUrl = sendMessageData.getPostUrl();
-        var postData = sendMessageData.getPostData();
-        var overrideToken = sendMessageData.getOverrideToken();
+        let postUrl = sendMessageData.getPostUrl();
+        let postData = sendMessageData.getPostData();
+        let overrideToken = sendMessageData.getOverrideToken();
 
-        var hubotMessage = sendMessageData.getHubotMessage();
+        let hubotMessage = sendMessageData.getHubotMessage();
         if(hubotMessage) {
             this.control.sendComposing(hubotMessage);
         }
 
         if(sendMessageData.hasAttachments()) {
-            var filePaths = sendMessageData.getAttachmentPaths();
+            let filePaths = sendMessageData.getAttachmentPaths();
             return this.postMultipart(postUrl, postData, "files", filePaths, overrideToken)
         } else {
             return this.post(postUrl, postData, overrideToken);
@@ -35,7 +35,7 @@ class MessengerClient extends JsonRestClient {
     }
 
     getMessage(messageId, chatId, isGroup, isAux, overrideToken) {
-        var methodPrefix = "";
+        let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
         }
@@ -51,13 +51,13 @@ class MessengerClient extends JsonRestClient {
         return new Promise(async (resolve) => {
             try {
                 Logger.debug("MessengerClient::downloadAttachment() ", attachment);
-                var attachmentId = attachment["id"];
-                var filename = attachment["name"];
-                var mime = attachment["mime_type"];
+                let attachmentId = attachment["id"];
+                let filename = attachment["name"];
+                let mime = attachment["mime_type"];
 
-                var getData = {};
+                let getData = {};
                 getData["headers"] = false;
-                var methodPrefix = "";
+                let methodPrefix = "";
                 if(isAux) {
                     methodPrefix += "aux/"
                 }
@@ -66,15 +66,15 @@ class MessengerClient extends JsonRestClient {
                 } else {
                     methodPrefix += "conversations/";
                 }
-                var getUrl = methodPrefix + encodeURIComponent(chatId) + "/attachments/" + attachmentId + this.toGetParameters(getData);
-                var urlJson = await this.get(getUrl, overrideToken);
+                let getUrl = methodPrefix + encodeURIComponent(chatId) + "/attachments/" + attachmentId + this.toGetParameters(getData);
+                let urlJson = await this.get(getUrl, overrideToken);
                 if(!urlJson) {
                     Logger.error("MessengerClient::downloadAttachment() Unable to retrieve download url:", attachment);
                     resolve(null);
                     return;
                 }
-                var url = urlJson["link"];
-                var downloadPath = await this.download(url, filename, mime, overrideToken);
+                let url = urlJson["link"];
+                let downloadPath = await this.download(url, filename, mime, overrideToken);
                 if(!downloadPath) {
                     Logger.error("MessengerClient::downloadAttachment() Unable to download attachment:", url, attachment);
                     resolve(null);
@@ -93,17 +93,17 @@ class MessengerClient extends JsonRestClient {
         return new Promise(async (resolve) => {
             try {
                 Logger.debug("MessengerClient::downloadChatPdf()");
-                var json = await this.getChatPdfUrl(chatId, isGroup, isAux, startDate, endDate, overrideToken);
+                let json = await this.getChatPdfUrl(chatId, isGroup, isAux, startDate, endDate, overrideToken);
                 if(!json) {
                     resolve(null);
                     return;
                 }
-                var url = json["link"];
+                let url = json["link"];
                 if(!url) {
                     resolve(null);
                     return;
                 }
-                var path = await this.download(url, filename, "application/pdf", overrideToken);
+                let path = await this.download(url, filename, "application/pdf", overrideToken);
                 resolve(path);
             } catch(err) {
                 Logger.error(err);
@@ -115,7 +115,7 @@ class MessengerClient extends JsonRestClient {
     getChatPdfUrl(chatId, isGroup, isAux, startDate, endDate, overrideToken) {
         return new Promise(async (resolve) => {
             try {
-                var getData = {};
+                let getData = {};
                 if(startDate) {
                     getData["start_date"] = this.dateToString(startDate);
                 }
@@ -123,7 +123,7 @@ class MessengerClient extends JsonRestClient {
                     getData["end_date"] = this.dateToString(endDate);
                 }
                 getData["headers"] = false;
-                var methodPrefix = "";
+                let methodPrefix = "";
                 if(isAux) {
                     methodPrefix += "aux/"
                 }
@@ -132,7 +132,7 @@ class MessengerClient extends JsonRestClient {
                 } else {
                     methodPrefix += "conversations/";
                 }
-                var json = await this.get(methodPrefix + encodeURIComponent(chatId) + "/pdf" + this.toGetParameters(getData), overrideToken);
+                let json = await this.get(methodPrefix + encodeURIComponent(chatId) + "/pdf" + this.toGetParameters(getData), overrideToken);
                 resolve(json);
             } catch(err) {
                 Logger.error(err);
@@ -142,28 +142,28 @@ class MessengerClient extends JsonRestClient {
     }
 
     inviteUser(inviteUserData) {
-        var postData = inviteUserData.getPostData();
-        var postUrl = inviteUserData.getPostUrl();
-        var overrideToken = inviteUserData.getOverrideToken();
+        let postData = inviteUserData.getPostData();
+        let postUrl = inviteUserData.getPostUrl();
+        let overrideToken = inviteUserData.getOverrideToken();
         return this.post(postUrl, postData, overrideToken);
     }
 
     createGroup(createGroupData) {
-        var postData = createGroupData.getPostData();
-        var postUrl = createGroupData.getPostUrl();
-        var overrideToken = createGroupData.getOverrideToken();
+        let postData = createGroupData.getPostData();
+        let postUrl = createGroupData.getPostUrl();
+        let overrideToken = createGroupData.getOverrideToken();
         return this.post(postUrl, postData, overrideToken);
     }
 
     changeGroupSettings(groupSettingsData) {
-        var putData = groupSettingsData.getPutData();
-        var putUrl = groupSettingsData.getPutUrl();
-        var overrideToken = groupSettingsData.getOverrideToken();
+        let putData = groupSettingsData.getPutData();
+        let putUrl = groupSettingsData.getPutUrl();
+        let overrideToken = groupSettingsData.getOverrideToken();
         return this.put(putUrl, putData, overrideToken);
     }
 
     getGroupMembers(groupId, isAux, overrideToken) {
-        var methodPrefix = "";
+        let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
         }
@@ -171,51 +171,51 @@ class MessengerClient extends JsonRestClient {
     }
 
     addGroupMembers(groupId, isAux, userIds, overrideToken) {
-        var methodPrefix = "";
+        let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
         }
-        var memberPutData = {};
+        let memberPutData = {};
         memberPutData["members"] = userIds;
 //        memberPutData["aux_members"] = false; TODO
         return this.put(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/members", memberPutData, overrideToken);
     }
 
     removeGroupMembers(groupId, isAux, userIds, overrideToken) {
-        var methodPrefix = "";
+        let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
         }
-        var memberDeleteData = {};
+        let memberDeleteData = {};
         memberDeleteData["members"] = userIds;
 //        memberDeleteData["aux_members"] = false; TODO
         return this.delete(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/members", memberDeleteData, overrideToken);
     }
 
     changeGroupSubject(groupId, isAux, subject, overrideToken) {
-        var methodPrefix = "";
+        let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
         }
-        var subjectPutData = {};
+        let subjectPutData = {};
         subjectPutData["subject"] = subject;
         return this.put(methodPrefix + "groupchats/" + encodeURIComponent(groupId), subjectPutData, overrideToken);
     }
 
     changeGroupAvatar(groupId, isAux, avatarPath, overrideToken) {
-        var methodPrefix = "";
+        let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
         }
-        var postUrl = methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/avatar";
+        let postUrl = methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/avatar";
         return this.postMultipart(postUrl, null, "avatar", [avatarPath], overrideToken);
     }
 
     closeGroupChat(groupId, isAux, sendEmail, overrideToken) {
-        var closePostData = {};
+        let closePostData = {};
         closePostData["send_email"] = sendEmail;
 
-        var methodPrefix = "";
+        let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
         }
@@ -223,11 +223,11 @@ class MessengerClient extends JsonRestClient {
     }
 
     removeGroupChat(groupId, isAux, sendEmail, overrideToken) {
-        var removePostData = {};
+        let removePostData = {};
         removePostData["send_email"] = sendEmail;
         removePostData["remove"] = true;
 
-        var methodPrefix = "";
+        let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
         }
@@ -235,7 +235,7 @@ class MessengerClient extends JsonRestClient {
     }
 
     getChat(chatId, isGroup, isAux, overrideToken) {
-        var methodPrefix = "";
+        let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
         }
@@ -248,7 +248,7 @@ class MessengerClient extends JsonRestClient {
     }
 
     getUser(userId, isAux, overrideToken) {
-        var methodPrefix = "";
+        let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
         }
@@ -264,7 +264,7 @@ class MessengerClient extends JsonRestClient {
     }
 
     askUserVerification(userId, providerId, chatId, isGroup, isAux, overrideToken) {
-        var methodPrefix = "";
+        let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
         }
@@ -273,8 +273,8 @@ class MessengerClient extends JsonRestClient {
         } else {
             methodPrefix += "conversations/";
         }
-        var postUrl = methodPrefix + encodeURIComponent(chatId) + "/verification";
-        var postData = {};
+        let postUrl = methodPrefix + encodeURIComponent(chatId) + "/verification";
+        let postData = {};
         postData["user_id"] = userId;
         postData["provider_id"] = providerId;
         return this.post(postUrl, postData, overrideToken);
@@ -289,7 +289,7 @@ class MessengerClient extends JsonRestClient {
                     resolve(null);
                     return;
                 }
-                var mentionedMembers = [];
+                let mentionedMembers = [];
                 if(isGroup) {
                     for(let mention of mentions) {
                         let memberId = mention["id"];

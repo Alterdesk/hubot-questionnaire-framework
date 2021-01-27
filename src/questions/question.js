@@ -139,11 +139,11 @@ class Question extends Step {
     execute() {
         // Generate user id list by mentioned users
         if(this.isMultiUser && !this.userIds && this.mentionAnswerKey) {
-            var mentions = this.flow.answers.get(this.mentionAnswerKey);
+            let mentions = this.flow.answers.get(this.mentionAnswerKey);
             if(mentions) {
                 this.userIds = [];
                 for(let mention of mentions) {
-                    var userId = mention["id"];
+                    let userId = mention["id"];
                     if(typeof userId !== "string") {
                         Logger.error("Question::execute() Invalid mention user id:", userId, mention);
                         continue;
@@ -170,7 +170,7 @@ class Question extends Step {
     }
 
     getQuestionText() {
-        var formatted;
+        let formatted;
         if(this.formatQuestionFunction != null) {
             Logger.debug("Question::getQuestionText() Formatting question with function");
             formatted = this.formatQuestionFunction(this.flow.answers);
@@ -239,8 +239,8 @@ class Question extends Step {
         if(!this.useListeners && !this.usePendingRequests) {
             return;
         }
-        var control = this.flow.control;
-        var msg = this.flow.msg;
+        let control = this.flow.control;
+        let msg = this.flow.msg;
 
         // Check if the question should be asked to multiple users
         if(this.isMultiUser && this.userIds && this.userIds.length > 0) {
@@ -250,7 +250,7 @@ class Question extends Step {
                 this.timedOut = false;
                 this.multiUserMessages = [];
 
-                var configuredTimeoutCallback = this.timeoutCallback;
+                let configuredTimeoutCallback = this.timeoutCallback;
 
                 this.timeoutCallback = () => {
                     // Check if question was already timed out
@@ -263,7 +263,7 @@ class Question extends Step {
                     if(configuredTimeoutCallback) {
                         configuredTimeoutCallback();
                     } else {
-                        var useTimeoutText = this.timeoutText;
+                        let useTimeoutText = this.timeoutText;
                         if(useTimeoutText == null) {
                             useTimeoutText = control.responseTimeoutText;
                         }
@@ -277,8 +277,8 @@ class Question extends Step {
                 // Create listener for every user id
                 for(let userId of remainingUserIds) {
                     // Create Message for each user id in list
-                    var user = new User(userId);
-                    var userMessage = new Message(user);
+                    let user = new User(userId);
+                    let userMessage = new Message(user);
                     userMessage.room = msg.message.room;
 
                     // Store for cleanup if needed
@@ -288,7 +288,7 @@ class Question extends Step {
                         control.questionAskedCallback(userId, this.answerKey, this.flow.answers, this);
                     }
 
-                    var chatUserKey = ChatTools.messageToChatUserKey(userMessage);
+                    let chatUserKey = ChatTools.messageToChatUserKey(userMessage);
                     if(this.useListeners) {
                         // Add listener for user and wait for answer
                         control.addListener(chatUserKey, new Listener(msg, this.flow.callback, this));
@@ -306,12 +306,12 @@ class Question extends Step {
         }
 
         if(control.questionAskedCallback) {
-            var userId = ChatTools.getUserId(msg.message.user);
-            var answerKey = this.getAnswerKey();
+            let userId = ChatTools.getUserId(msg.message.user);
+            let answerKey = this.getAnswerKey();
             control.questionAskedCallback(userId, answerKey, this.flow.answers, this);
         }
 
-        var chatUserKey = ChatTools.messageToChatUserKey(msg.message);
+        let chatUserKey = ChatTools.messageToChatUserKey(msg.message);
         if(this.useListeners) {
             // Add listener for single user and wait for answer
             control.addListener(chatUserKey, new Listener(msg, this.flow.callback, this));
@@ -330,7 +330,7 @@ class Question extends Step {
         }
         if(this.multiUserMessages != null) {
             for(let userMessage of this.multiUserMessages) {
-                var chatUserKey = ChatTools.messageToChatUserKey(userMessage);
+                let chatUserKey = ChatTools.messageToChatUserKey(userMessage);
                 this.flow.control.removeListener(chatUserKey);
                 this.flow.control.removePendingRequest(chatUserKey);
             }
@@ -351,9 +351,9 @@ class Question extends Step {
     reset() {
         super.reset();
         this.formattedQuestionText = null;
-        var labelKey = this.getLabelAnswerKey();
+        let labelKey = this.getLabelAnswerKey();
         this.flow.answers.remove(labelKey);
-        var valueKey = this.getValueAnswerKey();
+        let valueKey = this.getValueAnswerKey();
         this.flow.answers.remove(valueKey);
     }
 }

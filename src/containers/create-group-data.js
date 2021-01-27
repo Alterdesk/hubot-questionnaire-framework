@@ -62,22 +62,22 @@ class CreateGroupData {
     }
 
     getPostData() {
-        var data = {};
+        let data = {};
 
         if(this.groupSettingsData) {
             data["settings"] = this.groupSettingsData.getPutData();
         }
 
-        var hasAuxMembers = false;
+        let hasAuxMembers = false;
 
         // Invite user data
-        var inviteUsersData = [];
+        let inviteUsersData = [];
 
         for(let inviteUser of this.inviteUsers) {
             if(inviteUser.getAuxId()) {
                 hasAuxMembers = true;
             }
-            var inviteUserData = inviteUser.getPostData(true);
+            let inviteUserData = inviteUser.getPostData(true);
             inviteUsersData.push(inviteUserData);
         }
 

@@ -20,8 +20,8 @@ class ChatPdfAction extends Action {
             flowCallback();
             return;
         }
-        var answers = this.flow.answers;
-        var filename = this.getAnswerValue(this.filename, answers, "");
+        let answers = this.flow.answers;
+        let filename = this.getAnswerValue(this.filename, answers, "");
         for(let formatter of this.filenameFormatters) {
             filename = formatter.execute(filename, this.flow);
         }
@@ -34,21 +34,21 @@ class ChatPdfAction extends Action {
             flowCallback();
             return;
         }
-        var msg = this.flow.msg;
-        var control = this.flow.control;
-        var messengerClient = control.messengerClient;
+        let msg = this.flow.msg;
+        let control = this.flow.control;
+        let messengerClient = control.messengerClient;
 
-        var sourceChatId = msg.message.room;
-        var sourceIsGroup = ChatTools.isUserInGroup(msg.message.user);
+        let sourceChatId = msg.message.room;
+        let sourceIsGroup = ChatTools.isUserInGroup(msg.message.user);
         if(!sourceChatId) {
             this.onError("ChatPdfAction::start() Invalid source chat id");
             flowCallback();
             return;
         }
 
-        var destinationChatId;
-        var destinationIsGroup;
-        var destinationIsAux;
+        let destinationChatId;
+        let destinationIsGroup;
+        let destinationIsAux;
         if(this.chatId) {
             destinationChatId = this.getAnswerValue(this.chatId, answers);
             destinationIsGroup = this.getAnswerValue(this.isGroup, answers);
@@ -64,15 +64,15 @@ class ChatPdfAction extends Action {
             return;
         }
 
-        var messageText = this.getAnswerValue(this.messageText, answers, "");
+        let messageText = this.getAnswerValue(this.messageText, answers, "");
         for(let formatter of this.messageFormatters) {
             messageText = formatter.execute(messageText, this.flow);
         }
 
-        var startDate = this.getAnswerValue(this.startDate, answers);
-        var endDate = this.getAnswerValue(this.endDate, answers);
+        let startDate = this.getAnswerValue(this.startDate, answers);
+        let endDate = this.getAnswerValue(this.endDate, answers);
 
-        var filePath = await messengerClient.downloadChatPdf(filename, startDate, endDate, sourceChatId, sourceIsGroup, false);
+        let filePath = await messengerClient.downloadChatPdf(filename, startDate, endDate, sourceChatId, sourceIsGroup, false);
         if(!filePath) {
             this.onError("ChatPdfAction::start() Unable to generate PDF: chatId: " + sourceChatId + " isGroup: " + sourceIsGroup);
             if(this.answerKey) {
@@ -86,17 +86,17 @@ class ChatPdfAction extends Action {
         }
         Logger.debug("ChatPdfAction::start() Generated PDF: " + filePath);
 
-        var sendMessageData = new SendMessageData();
+        let sendMessageData = new SendMessageData();
         sendMessageData.setMessage(messageText);
         sendMessageData.setChat(destinationChatId, destinationIsGroup, destinationIsAux);
         sendMessageData.addAttachmentPath(filePath);
-        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+        let overrideToken = this.getAnswerValue(this.overrideToken, answers);
         if(overrideToken) {
             sendMessageData.setOverrideToken(overrideToken);
         }
 
-        var json = await messengerClient.sendMessage(sendMessageData);
-        var messageSuccess = json != null;
+        let json = await messengerClient.sendMessage(sendMessageData);
+        let messageSuccess = json != null;
         if(this.answerKey) {
             answers.add(this.answerKey, messageSuccess);
             if(messageSuccess) {

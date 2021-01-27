@@ -15,7 +15,7 @@ class InviteAction extends Action {
     }
 
     async start(flowCallback) {
-        var answers = this.flow.answers;
+        let answers = this.flow.answers;
         this.flowCallback = flowCallback;
         if(!this.flow || !this.flow.msg || !this.flow.control) {
             this.onError("InviteAction::start() Invalid Flow or Control");
@@ -23,11 +23,10 @@ class InviteAction extends Action {
             return;
         }
 
-        var inviteTypeValue = this.getAnswerValue(this.inviteType, answers);
-        var emailValue = this.getAnswerValue(this.email, answers);
-        var auxId = this.getAnswerValue(this.auxId, answers);
-        var firstNameValue = this.getAnswerValue(this.firstName, answers);
-        var lastNameValue = this.getAnswerValue(this.lastName, answers);
+        let inviteTypeValue = this.getAnswerValue(this.inviteType, answers);
+        let emailValue = this.getAnswerValue(this.email, answers);
+        let firstNameValue = this.getAnswerValue(this.firstName, answers);
+        let lastNameValue = this.getAnswerValue(this.lastName, answers);
         if(!inviteTypeValue || inviteTypeValue === ""
             || !emailValue || emailValue === ""
             || !firstNameValue || firstNameValue === ""
@@ -37,35 +36,32 @@ class InviteAction extends Action {
             return;
         }
 
-        var inviteUserData = new InviteUserData();
+        let inviteUserData = new InviteUserData();
         inviteUserData.setInviteType(inviteTypeValue);
         inviteUserData.setEmail(emailValue);
         inviteUserData.setFirstName(firstNameValue);
         inviteUserData.setLastName(lastNameValue);
-        if(auxId && auxId !== "") {
-            inviteUserData.setAuxId(auxId);
-        }
 
-        var inviteTextValue = this.getAnswerValue(this.inviteText, answers);
+        let inviteTextValue = this.getAnswerValue(this.inviteText, answers);
         for(let formatter of this.inviteFormatters) {
             inviteTextValue = formatter.execute(inviteTextValue, this.flow);
         }
         if(inviteTextValue && inviteTextValue !== "") {
             inviteUserData.setInviteMessage(inviteTextValue);    // Only used when creating conversation
         }
-        var auxId = this.getAnswerValue(this.auxId, answers);
+        let auxId = this.getAnswerValue(this.auxId, answers);
         if(auxId) {
             inviteUserData.setAuxId(auxId);
         }
-        var sendEmailValue = this.getAnswerValue(this.sendEmail, answers, true);
+        let sendEmailValue = this.getAnswerValue(this.sendEmail, answers, true);
         inviteUserData.setSendEmail(sendEmailValue);
 
-        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+        let overrideToken = this.getAnswerValue(this.overrideToken, answers);
         if(overrideToken) {
             inviteUserData.setOverrideToken(overrideToken);
         }
 
-        var result = await this.flow.control.messengerClient.inviteUser(inviteUserData);
+        let result = await this.flow.control.messengerClient.inviteUser(inviteUserData);
         if(!result) {
             this.done(null);
             return;
@@ -74,7 +70,7 @@ class InviteAction extends Action {
     }
 
     done(value) {
-        var answerKey = this.getAnswerKey();
+        let answerKey = this.getAnswerKey();
         if(answerKey && value != null) {
             this.flow.answers.add(answerKey, value);
         }

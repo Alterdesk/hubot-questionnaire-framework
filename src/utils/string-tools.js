@@ -140,14 +140,14 @@ class StringTools {
         if(typeof string !== "string" || string === "") {
             return string;
         }
-        var words = string.split(" ");
-        var result = "";
+        let words = string.split(" ");
+        let result = "";
         for(let index in words) {
             if(index > 0) {
                 result += " ";
             }
-            var word = words[index];
-            var nextIndex = parseInt(index) + 1;
+            let word = words[index];
+            let nextIndex = parseInt(index) + 1;
             if(nextIndex < words.length) {
                 result += word;
             } else {
@@ -161,10 +161,10 @@ class StringTools {
         if(mention["id"].toUpperCase() === "@ALL") {
             return mentionedAllText || "All members";
         }
-        var firstName = mention["first_name"];
-        var lastName = mention["last_name"];
-        var companyName = mention["company_name"];
-        var user = "";
+        let firstName = mention["first_name"];
+        let lastName = mention["last_name"];
+        let companyName = mention["company_name"];
+        let user = "";
         if(firstName && lastName) {
             user += firstName + " " + lastName;
         } else if(firstName) {
@@ -185,9 +185,9 @@ class StringTools {
         if(typeof filename !== "string" || filename.length === 0) {
             return filename;
         }
-        var parts = filename.split(".");
-        var maxLength = 255;
-        var extension;
+        let parts = filename.split(".");
+        let maxLength = 255;
+        let extension;
         if(parts.length > 1) {
             extension = "." + parts[(parts.length - 1)];
             maxLength = 255 - extension.length;

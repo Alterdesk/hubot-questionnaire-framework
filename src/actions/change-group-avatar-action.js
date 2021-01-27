@@ -12,7 +12,7 @@ class ChangeGroupAvatarAction extends Action {
     }
 
     async start(flowCallback) {
-        var answers = this.flow.answers;
+        let answers = this.flow.answers;
         this.flowCallback = flowCallback;
         if(!this.flow || !this.flow.msg || !this.flow.control) {
             this.onError("ChangeGroupAvatarAction::start() Invalid Flow or Control");
@@ -20,7 +20,7 @@ class ChangeGroupAvatarAction extends Action {
             return;
         }
 
-        var avatarPath = this.getAnswerValue(this.avatarPath, answers);
+        let avatarPath = this.getAnswerValue(this.avatarPath, answers);
 
         if(!avatarPath || avatarPath === "") {
             this.onError("ChangeGroupAvatarAction::start() Invalid avatar path:", avatarPath);
@@ -33,13 +33,13 @@ class ChangeGroupAvatarAction extends Action {
             return;
         }
 
-        var chatId;
-        var isAux;
+        let chatId;
+        let isAux;
         if(this.chatId) {
             chatId = this.getAnswerValue(this.chatId, answers);
             isAux = this.getAnswerValue(this.isAux, answers);
         } else {
-            var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
+            let isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
                 Logger.warn("ChangeGroupAvatarAction::start() Not a group chat");
                 flowCallback();
@@ -53,7 +53,7 @@ class ChangeGroupAvatarAction extends Action {
             flowCallback();
             return;
         }
-        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+        let overrideToken = this.getAnswerValue(this.overrideToken, answers);
         await this.flow.control.messengerClient.changeGroupAvatar(chatId, isAux, avatarPath, overrideToken);
         flowCallback();
     }

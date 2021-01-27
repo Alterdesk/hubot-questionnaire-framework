@@ -14,7 +14,7 @@ class EmailQuestion extends Question {
         if(matches == null || message.text == null) {
             return null;
         }
-        var email = matches[0];
+        let email = matches[0];
         if(this.allowedDomains.length === 0) {
             return email;
         }

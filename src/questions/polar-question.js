@@ -58,39 +58,39 @@ class PolarQuestion extends Question {
     }
 
     async send(callback) {
-        var msg = this.flow.msg;
+        let msg = this.flow.msg;
         if(this.useButtons) {
-            var sendMessageData = new SendMessageData();
-            var messageText = this.getQuestionText();
+            let sendMessageData = new SendMessageData();
+            let messageText = this.getQuestionText();
             sendMessageData.setMessage(messageText);
             sendMessageData.setHubotMessage(msg.message);
-            var requestStyle = this.questionStyle || "horizontal";
+            let requestStyle = this.questionStyle || "horizontal";
             sendMessageData.setRequestOptions(false, requestStyle);
 
-            var labelPositive = this.positiveLabel || this.positiveRegex;
+            let labelPositive = this.positiveLabel || this.positiveRegex;
             if(!labelPositive) {
                 labelPositive = "Positive";
             }
-            var namePositive = this.positiveName || this.positiveRegex;
+            let namePositive = this.positiveName || this.positiveRegex;
             if(namePositive) {
                 namePositive = namePositive.toLowerCase();
             } else {
                 namePositive = "positive";
             }
-            var stylePositive = this.positiveStyle || "green";
+            let stylePositive = this.positiveStyle || "green";
             sendMessageData.addQuestionButtonWithName(namePositive, labelPositive, stylePositive);
 
-            var labelNegative = this.negativeLabel || this.negativeRegex;
+            let labelNegative = this.negativeLabel || this.negativeRegex;
             if(!labelNegative) {
                 labelNegative = "Negative";
             }
-            var nameNegative = this.negativeName || this.negativeRegex;
+            let nameNegative = this.negativeName || this.negativeRegex;
             if(nameNegative) {
                 nameNegative = nameNegative.toLowerCase();
             } else {
                 nameNegative = "negative";
             }
-            var styleNegative = this.negativeStyle || "red";
+            let styleNegative = this.negativeStyle || "red";
             sendMessageData.addQuestionButtonWithName(nameNegative, labelNegative, styleNegative);
 
             if(this.isMultiUser && this.userIds && this.userIds.length > 0) {
@@ -111,15 +111,15 @@ class PolarQuestion extends Question {
             this.flow.control.sendComposing(msg);
 
             // Send the message and parse result in callback
-            var json = await this.flow.control.messengerClient.sendMessage(sendMessageData);
-            var success = json != null;
+            let json = await this.flow.control.messengerClient.sendMessage(sendMessageData);
+            let success = json != null;
             Logger.debug("PolarQuestion:send() Successful: " + success);
             if(json != null) {
-                var messageId = json["id"];
+                let messageId = json["id"];
                 Logger.debug("PolarQuestion:send() Question message id: " + messageId);
                 this.requestMessageId = messageId;
             } else {
-                var fallbackText = messageText;
+                let fallbackText = messageText;
                 fallbackText += "\n • \"" + this.positiveName + "\" - " + this.positiveLabel;
                 fallbackText += "\n • \"" + this.negativeName + "\" - " + this.negativeLabel;
                 msg.send(fallbackText);

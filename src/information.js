@@ -12,7 +12,7 @@ class Information extends Step {
 
     // Execute this information message
     execute() {
-        var result = this.text;
+        let result = this.text;
 
         // Format text with formatters if set
         for(let formatter of this.formatters) {

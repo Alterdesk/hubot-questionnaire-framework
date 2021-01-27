@@ -12,9 +12,9 @@ class FormatAnswerAction extends Action {
     }
 
     start(flowCallback) {
-        var answers = this.flow.answers;
-        var answerKey = this.getAnswerKey();
-        var text = this.getAnswerValue(this.text, answers, "");
+        let answers = this.flow.answers;
+        let answerKey = this.getAnswerKey();
+        let text = this.getAnswerValue(this.text, answers, "");
         Logger.debug("FormatAnswerAction::start() Using " + this.formatters.length + " formatters");
         for(let formatter of this.formatters) {
             text = formatter.execute(text, this.flow);

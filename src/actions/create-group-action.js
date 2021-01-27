@@ -21,8 +21,8 @@ class CreateGroupAction extends Action {
             this.done(null);
             return;
         }
-        var answers = this.flow.answers;
-        var subjectValue = this.getAnswerValue(this.subject, answers, "");
+        let answers = this.flow.answers;
+        let subjectValue = this.getAnswerValue(this.subject, answers, "");
         for(let formatter of this.subjectFormatters) {
             subjectValue = formatter.execute(subjectValue, this.flow);
         }
@@ -32,34 +32,34 @@ class CreateGroupAction extends Action {
             return;
         }
 
-        var createGroupData = new CreateGroupData();
+        let createGroupData = new CreateGroupData();
         createGroupData.setSubject(subjectValue);
 
-        var groupSettingsData = new GroupSettingsData();
-        var allowContactsValue = this.getAnswerValue(this.allowContacts, answers);
+        let groupSettingsData = new GroupSettingsData();
+        let allowContactsValue = this.getAnswerValue(this.allowContacts, answers);
         if(allowContactsValue != null) {
             groupSettingsData.setAllowContacts(allowContactsValue);
         }
-        var autoCloseAfterValue = this.getAnswerValue(this.autoCloseAfter, answers);
+        let autoCloseAfterValue = this.getAnswerValue(this.autoCloseAfter, answers);
         if(autoCloseAfterValue != null) {
             groupSettingsData.setCloseAfter(autoCloseAfterValue);
         }
-        var autoExpireAfterValue = this.getAnswerValue(this.autoExpireAfter, answers);
+        let autoExpireAfterValue = this.getAnswerValue(this.autoExpireAfter, answers);
         if(autoExpireAfterValue != null) {
             groupSettingsData.setExpireAfter(autoExpireAfterValue);
         }
-        var hybridMessagingValue = this.getAnswerValue(this.hybridMessaging, answers);
+        let hybridMessagingValue = this.getAnswerValue(this.hybridMessaging, answers);
         if(hybridMessagingValue != null) {
             groupSettingsData.setHybridMessaging(hybridMessagingValue);
         }
-        var membersCanInviteValue = this.getAnswerValue(this.membersCanInvite, answers);
+        let membersCanInviteValue = this.getAnswerValue(this.membersCanInvite, answers);
         if(membersCanInviteValue != null) {
             groupSettingsData.setMembersCanInvite(membersCanInviteValue);
         }
         createGroupData.setGroupSettings(groupSettingsData);
 
         for(let member of this.memberIds) {
-            var id = this.getAnswerValue(member, answers);
+            let id = this.getAnswerValue(member, answers);
             if(id && id.length > 0) {
                 createGroupData.addMemberId(id);
             }
@@ -67,7 +67,7 @@ class CreateGroupAction extends Action {
 
         // Invite user data
         for(let invite of this.invites) {
-            var inviteUserData = new InviteUserData();
+            let inviteUserData = new InviteUserData();
             inviteUserData.setCreateConversation(this.getAnswerValue(invite.createConversation, answers, false));
             inviteUserData.setEmail(this.getAnswerValue(invite.email, answers));
             inviteUserData.setFirstName(this.getAnswerValue(invite.firstName, answers));
@@ -80,11 +80,11 @@ class CreateGroupAction extends Action {
 
         createGroupData.setSendEmail(this.getAnswerValue(this.sendEmail, answers, true));
         createGroupData.setAuxId(this.getAnswerValue(this.auxId, answers));
-        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+        let overrideToken = this.getAnswerValue(this.overrideToken, answers);
         if(overrideToken) {
             createGroupData.setOverrideToken(overrideToken);
         }
-        var result = await this.flow.control.messengerClient.createGroup(createGroupData);
+        let result = await this.flow.control.messengerClient.createGroup(createGroupData);
         if(!result) {
             this.done(null);
             return;
@@ -93,7 +93,7 @@ class CreateGroupAction extends Action {
     }
 
     done(value) {
-        var answerKey = this.getAnswerKey();
+        let answerKey = this.getAnswerKey();
         if(answerKey && value != null) {
             this.flow.answers.add(answerKey, value);
         }
@@ -118,7 +118,7 @@ class CreateGroupAction extends Action {
     }
 
     addInvite(email, firstName, lastName, inviteType, inviteText, createConversation, auxId) {
-        var invite = new MemberInvite(email, firstName, lastName, inviteType, inviteText, createConversation, auxId);
+        let invite = new MemberInvite(email, firstName, lastName, inviteType, inviteText, createConversation, auxId);
         this.invites.push(invite);
     }
 
