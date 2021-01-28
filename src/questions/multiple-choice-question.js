@@ -66,7 +66,8 @@ class MultipleChoiceQuestion extends Question {
         }
         if(this.multiAnswer && typeof answerValue === "object") {
             let labels = [];
-            for(let label of answerValue) {
+            for(let value of answerValue) {
+                let label = this.getLabelForAnswer(value);
                 if(!label) {
                     continue;
                 }
@@ -90,7 +91,8 @@ class MultipleChoiceQuestion extends Question {
         }
         if(this.multiAnswer && typeof answerValue === "object") {
             let values = [];
-            for(let label of answerValue) {
+            for(let value of answerValue) {
+                let label = this.getValueForAnswer(value);
                 if(!label) {
                     continue;
                 }
