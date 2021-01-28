@@ -26,9 +26,7 @@ class CreateGroupData {
     }
 
     addMemberIds(ids) {
-        for(let id of ids) {
-            this.addMemberId.push(id);
-        }
+        this.memberIds = this.memberIds.concat(ids);
     }
 
     addInvite(invite) {
@@ -36,9 +34,7 @@ class CreateGroupData {
     }
 
     addInvites(invites) {
-        for(let invite of invites) {
-            this.addInvite.push(invite);
-        }
+        this.inviteUsers = this.inviteUsers.concat(invites);
     }
 
     setGroupSettings(groupSettingsData) {
