@@ -51,9 +51,7 @@ class SendMessageData {
     }
 
     addAttachmentPaths(paths) {
-        for(let path of paths) {
-            this.attachmentPaths.push(path);
-        }
+        this.attachmentPaths = this.attachmentPaths.concat(paths);
     }
 
     getAttachmentPaths() {
@@ -70,9 +68,7 @@ class SendMessageData {
     }
 
     addRequestUserIds(userIds) {
-        for(let userId of userIds) {
-            this.requestUserIds.push(userId);
-        }
+        this.requestUserIds = this.requestUserIds.concat(userIds);
     }
 
     addQuestionButton(label, style) {
