@@ -127,6 +127,10 @@ class ModifyDateAction extends Action {
         this.dateConditions.push(condition);
     }
 
+    addDateConditions(conditions) {
+        this.dateConditions = this.dateConditions.concat(conditions);
+    }
+
     reset() {
         super.reset();
         this.failOperations = 0;
