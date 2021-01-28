@@ -122,12 +122,20 @@ class ChatPdfAction extends Action {
         this.filenameFormatters.push(formatter);
     }
 
+    addFilenameFormatters(formatters) {
+        this.filenameFormatters = this.filenameFormatters.concat(formatters);
+    }
+
     setMessageText(messageText) {
         this.messageText = messageText;
     }
 
     addMessageFormatter(formatter) {
         this.messageFormatters.push(formatter);
+    }
+
+    addMessageFormatters(formatters) {
+        this.messageFormatters = this.messageFormatters.concat(formatters);
     }
 
     setStartDate(startDate) {

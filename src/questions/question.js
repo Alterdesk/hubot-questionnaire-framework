@@ -43,6 +43,10 @@ class Question extends Step {
         this.questionFormatters.push(formatter);
     }
 
+    addQuestionFormatters(formatters) {
+        this.questionFormatters = this.questionFormatters.concat(formatters);
+    }
+
     // Add a delay before executing this question
     setDelay(ms) {
         this.delayMs = ms;

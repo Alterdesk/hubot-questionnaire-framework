@@ -29,6 +29,10 @@ class FormatAnswerAction extends Action {
     addFormatter(formatter) {
         this.formatters.push(formatter);
     }
+
+    addFormatters(formatters) {
+        this.formatters = this.formatters.concat(formatters);
+    }
 }
 
 module.exports = FormatAnswerAction;

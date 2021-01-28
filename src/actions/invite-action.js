@@ -102,6 +102,10 @@ class InviteAction extends Action {
         this.inviteFormatters.push(formatter);
     }
 
+    addInviteFormatters(formatters) {
+        this.inviteFormatters = this.inviteFormatters.concat(formatters);
+    }
+
     setSendEmail(sendEmail) {
         this.sendEmail = sendEmail;
     }

@@ -88,6 +88,10 @@ class SendMessageAction extends Action {
         this.messageFormatters.push(formatter);
     }
 
+    addMessageFormatters(formatters) {
+        this.messageFormatters = this.messageFormatters.concat(formatters);
+    }
+
     addAttachmentPath(filePath) {
         this.attachmentPaths.push(filePath);
     }

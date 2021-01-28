@@ -68,6 +68,10 @@ class ChangeSubjectAction extends Action {
     addSubjectFormatter(formatter) {
         this.subjectFormatters.push(formatter);
     }
+
+    addSubjectFormatters(formatters) {
+        this.subjectFormatters = this.subjectFormatters.concat(formatters);
+    }
 }
 
 module.exports = ChangeSubjectAction;

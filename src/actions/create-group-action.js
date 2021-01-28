@@ -166,6 +166,10 @@ class CreateGroupAction extends Action {
         this.subjectFormatters.push(formatter);
     }
 
+    addSubjectFormatters(formatters) {
+        this.subjectFormatters = this.subjectFormatters.concat(formatters);
+    }
+
 }
 
 class MemberInvite {
