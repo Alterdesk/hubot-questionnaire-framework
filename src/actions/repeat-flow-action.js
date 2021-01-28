@@ -116,6 +116,10 @@ class RepeatFlowAction extends Action {
         this.conditions.push(condition);
     }
 
+    addConditions(conditions) {
+        this.conditions = this.conditions.concat(conditions);
+    }
+
     setRepeatAnswer(repeatKey, repeatValue) {
         this.repeatKey = repeatKey;
         this.repeatValue = repeatValue;

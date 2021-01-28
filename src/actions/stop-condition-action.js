@@ -42,6 +42,10 @@ class StopConditionAction extends Action {
         this.conditions.push(condition);
     }
 
+    addConditions(conditions) {
+        this.conditions = this.conditions.concat(conditions);
+    }
+
     setAnswerOnStop(answerKey, answerValue) {
         if(!this.setAnswers) {
             this.setAnswers = new Answers();

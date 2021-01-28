@@ -33,6 +33,10 @@ class FlowAction extends Action {
     addCondition(condition) {
         this.conditions.push(condition);
     }
+
+    addConditions(conditions) {
+        this.conditions = this.conditions.concat(conditions);
+    }
 }
 
 module.exports = FlowAction;

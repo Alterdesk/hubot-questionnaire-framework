@@ -38,6 +38,10 @@ class Formatter {
         this.conditions.push(condition);
     }
 
+    addConditions(conditions) {
+        this.conditions = this.conditions.concat(conditions);
+    }
+
     setForceRepeatIteration(forceRepeatIteration) {
         Logger.debug("Formatter::setForceRepeatIteration():", forceRepeatIteration);
         this.forceRepeatIteration = forceRepeatIteration;
