@@ -69,6 +69,10 @@ class GenerateNumberAction extends Action {
     addNumberCondition(condition) {
         this.numberConditions.push(condition);
     }
+
+    addNumberConditions(conditions) {
+        this.numberConditions = this.numberConditions.concat(conditions);
+    }
 }
 
 module.exports = GenerateNumberAction;
