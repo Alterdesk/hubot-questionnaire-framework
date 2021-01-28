@@ -129,16 +129,32 @@ class RepeatFormatter extends Formatter {
         this.formatters.push(formatter);
     }
 
+    addFormatters(formatters) {
+        this.formatters = this.formatters.concat(formatters);
+    }
+
     addStartFormatter(formatter) {
         this.startFormatters.push(formatter);
+    }
+
+    addStartFormatters(formatters) {
+        this.startFormatters = this.startFormatters.concat(formatters);
     }
 
     addDividerFormatter(formatter) {
         this.dividerFormatters.push(formatter);
     }
 
+    addDividerFormatters(formatters) {
+        this.dividerFormatters = this.dividerFormatters.concat(formatters);
+    }
+
     addEndFormatter(formatter) {
         this.endFormatters.push(formatter);
+    }
+
+    addEndFormatters(formatters) {
+        this.endFormatters = this.endFormatters.concat(formatters);
     }
 
 }
