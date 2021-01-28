@@ -50,6 +50,10 @@ class AppendTextFormatter extends Formatter {
         this.formatters.push(formatter);
     }
 
+    addFormatters(formatters) {
+        this.formatters = this.formatters.concat(formatters);
+    }
+
 }
 
 module.exports = AppendTextFormatter;
