@@ -134,7 +134,8 @@ class RepeatFlowAction extends Action {
             return null;
         }
         let questions = [];
-        for(let question of this.summaryQuestions) {
+        for(let repeatKey in this.summaryQuestions) {
+            let question = this.summaryQuestions[repeatKey];
             if(ChatTools.filterSummaryQuestion(question, limitToTitles, excludeTitles)) {
                 questions.push(question);
             }
