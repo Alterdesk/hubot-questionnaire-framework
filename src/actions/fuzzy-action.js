@@ -88,7 +88,7 @@ class FuzzyAction extends Action {
                     return;
                 }
             }
-            this.onError("FuzzyAction::showCandidates() Unable to find matching candidate: ", answerValue)
+            this.onError("FuzzyAction::showCandidates() Unable to find matching candidate: ", answerValue);
             this.done(null);
             subFlowCallback();
         });
@@ -131,7 +131,7 @@ class FuzzyAction extends Action {
         let indexAnswerKey = answerKey + "_index_" + this.indexAttempts;
         this.steps.push(indexAnswerKey);
         this.indexAttempts++;
-        this.innerFlow.multiple(indexAnswerKey, this.indexText, this.invalidText)
+        this.innerFlow.multiple(indexAnswerKey, this.indexText, this.invalidText);
         for(let option of availableOptions) {
             let label = option.toUpperCase();
             let style = "orange";

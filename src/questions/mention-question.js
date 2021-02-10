@@ -82,7 +82,7 @@ class MentionQuestion extends Question {
             let userId = mention["id"];
             // Skip robot mention if not allowed
             if(!this.robotAllowed && robotId !== null && userId === robotId) {
-                Logger.debug("MentionQuestion::checkAndParseAnswer() Removed robot mention")
+                Logger.debug("MentionQuestion::checkAndParseAnswer() Removed robot mention");
                 continue;
             }
             let add = true;

@@ -14,13 +14,13 @@ class PolarQuestion extends Question {
 
     // Set the positive answer regex and optional sub flow to start when a positive answer was given
     setPositive(regex, subFlow) {
-        this.positiveRegex = regex
+        this.positiveRegex = regex;
         this.positiveFlow = subFlow;
     }
 
     // Set the negative answer regex and optional sub flow to start when a negative answer was given
     setNegative(regex, subFlow) {
-        this.negativeRegex = regex
+        this.negativeRegex = regex;
         this.negativeFlow = subFlow;
     }
 

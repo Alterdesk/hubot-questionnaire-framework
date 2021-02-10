@@ -29,7 +29,7 @@ class PendingRequest {
             if(this.retryCount++ < 9) {
                 setTimeout(() => {
                     this.call(responseMessage);
-                }, 500)
+                }, 500);
                 return;
             }
         }

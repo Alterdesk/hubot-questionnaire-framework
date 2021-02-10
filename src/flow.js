@@ -1355,7 +1355,7 @@ class Flow {
                         }
                         if(parsedUserIds && parsedUserIds[userId]) {
                             Logger.debug("Flow::next() Already parsed multi-user answer from \"" + userId + "\" for \"" + answerKey + "\"");
-                            parsedAnswers++
+                            parsedAnswers++;
                             continue;
                         }
                         let matches;

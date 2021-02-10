@@ -90,7 +90,7 @@ class Control {
     overrideReceiver(robot) {
         // Check if robot receiver is already overridden
         if(robot.defaultRobotReceiver != null) {
-            Logger.error("Control::overrideReceiver() Robot receiver already overridden!")
+            Logger.error("Control::overrideReceiver() Robot receiver already overridden!");
             return;
         }
         this.robot = robot;
@@ -550,7 +550,7 @@ class Control {
         this.removeResponseTimeoutTimer(chatUserKey);
         this.removePresenceTimeoutTimer(chatUserKey);
         let count = this.getActiveQuestionnaireCount();
-        Logger.debug("Control::removeActiveQuestionnaire() Active questionnaires: " + count)
+        Logger.debug("Control::removeActiveQuestionnaire() Active questionnaires: " + count);
         if(this.removedActiveQuestionnaireCallback) {
             this.removedActiveQuestionnaireCallback(chatUserKey, count);
         }

@@ -72,7 +72,7 @@ class CreateGroupAction extends Action {
             inviteUserData.setEmail(this.getAnswerValue(invite.email, answers));
             inviteUserData.setFirstName(this.getAnswerValue(invite.firstName, answers));
             inviteUserData.setLastName(this.getAnswerValue(invite.lastName, answers));
-            inviteUserData.setInviteMessage(this.getAnswerValue(invite.inviteText, answers))
+            inviteUserData.setInviteMessage(this.getAnswerValue(invite.inviteText, answers));
             inviteUserData.setAuxId(this.getAnswerValue(invite.auxId, answers));
             inviteUserData.setInviteType(this.getAnswerValue(invite.inviteType, answers));
             createGroupData.addInvite(inviteUserData);
