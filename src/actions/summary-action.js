@@ -9,7 +9,7 @@ class SummaryAction extends Action {
     }
 
     start(flowCallback) {
-        var summary = this.summaryFunction(this.flow.answers);
+        let summary = this.summaryFunction(this.flow.answers);
         if(summary && summary !== "") {
             this.flow.msg.send(summary);
         }

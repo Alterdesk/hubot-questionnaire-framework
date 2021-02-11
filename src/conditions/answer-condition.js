@@ -19,7 +19,7 @@ class AnswerCondition extends Condition {
 
     addValue(answerKey, answerValue) {
         this.addKey(answerKey);
-        var values = this.answerValues[answerKey];
+        let values = this.answerValues[answerKey];
         if(!values) {
             values = [];
             this.answerValues[answerKey] = values;
@@ -40,17 +40,16 @@ class AnswerCondition extends Condition {
     }
 
     check(flow) {
-        var inverse = this.getAnswerValue(this.inverse, flow.answers, false);
-        for(let i in this.answerKeys) {
-            var checkKey = this.answerKeys[i];
-            var answerKey = ChatTools.getAnswerKey(checkKey, flow, this.forceRepeatIteration);
+        let inverse = this.getAnswerValue(this.inverse, flow.answers, false);
+        for(let checkKey of this.answerKeys) {
+            let answerKey = ChatTools.getAnswerKey(checkKey, flow, this.forceRepeatIteration);
             if(!flow.answers.has(answerKey)) {
                 Logger.debug("AnswerCondition::check() Key not available: " + answerKey);
                 continue;
             }
-            var answerValue = flow.answers.get(answerKey);
-            var type = typeof answerValue;
-            var className = "";
+            let answerValue = flow.answers.get(answerKey);
+            let type = typeof answerValue;
+            let className = "";
             if(answerValue && answerValue.constructor) {
                 className = answerValue.constructor.name;
             }
@@ -62,8 +61,8 @@ class AnswerCondition extends Condition {
                         return !inverse;
                     }
                 }
-                for(let i in answerValue) {
-                    if(this.checkAnswer(checkKey, answerKey, answerValue[i])) {
+                for(let value of answerValue) {
+                    if(this.checkAnswer(checkKey, answerKey, value)) {
                         Logger.debug("AnswerCondition::check() Condition met: inverse: " + inverse + " condition:", this);
                         return !inverse;
                     }
@@ -80,9 +79,9 @@ class AnswerCondition extends Condition {
     }
 
     checkAnswer(checkKey, answerKey, answerValue) {
-        var regex = this.answerRegex[checkKey];
-        var values = this.answerValues[checkKey];
-        var range = this.answerRanges[checkKey];
+        let regex = this.answerRegex[checkKey];
+        let values = this.answerValues[checkKey];
+        let range = this.answerRanges[checkKey];
         if((!values || values.length === 0) && !regex && !range) {
             Logger.debug("AnswerCondition::checkAnswer() No restrictions and answer given: key: " + answerKey);
             return true;
@@ -96,8 +95,7 @@ class AnswerCondition extends Condition {
             Logger.debug("AnswerCondition::checkAnswer() Not matched by regex: key: " + answerKey + " value: " + answerValue + " regex: " + regex);
         }
         if(values && values.length > 0) {
-            for(let i in values) {
-                var checkValue = values[i];
+            for(let checkValue of values) {
                 if(answerValue === checkValue) {
                     Logger.debug("AnswerCondition::checkAnswer() Equals value: key: " + answerKey + " value: " + answerValue);
                     return true;

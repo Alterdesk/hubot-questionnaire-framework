@@ -37,8 +37,8 @@ class Control {
         this.backRegex = null;//new RegExp(/^[ \n\r\t]*back[ \n\r\t]*$/, 'gi');
         this.checkpointRegex = null;//new RegExp(/^[ \n\r\t]*checkpoint[ \n\r\t]*$/, 'gi');
         this.helpRegex = new RegExp(/^[ \n\r\t]*help[ \n\r\t]*$/, 'gi');
-        this.robotUserId;
-        this.robotMentionRegex;
+        this.robotUserId = null;
+        this.robotMentionRegex = null;
 
         // Response timeout milliseconds
         this.responseTimeoutMs = parseInt(process.env.HUBOT_QUESTIONNAIRE_RESPONSE_TIMEOUT || 60000);
@@ -90,7 +90,7 @@ class Control {
     overrideReceiver(robot) {
         // Check if robot receiver is already overridden
         if(robot.defaultRobotReceiver != null) {
-            Logger.error("Control::overrideReceiver() Robot receiver already overridden!")
+            Logger.error("Control::overrideReceiver() Robot receiver already overridden!");
             return;
         }
         this.robot = robot;
@@ -113,7 +113,7 @@ class Control {
                 this.robotMentionRegex = new RegExp("\\[mention=" + robot.user.id + "\\]+", 'i');
             }
 
-            var className;
+            let className;
             if(message.constructor != null) {
                 className = message.constructor.name;
             } else {
@@ -122,7 +122,7 @@ class Control {
             }
 
             if(className === "TopicMessage" || message instanceof TopicMessage) {
-                var event = message.text;
+                let event = message.text;
                 Logger.debug("Control::receive() TopicMessage: \"" + event + "\"");
                 if(event === "authenticated") {
                     if(this.authenticatedCallback) {
@@ -130,8 +130,8 @@ class Control {
                     }
                 } else if(event === "typing" || event === "stop_typing") {
                     if(this.typingCallback) {
-                        var userId = ChatTools.getUserId(message.user);
-                        var isGroup = ChatTools.isUserInGroup(message.user);
+                        let userId = ChatTools.getUserId(message.user);
+                        let isGroup = ChatTools.isUserInGroup(message.user);
                         this.typingCallback(userId, event === "typing", message.room, isGroup);
                     }
                 } else if(event === "presence_update") {
@@ -154,65 +154,63 @@ class Control {
                     }
                 } else if(event === "conversation_message_liked" || event === "groupchat_message_liked") {
                     if(this.messageLikedCallback) {
-                        var userId = ChatTools.getUserId(message.user);
-                        var isGroup = ChatTools.isUserInGroup(message.user);
+                        let userId = ChatTools.getUserId(message.user);
+                        let isGroup = ChatTools.isUserInGroup(message.user);
                         this.messageLikedCallback(userId, message.id, message.room, isGroup);
                     }
                 } else if(event === "conversation_message_deleted" || event === "groupchat_message_deleted") {
                     if(this.messageDeletedCallback) {
-                        var userId = ChatTools.getUserId(message.user);
-                        var isGroup = ChatTools.isUserInGroup(message.user);
+                        let userId = ChatTools.getUserId(message.user);
+                        let isGroup = ChatTools.isUserInGroup(message.user);
                         this.messageDeletedCallback(userId, message.id, message.room, isGroup);
                     }
                 } else if(event === "conversation_verification_accepted" || event === "conversation_verification_rejected"
                     || event === "groupchat_verification_accepted" || event === "groupchat_verification_rejected") {
-                    var chatUserKey = ChatTools.messageToChatUserKey(message);
+                    let chatUserKey = ChatTools.messageToChatUserKey(message);
                     if(this.hasPendingRequest(chatUserKey)) {
-                        var pendingRequest = this.removePendingRequest(chatUserKey);
+                        let pendingRequest = this.removePendingRequest(chatUserKey);
                         pendingRequest.call(message);
                     }
                     if(this.verificationCallback) {
-                        var userId = ChatTools.getUserId(message.user);
-                        var isGroup = ChatTools.isUserInGroup(message.user);
-                        var accepted = event === "conversation_verification_accepted" || event === "groupchat_verification_accepted";
+                        let userId = ChatTools.getUserId(message.user);
+                        let isGroup = ChatTools.isUserInGroup(message.user);
+                        let accepted = event === "conversation_verification_accepted" || event === "groupchat_verification_accepted";
                         this.verificationCallback(userId, message.id, message.room, isGroup, accepted);
                     }
                 } else if(event === "conversation_question_answer" || event === "groupchat_question_answer") {
-                    var chatUserKey = ChatTools.messageToChatUserKey(message);
+                    let chatUserKey = ChatTools.messageToChatUserKey(message);
                     if(this.hasPresenceTimeoutTimer(chatUserKey)) {
                         this.removePresenceTimeoutTimer(chatUserKey);
                     }
                     if(this.hasPendingRequest(chatUserKey)) {
-                        var pendingRequest = this.removePendingRequest(chatUserKey);
+                        let pendingRequest = this.removePendingRequest(chatUserKey);
                         pendingRequest.call(message);
                     } else if(message.id) {
                         this.checkCommandButton(message);
                     }
                     if(this.questionCallback && message.id) {
-                        var userId = ChatTools.getUserId(message.user);
-                        var isGroup = ChatTools.isUserInGroup(message.user);
-                        var messageId = message.id["message_id"];
-                        var options = message.id["options"];
+                        let userId = ChatTools.getUserId(message.user);
+                        let isGroup = ChatTools.isUserInGroup(message.user);
+                        let messageId = message.id["message_id"];
+                        let options = message.id["options"];
                         if(messageId && options) {
                             this.questionCallback(userId, messageId, message.room, isGroup, options);
                         }
                     }
                 } else if(event === "groupchat_members_added" || event === "groupchat_members_removed") {
-                    var userId = ChatTools.getUserId(message.user);
-                    var chatId = message.room;
-                    var users = message.id["users"];
-                    var added = event === "groupchat_members_added";
+                    let userId = ChatTools.getUserId(message.user);
+                    let chatId = message.room;
+                    let users = message.id["users"];
+                    let added = event === "groupchat_members_added";
                     if(!added) {
-                        for(let index in users) {
-                            var user = users[index];
-                            var chatUserKey = ChatTools.getChatUserKey(chatId, user["id"]);
+                        for(let user of users) {
+                            let chatUserKey = ChatTools.getChatUserKey(chatId, user["id"]);
                             if(this.hasActiveQuestionnaire(chatUserKey)) {
                                 this.removeActiveQuestionnaire(chatUserKey);
                             }
                         }
                     }
                     if(this.groupMemberCallback) {
-                        var data = message.id;
                         this.groupMemberCallback(chatId, added, userId, users);
                     }
                 } else if(event === "groupchat_subscribed" || event === "groupchat_unsubscribed") {
@@ -225,14 +223,14 @@ class Control {
                 }
             } else if(className === "TextMessage" || message instanceof TextMessage) {
                 Logger.debug("Control::receive() TextMessage: \"" + message.text + "\"");
-                var chatUserKey = ChatTools.messageToChatUserKey(message);
+                let chatUserKey = ChatTools.messageToChatUserKey(message);
                 if(this.hasPresenceTimeoutTimer(chatUserKey)) {
                     this.removePresenceTimeoutTimer(chatUserKey);
                 }
 
                 // Check for listeners waiting for a message
                 if (this.hasListener(chatUserKey)) {
-                    var listener = this.removeListener(chatUserKey);
+                    let listener = this.removeListener(chatUserKey);
                     listener.call(message);
                     return;
                 }
@@ -242,13 +240,13 @@ class Control {
                     return;
                 }
 
-                var userId = ChatTools.getUserId(message.user);
-                var isGroup = ChatTools.isUserInGroup(message.user);
-                var commandString = message.text.toLowerCase();
+                let userId = ChatTools.getUserId(message.user);
+                let isGroup = ChatTools.isUserInGroup(message.user);
+                let commandString = message.text.toLowerCase();
 
-                var isMentioned;
+                let isMentioned;
                 if(this.robotMentionRegex != null) {
-                    var mentionMatch = commandString.match(this.robotMentionRegex);
+                    let mentionMatch = commandString.match(this.robotMentionRegex);
                     if(mentionMatch) {
                         commandString = commandString.replace(mentionMatch[0], "");
                     }
@@ -272,9 +270,9 @@ class Control {
                 }
 
                 // Check if an accepted command was sent
-                var unknownCommand = true;
-                for(let index in this.acceptedRegex) {
-                    var match = commandString.match(this.acceptedRegex[index]);
+                let unknownCommand = true;
+                for(let regex of this.acceptedRegex) {
+                    let match = commandString.match(regex);
                     if(match != null) {
                         unknownCommand = false;
                         Logger.debug("Control::receive() Command detected: \"" + match + "\"");
@@ -287,7 +285,7 @@ class Control {
                     if(this.catchAllStartCommand
                             && (!isGroup || isMentioned || this.catchAllNoMentionInGroup)
                             && this.acceptedCommands.length === 1) {
-                        var accepted = this.acceptedCommands[0];
+                        let accepted = this.acceptedCommands[0];
                         Logger.debug("Control::receive() Catched unknown command, changed to \"" + accepted + "\"");
                         message.catchedText = message.text;
                         message.text = accepted;
@@ -303,22 +301,20 @@ class Control {
                 }
 
             } else if(className === "EnterMessage" || message instanceof EnterMessage) {
-                var userId = message.user.id;
+                let userId = message.user.id;
                 Logger.debug("Control::receive() Enter detected: " + userId);
-                var chatUserKeys = this.getUserActiveChatUserKeys(userId);
-                for(let index in chatUserKeys) {
-                    var chatUserKey = chatUserKeys[index];
+                let chatUserKeys = this.getUserActiveChatUserKeys(userId);
+                for(let chatUserKey of chatUserKeys) {
                     if(this.hasPresenceTimeoutTimer(chatUserKey)) {
                         this.removePresenceTimeoutTimer(chatUserKey);
                     }
                 }
             } else if(className === "LeaveMessage" || message instanceof LeaveMessage) {
-                var userId = message.user.id;
+                let userId = message.user.id;
                 Logger.debug("Control::receive() Leave detected: " + userId);
                 if(this.removeListenerOnLeave) {
-                    var chatUserKeys = this.getUserActiveChatUserKeys(userId);
-                    for(let index in chatUserKeys) {
-                        var chatUserKey = chatUserKeys[index];
+                    let chatUserKeys = this.getUserActiveChatUserKeys(userId);
+                    for(let chatUserKey of chatUserKeys) {
                         if(this.hasListener(chatUserKey)) {
                             this.removeListener(chatUserKey);
                         }
@@ -327,9 +323,8 @@ class Control {
                         }
                     }
                 } else if(this.presenceTimeoutMs > 0) {
-                    var chatUserKeys = this.getUserActiveChatUserKeys(userId);
-                    for(let index in chatUserKeys) {
-                        var chatUserKey = chatUserKeys[index];
+                    let chatUserKeys = this.getUserActiveChatUserKeys(userId);
+                    for(let chatUserKey of chatUserKeys) {
                         if(!this.hasPresenceTimeoutTimer(chatUserKey)) {
                             this.addPresenceTimeoutTimer(chatUserKey);
                         }
@@ -359,7 +354,7 @@ class Control {
             return null;
         }
         Logger.debug("Control::removeListener() key: " + chatUserKey);
-        var listener = this.pendingListeners[chatUserKey];
+        let listener = this.pendingListeners[chatUserKey];
         delete this.pendingListeners[chatUserKey];
         if(this.hasResponseTimeoutTimer(chatUserKey)) {
             this.removeResponseTimeoutTimer(chatUserKey, listener.question);
@@ -387,7 +382,7 @@ class Control {
             return null;
         }
         Logger.debug("Control::removePendingRequest() key: " + chatUserKey);
-        var pendingRequest = this.pendingRequests[chatUserKey];
+        let pendingRequest = this.pendingRequests[chatUserKey];
         delete this.pendingRequests[chatUserKey];
         if(this.hasResponseTimeoutTimer(chatUserKey)) {
             this.removeResponseTimeoutTimer(chatUserKey, pendingRequest.question);
@@ -404,12 +399,12 @@ class Control {
     addResponseTimeoutTimer(chatUserKey, msg, question) {
         Logger.debug("Control::addResponseTimeoutTimer() key: " + chatUserKey);
         // Timeout milliseconds and callback
-        var useTimeoutMs = question.timeoutMs || this.responseTimeoutMs;
-        var useTimeoutText = question.timeoutText;
+        let useTimeoutMs = question.timeoutMs || this.responseTimeoutMs;
+        let useTimeoutText = question.timeoutText;
         if(useTimeoutText == null) {
             useTimeoutText = this.responseTimeoutText;
         }
-        var useTimeoutCallback = question.timeoutCallback;
+        let useTimeoutCallback = question.timeoutCallback;
         if(!useTimeoutCallback && useTimeoutText && useTimeoutText.length > 0) {
             Logger.debug("Control::addResponseTimeoutTimer() ms: " + useTimeoutMs + " text: " + useTimeoutText);
             useTimeoutCallback = () => {
@@ -419,16 +414,16 @@ class Control {
             Logger.debug("Control::addResponseTimeoutTimer() Using custom callback");
         }
 
-        var timer = setTimeout(() => {
+        this.timeoutTimers[chatUserKey] = setTimeout(() => {
             Logger.debug("Response timer timeout: key: " + chatUserKey);
-            var flow = this.getActiveQuestionnaire(chatUserKey);
+            let flow = this.getActiveQuestionnaire(chatUserKey);
             if(!flow) {
                 Logger.error("Unable to retrieve flow on response timer timeout: key: " + chatUserKey);
                 return;
             }
             flow.stop(false);
             if(this.questionnaireTimedOutCallback) {
-                var userId = ChatTools.getUserId(flow.msg.message.user);
+                let userId = ChatTools.getUserId(flow.msg.message.user);
                 this.questionnaireTimedOutCallback(userId, flow.answers);
             }
             // Call timeout callback
@@ -436,8 +431,6 @@ class Control {
                 useTimeoutCallback();
             }
         }, useTimeoutMs);
-
-        this.timeoutTimers[chatUserKey] = timer;
     }
 
     // Remove a response timeout timer for a user
@@ -446,7 +439,7 @@ class Control {
             return;
         }
         Logger.debug("Control::removeResponseTimeoutTimer() key: " + chatUserKey);
-        var timer = this.timeoutTimers[chatUserKey];
+        let timer = this.timeoutTimers[chatUserKey];
         delete this.timeoutTimers[chatUserKey];
         clearTimeout(timer);
     }
@@ -460,23 +453,21 @@ class Control {
     addPresenceTimeoutTimer(chatUserKey) {
         Logger.debug("Control::addPresenceTimeoutTimer() key: " + chatUserKey);
         // Timeout milliseconds and callback
-        var timer = setTimeout(() => {
+        this.presenceTimeoutTimers[chatUserKey] = setTimeout(() => {
             Logger.debug("Presence timer timeout: key: " + chatUserKey);
-            var flow = this.getActiveQuestionnaire(chatUserKey);
+            let flow = this.getActiveQuestionnaire(chatUserKey);
             if(!flow) {
                 Logger.error("Unable to retrieve flow on presence timer timeout: key: " + chatUserKey);
                 return;
             }
             flow.stop(false);
             if(this.questionnaireTimedOutCallback) {
-                var userId = ChatTools.getUserId(flow.msg.message.user);
+                let userId = ChatTools.getUserId(flow.msg.message.user);
                 this.questionnaireTimedOutCallback(userId, flow.answers);
             }
             flow.sendRestartMessage(this.presenceTimeoutText);
 
         }, this.presenceTimeoutMs);
-
-        this.presenceTimeoutTimers[chatUserKey] = timer;
     }
 
     // Remove a presence timeout timer for a user
@@ -485,7 +476,7 @@ class Control {
             return;
         }
         Logger.debug("Control::removePresenceTimeoutTimer() key: " + chatUserKey);
-        var timer = this.presenceTimeoutTimers[chatUserKey];
+        let timer = this.presenceTimeoutTimers[chatUserKey];
         delete this.presenceTimeoutTimers[chatUserKey];
         clearTimeout(timer);
     }
@@ -502,7 +493,7 @@ class Control {
         }
         Logger.debug("Control::addActiveQuestionnaire() key: " + chatUserKey + " flow: " + flow.name);
         this.activeQuestionnaires[chatUserKey] = flow;
-        var count = this.getActiveQuestionnaireCount();
+        let count = this.getActiveQuestionnaireCount();
         Logger.debug("Control::addActiveQuestionnaire() Active questionnaires: " + count);
         if(this.addedActiveQuestionnaireCallback) {
             this.addedActiveQuestionnaireCallback(chatUserKey, count);
@@ -514,7 +505,7 @@ class Control {
     }
 
     getGroupActiveChatUserKeys(chatId) {
-        var chatUserKeys = [];
+        let chatUserKeys = [];
         for(let chatUserKey in this.activeQuestionnaires) {
             if(chatUserKey.indexOf("groupchat/" + chatId) !== -1) {
                 chatUserKeys.push(chatUserKey);
@@ -524,8 +515,8 @@ class Control {
     }
 
     getUserActiveChatUserKeys(userId) {
-        var chatUserKeys = [];
-        var suffix = "/" + userId;
+        let chatUserKeys = [];
+        let suffix = "/" + userId;
         for(let chatUserKey in this.activeQuestionnaires) {
             if(chatUserKey.endsWith(suffix)) {
                 chatUserKeys.push(chatUserKey);
@@ -547,7 +538,7 @@ class Control {
     }
 
     removeActiveQuestionnaire(chatUserKey) {
-        var flow = this.activeQuestionnaires[chatUserKey];
+        let flow = this.activeQuestionnaires[chatUserKey];
         if(!flow) {
             Logger.error("Control::removeActiveQuestionnaire() No active questionnaire for key: " + chatUserKey);
             return null;
@@ -558,8 +549,8 @@ class Control {
         this.removePendingRequest(chatUserKey);
         this.removeResponseTimeoutTimer(chatUserKey);
         this.removePresenceTimeoutTimer(chatUserKey);
-        var count = this.getActiveQuestionnaireCount();
-        Logger.debug("Control::removeActiveQuestionnaire() Active questionnaires: " + count)
+        let count = this.getActiveQuestionnaireCount();
+        Logger.debug("Control::removeActiveQuestionnaire() Active questionnaires: " + count);
         if(this.removedActiveQuestionnaireCallback) {
             this.removedActiveQuestionnaireCallback(chatUserKey, count);
         }
@@ -571,24 +562,24 @@ class Control {
     }
 
     removeGroupActiveQuestionnaires(chatId) {
-        var chatUserKeys = this.getGroupActiveChatUserKeys(chatId);
+        let chatUserKeys = this.getGroupActiveChatUserKeys(chatId);
         if(chatUserKeys.length === 0) {
             return;
         }
         Logger.debug("Control::removeGroupActiveQuestionnaires() Removing " + chatUserKeys.length + " questionnaires from chat: " + chatId);
-        for(let index in chatUserKeys) {
-            this.removeActiveQuestionnaire(chatUserKeys[index]);
+        for(let chatUserKey of chatUserKeys) {
+            this.removeActiveQuestionnaire(chatUserKey);
         }
     }
 
     removeUserActiveQuestionnaires(userId) {
-        var chatUserKeys = this.getUserActiveChatUserKeys(userId);
+        let chatUserKeys = this.getUserActiveChatUserKeys(userId);
         if(chatUserKeys.length === 0) {
             return;
         }
         Logger.debug("Control::removeGroupActiveQuestionnaires() Removing " + chatUserKeys.length + " questionnaires from user: " + userId);
-        for(let index in chatUserKeys) {
-            this.removeActiveQuestionnaire(chatUserKeys[index]);
+        for(let chatUserKey of chatUserKeys) {
+            this.removeActiveQuestionnaire(chatUserKey);
         }
     }
 
@@ -802,24 +793,19 @@ class Control {
 
     // Add commands that the overridden receiver will accept
     addAcceptedCommands(commands) {
-        for(let index in commands) {
-            this.addAcceptedCommand(commands[index]);
+        for(let command of commands) {
+            this.addAcceptedCommand(command);
         }
     }
 
     // Add a command that the overridden receiver will accept
     addAcceptedCommand(command, helpText, buttonLabel, buttonStyle) {
-        var c = command.toLowerCase();
-        var configured = false;
-        for(let index in this.acceptedCommands) {
-            if(c === this.acceptedCommands[index]) {
-                configured = true;
-                break;
+        let c = command.toLowerCase();
+        for(let accepted of this.acceptedCommands) {
+            if(c === accepted) {
+                Logger.error("Control::addAcceptedCommand() Command already configured as accepted: " + c);
+                return;
             }
-        }
-        if(configured) {
-            Logger.error("Control::addAcceptedCommand() Command already configured as accepted: " + c);
-            return;
         }
         Logger.debug("Control::addAcceptedCommand() Command configured as accepted: " + c);
         this.acceptedCommands.push(c);
@@ -850,19 +836,19 @@ class Control {
 
     // Check if the received answer was a command and trigger it if so
     async checkCommandButton(message) {
-        var acceptedCommand = false;
-        var options = message.id["options"];
-        var optionText = "";
-        for(let index in options) {
+        let acceptedCommand = false;
+        let options = message.id["options"];
+        let optionText = "";
+        for(let option of options) {
             if(optionText.length > 0) {
                 optionText += ",";
             }
-            optionText += options[index];
+            optionText += option;
         }
-        var helpCommand = optionText.match(this.helpRegex);
+        let helpCommand = optionText.match(this.helpRegex);
         if(!helpCommand) {
-            for(let index in this.acceptedCommands) {
-                if(optionText === this.acceptedCommands[index]) {
+            for(let command of this.acceptedCommands) {
+                if(optionText === command) {
                     acceptedCommand = true;
                     break;
                 }
@@ -872,22 +858,22 @@ class Control {
                 return;
             }
         }
-        var userId = ChatTools.getUserId(message.user);
-        var chatId = message.room;
-        var isGroup = ChatTools.isUserInGroup(message.user);
-        var messageId = message.id["message_id"];
+        let userId = ChatTools.getUserId(message.user);
+        let chatId = message.room;
+        let isGroup = ChatTools.isUserInGroup(message.user);
+        let messageId = message.id["message_id"];
 
-        var messageJson = await this.messengerClient.getMessage(messageId, chatId, isGroup, false);
+        let messageJson = await this.messengerClient.getMessage(messageId, chatId, isGroup, false);
         if(!messageJson) {
             Logger.error("Control::checkCommandButton() Unable to retrieve request message on checkCommandButton");
             return;
         }
-        var user = messageJson["user"];
+        let user = messageJson["user"];
         if(!user) {
             Logger.error("Control::checkCommandButton() Retrieved invalid user on checkCommandButton:", messageJson);
             return;
         }
-        var id = user["id"];
+        let id = user["id"];
         if(id !== this.robotUserId) {
             Logger.warn("Control::checkCommandButton() User id is not robot id on checkCommandButton:", this.robotUserId, messageJson);
             return;
@@ -902,7 +888,7 @@ class Control {
         } else {
             Logger.debug("Control:checkCommandButton() Accepted command: \"" + optionText + "\"");
         }
-        var textMessage = ChatTools.createHubotTextMessage(userId, chatId, isGroup, optionText);
+        let textMessage = ChatTools.createHubotTextMessage(userId, chatId, isGroup, optionText);
         this.robot.receive(textMessage);
     }
 
@@ -913,18 +899,18 @@ class Control {
             this.overrideHelpCallback(message);
             return;
         }
-        var helpText = this.catchHelpText;
+        let helpText = this.catchHelpText;
         for(let field in this.acceptedHelpTexts) {
             helpText += "\n • \'" + field + "\' - " + this.acceptedHelpTexts[field];
         }
-        var sendMessageData = new SendMessageData();
+        let sendMessageData = new SendMessageData();
         sendMessageData.setHubotMessage(message);
         sendMessageData.setMessage(helpText);
         if(Object.keys(this.acceptedButtonLabels).length > 0) {
-            var style = this.helpQuestionStyle || "horizontal";
+            let style = this.helpQuestionStyle || "horizontal";
             sendMessageData.setRequestOptions(false, style);
             for(let key in this.acceptedButtonLabels) {
-                var buttonStyle = this.acceptedButtonStyles[key];
+                let buttonStyle = this.acceptedButtonStyles[key];
                 sendMessageData.addQuestionButtonWithName(key, this.acceptedButtonLabels[key], buttonStyle);
             }
             sendMessageData.addRequestUserId(ChatTools.getUserId(message.user));
@@ -939,11 +925,11 @@ class Control {
             this.overrideCatchAllCallback(message);
             return;
         }
-        var sendMessageData = new SendMessageData();
+        let sendMessageData = new SendMessageData();
         sendMessageData.setHubotMessage(message);
         sendMessageData.setMessage(this.catchAllText);
         if(this.catchAllButtonName && this.catchAllButtonLabel) {
-            var style = this.catchAllButtonStyle || "theme";
+            let style = this.catchAllButtonStyle || "theme";
             sendMessageData.addQuestionButtonWithName(this.catchAllButtonName, this.catchAllButtonLabel, style);
             sendMessageData.addRequestUserId(ChatTools.getUserId(message.user));
         }
@@ -952,11 +938,11 @@ class Control {
 
     // Send a request message
     async sendRequestMessage(sendMessageData) {
-        var response = ChatTools.hubotMessageToResponse(this.robot, sendMessageData.getHubotMessage());
+        let response = ChatTools.hubotMessageToResponse(this.robot, sendMessageData.getHubotMessage());
         if(sendMessageData.usePostCall()) {
             this.sendComposing(response);
 
-            var result = await this.messengerClient.sendMessage(sendMessageData);
+            let result = await this.messengerClient.sendMessage(sendMessageData);
             if(!result) {
                 response.send(sendMessageData.getMessage());
             }

@@ -11,8 +11,7 @@ class FlowAction extends Action {
     }
 
     start(flowCallback) {
-        for(let i in this.conditions) {
-            var condition = this.conditions[i];
+        for(let condition of this.conditions) {
             if(!condition.check(this.flow)) {
                 Logger.debug("FlowAction::start() Condition not met: ", condition);
                 if(this.failFlow) {
@@ -33,6 +32,10 @@ class FlowAction extends Action {
 
     addCondition(condition) {
         this.conditions.push(condition);
+    }
+
+    addConditions(conditions) {
+        this.conditions = this.conditions.concat(conditions);
     }
 }
 

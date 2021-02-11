@@ -36,15 +36,15 @@ class VerificationQuestion extends Question {
     }
 
     send(callback) {
-        var msg = this.flow.msg;
+        let msg = this.flow.msg;
         this.chatId = msg.message.room;
         this.isGroup = ChatTools.isUserInGroup(msg.message.user);
 
         if(this.isMultiUser && this.userIds && this.userIds.length > 0) {
             let remainingUserIds = this.getRemainingUserIds();
             if(remainingUserIds && remainingUserIds.length > 0) {
-                for(let index in remainingUserIds) {
-                    this.sendForUserId(callback, remainingUserIds[index]);
+                for(let userId of remainingUserIds) {
+                    this.sendForUserId(callback, userId);
                 }
             } else {
                 Logger.error("VerificationQuestion:send() Got no remaining user ids for multi-user question: " + this.answerKey);
@@ -56,17 +56,16 @@ class VerificationQuestion extends Question {
     }
 
     async sendForUserId(callback, userId) {
-        var control = this.flow.control;
+        let control = this.flow.control;
         // Try to retrieve provider for user
-        var providerJson = await control.messengerClient.getUserProviders(userId);
+        let providerJson = await control.messengerClient.getUserProviders(userId);
         if(!providerJson) {
             Logger.error("VerificationQuestion:sendForUserId() Unable to retrieve providers for user: " + userId);
             this.flow.stop(true, true);
             return;
         }
-        var providerId;
-        for(let i in providerJson) {
-            var provider = providerJson[i];
+        let providerId;
+        for(let provider of providerJson) {
             if(provider["name"] === this.provider) {
                 providerId = provider["provider_id"];
                 break;
@@ -78,27 +77,26 @@ class VerificationQuestion extends Question {
 
             control.sendComposing(this.flow.msg);
 
-            var askJson = await control.messengerClient.askUserVerification(userId, providerId, this.chatId, this.isGroup, false);
+            let askJson = await control.messengerClient.askUserVerification(userId, providerId, this.chatId, this.isGroup, false);
             if(!askJson) {
                 Logger.error("VerificationQuestion:sendForUserId() Unable to send verification request for user: " + userId);
                 this.flow.stop(true, true);
                 return;
             }
-            var messageId = askJson["id"];
+            let messageId = askJson["id"];
             Logger.debug("VerificationQuestion:sendForUserId() Verification message id: " + messageId);
             this.requests[userId] = messageId;
         } else {
             // Unable to get provider for this user, check if user already verified via provider
-            var verificationsJson = await control.messengerClient.getUserVerifications(userId);
+            let verificationsJson = await control.messengerClient.getUserVerifications(userId);
             if(!verificationsJson) {
                 Logger.error("VerificationQuestion:sendForUserId() Unable to retrieve verifications for user: " + userId);
                 this.flow.stop(true, true);
                 return;
             }
-            var isVerified = false;
-            var userVerifications = verificationsJson["user"];
-            for(let i in userVerifications) {
-                var verification = userVerifications[i];
+            let isVerified = false;
+            let userVerifications = verificationsJson["user"];
+            for(let verification of userVerifications) {
                 if(verification["name"] === this.provider) {
                     isVerified = true;
                     break;
@@ -106,11 +104,10 @@ class VerificationQuestion extends Question {
             }
             if(isVerified) {
                 this.setSubFlow(this.verifiedSubFlow);
-                this.flow.onAnswer(msg, this, true);
+                this.flow.onAnswer(this.flow.msg, this, true);
             } else {
                 Logger.error("VerificationQuestion:sendForUserId() Provider not available for user and not verified: provider: " + this.provider + " user: " + userId);
                 this.flow.stop(true, true);
-                return;
             }
         }
     }
@@ -133,19 +130,19 @@ class VerificationQuestion extends Question {
     retrieveAttributes(requestMessageId) {
         return new Promise(async (resolve) => {
             try {
-                var json = await this.flow.control.messengerClient.getMessage(requestMessageId, this.chatId, this.isGroup, false);
+                let json = await this.flow.control.messengerClient.getMessage(requestMessageId, this.chatId, this.isGroup, false);
                 if(!json) {
                     Logger.error("VerificationQuestion:retrieveAttributes() Unable to retrieve message");
                     resolve(null);
                     return;
                 }
-                var payload = json["payload"];
+                let payload = json["payload"];
                 if(!payload || payload["type"] !== "verification_request") {
                     Logger.error("VerificationQuestion:retrieveAttributes() Message has no payload or is wrong type");
                     resolve(null);
                     return;
                 }
-                var attributes = payload["attributes"];
+                let attributes = payload["attributes"];
                 if(!attributes) {
                     Logger.error("VerificationQuestion:retrieveAttributes() Payload holds no attributes");
                     resolve(null);
@@ -168,13 +165,13 @@ class VerificationQuestion extends Question {
         }
 
         for(let userId in this.requests) {
-            var requestMessageId = this.requests[userId];
+            let requestMessageId = this.requests[userId];
             if(this.isMultiUser) {
-                var multiAnswers = answers.get(this.answerKey);
+                let multiAnswers = answers.get(this.answerKey);
                 if(multiAnswers.get(userId)) {
-                    var attributes = await this.retrieveAttributes(requestMessageId);
+                    let attributes = await this.retrieveAttributes(requestMessageId);
                     if(attributes) {
-                        var attributesKey = userId + "_attributes";
+                        let attributesKey = userId + "_attributes";
                         multiAnswers.add(attributesKey, attributes);
                         Logger.info("VerificationQuestion:retrieveAttributes() Successfully stored attributes with answer key: " + attributesKey);
                     }
@@ -183,9 +180,9 @@ class VerificationQuestion extends Question {
                 }
             } else {
                 if(answers.get(this.answerKey)) {
-                    var attributes = await this.retrieveAttributes(requestMessageId);
+                    let attributes = await this.retrieveAttributes(requestMessageId);
                     if(attributes) {
-                        var attributesKey = this.answerKey + "_attributes";
+                        let attributesKey = this.answerKey + "_attributes";
                         answers.add(attributesKey, attributes);
                         Logger.info("VerificationQuestion:retrieveAttributes() Successfully stored attributes with answer key: " + attributesKey);
                     }

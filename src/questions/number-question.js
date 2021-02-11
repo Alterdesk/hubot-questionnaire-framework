@@ -19,7 +19,7 @@ class NumberQuestion extends Question {
         if(matches == null && typeof message.text !== "number") {
             return null;
         }
-        var value;
+        let value;
         if(matches) {
             value = parseFloat(matches[0]);
         } else {

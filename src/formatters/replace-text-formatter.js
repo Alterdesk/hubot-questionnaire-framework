@@ -25,7 +25,7 @@ class ReplaceTextFormatter extends Formatter {
         }
         Logger.debug("ReplaceTextFormatter::execute() Using from: \"" + this.from + "\" to: \"" + this.to + "\"");
 
-        var to = this.to;
+        let to = this.to;
         if(this.prefixText && this.prefixText.length > 0) {
             to = this.prefixText + to;
         }

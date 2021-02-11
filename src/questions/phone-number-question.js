@@ -18,18 +18,18 @@ class PhoneNumberQuestion extends Question {
         if(matches == null || message.text == null) {
             return null;
         }
-        var text = message.text;
+        let text = message.text;
         Logger.debug("PhoneNumberQuestion::checkAndParseAnswer() Got text:", text);
-        text = text.replace(new RegExp(/[ \-\_\(\)\[\]]/, 'gi'), "");
+        text = text.replace(new RegExp(/[ \-_()\[\]]/, 'gi'), "");
         Logger.debug("PhoneNumberQuestion::checkAndParseAnswer() Filtered:", text);
-        var phoneMatches = text.match(this.phoneRegex);
+        let phoneMatches = text.match(this.phoneRegex);
         Logger.debug("PhoneNumberQuestion::checkAndParseAnswer() Phone matches:", phoneMatches);
         if(phoneMatches == null) {
             return null;
         }
-        var phone = phoneMatches[0];
+        let phone = phoneMatches[0];
         if(this.replaceLeadingZero && phone.startsWith("0")) {
-            var code = LocaleTools.getPhoneCountryCode();
+            let code = LocaleTools.getPhoneCountryCode();
             if(code && code.length > 0) {
                 phone = code + phone.substring(1);
             }
@@ -37,8 +37,8 @@ class PhoneNumberQuestion extends Question {
         if(this.allowedCountryCodes.length === 0) {
             return phone;
         }
-        for(let index in this.allowedCountryCodes) {
-            if(phone.startsWith(this.allowedCountryCodes[index])) {
+        for(let code of this.allowedCountryCodes) {
+            if(phone.startsWith(code)) {
                 return phone;
             }
         }
@@ -60,8 +60,8 @@ class PhoneNumberQuestion extends Question {
 
     // Add a list of accepted country codes
     addAllowedCountryCodes(codes) {
-        for(let index in codes) {
-            this.addAllowedCountryCode(codes[index]);
+        for(let code of codes) {
+            this.addAllowedCountryCode(code);
         }
     }
 }

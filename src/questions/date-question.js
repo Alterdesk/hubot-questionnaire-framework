@@ -17,11 +17,11 @@ class DateQuestion extends Question {
         if(matches == null || matches.length === 0) {
             return null;
         }
-        var matchString = matches[0];
+        let matchString = matches[0];
         if(!matchString || matchString.length === 0) {
             return null;
         }
-        var moment = DateTools.parseLocalToUTC(matchString, this.dateFormat);
+        let moment = DateTools.parseLocalToUTC(matchString, this.dateFormat);
         if(!moment) {
             return null;
         }

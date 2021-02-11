@@ -21,15 +21,14 @@ class AppendTextFormatter extends Formatter {
         }
         Logger.debug("AppendTextFormatter::execute() Using text: \"" + this.appendText + "\"");
 
-        var result = this.appendText;
+        let result = this.appendText;
         if(this.prefixText && this.prefixText.length > 0) {
             result = this.prefixText + result;
         }
         if(this.suffixText && this.suffixText.length > 0) {
             result = result + this.suffixText;
         }
-        for(let i in this.formatters) {
-            var formatter = this.formatters[i];
+        for(let formatter of this.formatters) {
             formatter.setEscapeHtml(this.escapeHtml);
             result = formatter.execute(result, flow);
         }
@@ -49,6 +48,10 @@ class AppendTextFormatter extends Formatter {
 
     addFormatter(formatter) {
         this.formatters.push(formatter);
+    }
+
+    addFormatters(formatters) {
+        this.formatters = this.formatters.concat(formatters);
     }
 
 }

@@ -13,14 +13,14 @@ class StringTools {
     }
 
     static escapeRegex(string) {
-        if(typeof string !== "string" || string == "") {
+        if(typeof string !== "string" || string === "") {
             return string;
         }
         return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
     }
 
     static replaceAll(string, search, replace) {
-        if(typeof string !== "string" || string == "" || search == null || replace == null) {
+        if(typeof string !== "string" || string === "" || search == null || replace == null) {
             return string;
         }
         return string.replace(new RegExp(StringTools.escapeRegex(search), 'g'), replace);
@@ -113,7 +113,7 @@ class StringTools {
 
     // String to lowercase
     static lowercase(string) {
-        if(typeof string !== "string" || string == "") {
+        if(typeof string !== "string" || string === "") {
             return string;
         }
         return string.toLowerCase();
@@ -121,7 +121,7 @@ class StringTools {
 
     // String to uppercase
     static uppercase(string) {
-        if(typeof string !== "string" || string == "") {
+        if(typeof string !== "string" || string === "") {
             return string;
         }
         return string.toUpperCase();
@@ -129,7 +129,7 @@ class StringTools {
 
     // Capitalize first letter in the string
     static capitalizeFirstLetter(string) {
-        if(typeof string !== "string" || string == "") {
+        if(typeof string !== "string" || string === "") {
             return string;
         }
         return string.charAt(0).toUpperCase() + string.slice(1);
@@ -137,17 +137,17 @@ class StringTools {
 
     // Only capitalize last word in the name: "de Boer"
     static capitalizeLastName(string) {
-        if(typeof string !== "string" || string == "") {
+        if(typeof string !== "string" || string === "") {
             return string;
         }
-        var words = string.split(" ");
-        var result = "";
+        let words = string.split(" ");
+        let result = "";
         for(let index in words) {
             if(index > 0) {
                 result += " ";
             }
-            var word = words[index];
-            var nextIndex = parseInt(index) + 1;
+            let word = words[index];
+            let nextIndex = parseInt(index) + 1;
             if(nextIndex < words.length) {
                 result += word;
             } else {
@@ -161,10 +161,10 @@ class StringTools {
         if(mention["id"].toUpperCase() === "@ALL") {
             return mentionedAllText || "All members";
         }
-        var firstName = mention["first_name"];
-        var lastName = mention["last_name"];
-        var companyName = mention["company_name"];
-        var user = "";
+        let firstName = mention["first_name"];
+        let lastName = mention["last_name"];
+        let companyName = mention["company_name"];
+        let user = "";
         if(firstName && lastName) {
             user += firstName + " " + lastName;
         } else if(firstName) {
@@ -185,9 +185,9 @@ class StringTools {
         if(typeof filename !== "string" || filename.length === 0) {
             return filename;
         }
-        var parts = filename.split(".");
-        var maxLength = 255;
-        var extension;
+        let parts = filename.split(".");
+        let maxLength = 255;
+        let extension;
         if(parts.length > 1) {
             extension = "." + parts[(parts.length - 1)];
             maxLength = 255 - extension.length;

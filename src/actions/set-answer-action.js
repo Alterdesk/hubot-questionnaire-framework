@@ -11,9 +11,9 @@ class SetAnswerAction extends Action {
     }
 
     start(flowCallback) {
-        var answers = this.flow.answers;
-        var answerKey = this.getAnswerKey();
-        var value = this.getAnswerValue(this.answerValue, answers);
+        let answers = this.flow.answers;
+        let answerKey = this.getAnswerKey();
+        let value = this.getAnswerValue(this.answerValue, answers);
         if(value != null) {
             Logger.debug("SetAnswerAction::start() Setting answer: key: " + answerKey + " value: " + value);
             answers.add(answerKey, value);

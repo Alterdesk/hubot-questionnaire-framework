@@ -9,7 +9,7 @@ class RemoveAnswerAction extends Action {
     }
 
     start(flowCallback) {
-        var answerKey = this.getAnswerKey();
+        let answerKey = this.getAnswerKey();
         this.flow.answers.remove(answerKey);
         flowCallback();
     }

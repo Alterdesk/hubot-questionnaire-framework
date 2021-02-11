@@ -16,9 +16,9 @@ class DownloadAttachmentsAction extends Action {
             flowCallback();
             return;
         }
-        var answers = this.flow.answers;
-        var answerKey = ChatTools.getAnswerKey(this.answerKey, this.flow);
-        var attachments = answers.get(answerKey);
+        let answers = this.flow.answers;
+        let answerKey = ChatTools.getAnswerKey(this.answerKey, this.flow);
+        let attachments = answers.get(answerKey);
         if(!attachments || attachments.length === 0) {
             Logger.debug("DownloadAttachmentsAction::start() No attachments on answer key:", answerKey);
             flowCallback();
@@ -26,20 +26,20 @@ class DownloadAttachmentsAction extends Action {
         }
         Logger.debug("DownloadAttachmentsAction::start() Got " + attachments.length + " attachments");
 
-        var chatId = this.flow.msg.message.room;
-        var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
-        var isAux = false;
+        let chatId = this.flow.msg.message.room;
+        let isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
+        let isAux = false;
         if(this.chatId) {
             chatId = this.getAnswerValue(this.chatId, answers);
             isGroup = this.getAnswerValue(this.isGroup, answers);
             isAux = this.getAnswerValue(this.isAux, answers);
         }
-        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+        let overrideToken = this.getAnswerValue(this.overrideToken, answers);
 
-        var downloaded = 0;
+        let downloaded = 0;
         for(let i in attachments) {
-            var attachment = attachments[i];
-            var filePath = await this.flow.control.messengerClient.downloadAttachment(attachment, chatId, isGroup, isAux, overrideToken);
+            let attachment = attachments[i];
+            let filePath = await this.flow.control.messengerClient.downloadAttachment(attachment, chatId, isGroup, isAux, overrideToken);
             if(filePath) {
                 answers.add(answerKey + "_file_path_" + i, filePath);
                 downloaded++;

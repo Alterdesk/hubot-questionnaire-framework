@@ -11,7 +11,7 @@ class ChangeGroupSettingsAction extends Action {
     }
 
     async start(flowCallback) {
-        var answers = this.flow.answers;
+        let answers = this.flow.answers;
         this.flowCallback = flowCallback;
         if(!this.flow || !this.flow.msg || !this.flow.control) {
             this.onError("ChangeGroupSettingsAction::start() Invalid Flow or Control");
@@ -19,13 +19,13 @@ class ChangeGroupSettingsAction extends Action {
             return;
         }
 
-        var chatId;
-        var isAux;
+        let chatId;
+        let isAux;
         if(this.chatId) {
             chatId = this.getAnswerValue(this.chatId, answers);
             isAux = this.getAnswerValue(this.isAux, answers);
         } else {
-            var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
+            let isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
                 Logger.warn("ChangeGroupSettingsAction::start() Not a group chat");
                 flowCallback();
@@ -42,32 +42,32 @@ class ChangeGroupSettingsAction extends Action {
         }
 
         // Group chat settings
-        var groupSettingsData = new GroupSettingsData();
+        let groupSettingsData = new GroupSettingsData();
 
         groupSettingsData.setChat(chatId, isAux);
 
-        var allowContactsValue = this.getAnswerValue(this.allowContacts, answers);
+        let allowContactsValue = this.getAnswerValue(this.allowContacts, answers);
         if(allowContactsValue != null) {
             groupSettingsData.setAllowContacts(allowContactsValue);
         }
-        var autoCloseAfterValue = this.getAnswerValue(this.autoCloseAfter, answers);
+        let autoCloseAfterValue = this.getAnswerValue(this.autoCloseAfter, answers);
         if(autoCloseAfterValue != null) {
             groupSettingsData.setCloseAfter(autoCloseAfterValue);
         }
-        var autoExpireAfterValue = this.getAnswerValue(this.autoExpireAfter, answers);
+        let autoExpireAfterValue = this.getAnswerValue(this.autoExpireAfter, answers);
         if(autoCloseAfterValue != null) {
             groupSettingsData.setExpireAfter(autoExpireAfterValue);
         }
-        var hybridMessagingValue = this.getAnswerValue(this.hybridMessaging, answers);
+        let hybridMessagingValue = this.getAnswerValue(this.hybridMessaging, answers);
         if(hybridMessagingValue != null) {
             groupSettingsData.setHybridMessaging(hybridMessagingValue);
         }
-        var membersCanInviteValue = this.getAnswerValue(this.membersCanInvite, answers);
+        let membersCanInviteValue = this.getAnswerValue(this.membersCanInvite, answers);
         if(membersCanInviteValue != null) {
             groupSettingsData.setMembersCanInvite(membersCanInviteValue);
         }
 
-        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+        let overrideToken = this.getAnswerValue(this.overrideToken, answers);
         if(overrideToken) {
             groupSettingsData.setOverrideToken(overrideToken);
         }

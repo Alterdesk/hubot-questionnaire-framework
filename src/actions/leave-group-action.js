@@ -16,14 +16,14 @@ class LeaveGroupAction extends Action {
             flowCallback();
             return;
         }
-        var answers = this.flow.answers;
-        var chatId;
-        var isAux;
+        let answers = this.flow.answers;
+        let chatId;
+        let isAux;
         if(this.chatId) {
             chatId = this.getAnswerValue(this.chatId, answers);
             isAux = this.getAnswerValue(this.isAux, answers);
         } else {
-            var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
+            let isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
                 Logger.warn("LeaveGroupAction::start() Not a group chat");
                 flowCallback();
@@ -37,8 +37,8 @@ class LeaveGroupAction extends Action {
             flowCallback();
             return;
         }
-        var robotUserId = this.flow.control.robotUserId;
-        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+        let robotUserId = this.flow.control.robotUserId;
+        let overrideToken = this.getAnswerValue(this.overrideToken, answers);
 
         await this.flow.control.messengerClient.removeGroupMembers(chatId, isAux, [robotUserId], overrideToken);
         flowCallback();

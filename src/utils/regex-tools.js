@@ -62,7 +62,7 @@ class RegexTools {
     }
     
     static getFilePathRegex() {
-        return new RegExp(/^(\/tmp\/messenger-pdfs\/|\/tmp\/messenger-downloads\/|\/usr\/local\/share\/bots\/resources\/)[0-9a-zA-Z\W\_\-\/ ]{1,}(\.[0-9a-zA-Z]{1,}){0,}$/, 'g');
+        return new RegExp(/^(\/tmp\/messenger-pdfs\/|\/tmp\/messenger-downloads\/|\/usr\/local\/share\/bots\/resources\/)[0-9a-zA-Z\W_\-\/ ]{1,}(\.[0-9a-zA-Z]{1,}){0,}$/, 'g');
     }
 
 }

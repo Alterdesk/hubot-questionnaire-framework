@@ -22,7 +22,7 @@ class ChatTools {
     }
 
     static createHubotUser(userId, chatId, isGroup) {
-        var user = new User(userId);
+        let user = new User(userId);
         user.is_groupchat = isGroup;
         user.user_id = userId;
         user.room = chatId;
@@ -31,8 +31,8 @@ class ChatTools {
     }
 
     static createHubotResponse(robot, userId, chatId, isGroup) {
-        var user = ChatTools.createHubotUser(userId, chatId, isGroup);
-        var message = new Message(user);
+        let user = ChatTools.createHubotUser(userId, chatId, isGroup);
+        let message = new Message(user);
         message.room = chatId;
         return new Response(robot, message, true);
     }
@@ -42,8 +42,8 @@ class ChatTools {
     }
 
     static createHubotTextMessage(userId, chatId, isGroup, text) {
-        var user = ChatTools.createHubotUser(userId, chatId, isGroup);
-        var textMessage = new TextMessage(user, text, "dummy_id");
+        let user = ChatTools.createHubotUser(userId, chatId, isGroup);
+        let textMessage = new TextMessage(user, text, "dummy_id");
         textMessage.room = chatId;
         return textMessage;
     }
@@ -52,7 +52,7 @@ class ChatTools {
         if(!answerKey || answerKey.length === 0) {
             return null;
         }
-        var repeatIteration;
+        let repeatIteration;
         if(typeof forceRepeatIteration === "number") {
             repeatIteration = forceRepeatIteration;
         } else if(flow) {
@@ -78,28 +78,27 @@ class ChatTools {
             Logger.debug("ChatTools::getRepeatedKeys() invalid answerkey or answers:", answerKey, answers);
             return null;
         }
-        var hashIndex = answerKey.indexOf("#");
+        let hashIndex = answerKey.indexOf("#");
         if(hashIndex === -1) {
             Logger.debug("ChatTools::getRepeatedKeys() invalid hash index:", hashIndex);
             return null;
         }
-        var keySubstring;
+        let keySubstring;
         if(hashIndex === 0) {
             keySubstring = answerKey.substring(hashIndex + 1);
         } else {
             keySubstring = answerKey.substring(0, hashIndex);
         }
         Logger.debug("ChatTools::getRepeatedKeys() got sub string:", keySubstring);
-        var result = answers.getKeysContaining(keySubstring);
+        let result = answers.getKeysContaining(keySubstring);
         Logger.debug("ChatTools::getRepeatedKeys() result:", result);
         if(!result) {
             return null;
         }
-        var numberRegex = RegexTools.getNumberOnlyRegex();
-        var filteredKeys = [];
-        for(let index in result) {
-            var key = result[index];
-            var replaceResult = key.replace(keySubstring, "");
+        let numberRegex = RegexTools.getNumberOnlyRegex();
+        let filteredKeys = [];
+        for(let key of result) {
+            let replaceResult = key.replace(keySubstring, "");
             if(typeof replaceResult === "string" && replaceResult.match(numberRegex)) {
                 filteredKeys.push(key);
             }
@@ -112,29 +111,28 @@ class ChatTools {
         if(typeof answerKey !== "string" || !answers) {
             return 0;
         }
-        var hashIndex = answerKey.indexOf("#");
+        let hashIndex = answerKey.indexOf("#");
         if(hashIndex === -1) {
             return 0;
         }
-        var keySubstring;
+        let keySubstring;
         if(hashIndex === 0) {
             keySubstring = answerKey.substring(hashIndex + 1);
         } else {
             keySubstring = answerKey.substring(0, hashIndex);
         }
         Logger.debug("ChatTools::getRepeatIterations() got sub string:", keySubstring);
-        var result = answers.getKeysContaining(keySubstring);
+        let result = answers.getKeysContaining(keySubstring);
         Logger.debug("ChatTools::getRepeatIterations() result:", result);
         if(!result) {
             return 0;
         }
-        var numberRegex = RegexTools.getNumberOnlyRegex();
-        var maxIteration = 0;
-        for(let index in result) {
-            var key = result[index];
-            var replaceResult = key.replace(keySubstring, "");
+        let numberRegex = RegexTools.getNumberOnlyRegex();
+        let maxIteration = 0;
+        for(let key of result) {
+            let replaceResult = key.replace(keySubstring, "");
             if(typeof replaceResult === "string" && replaceResult.match(numberRegex)) {
-                var iteration = parseInt(replaceResult);
+                let iteration = parseInt(replaceResult);
                 if(iteration > maxIteration) {
                     maxIteration = iteration;
                 }
@@ -146,12 +144,12 @@ class ChatTools {
     }
 
     static filterSummaryQuestion(question, limitToTitles, excludeTitles) {
-        var answerKey = question.getAnswerKey();
+        let answerKey = question.getAnswerKey();
         if(!question.inSummary) {
             Logger.debug("ChatTools::filterSummaryQuestion() No summary options for question:", answerKey);
             return false;
         }
-        var title = question.summaryTitle;
+        let title = question.summaryTitle;
         if((!excludeTitles || excludeTitles.length === 0 || !title || excludeTitles.indexOf(title) === -1)
            && ((!limitToTitles || limitToTitles.length === 0) || (title && limitToTitles.indexOf(title) !== -1))) {
             Logger.info("ChatTools::filterSummaryQuestion() Found summary question: " + answerKey + " title: \"" + title + "\"");
@@ -170,8 +168,8 @@ class ChatTools {
     }
 
     static messageToChatUserKey(message) {
-        var userId = ChatTools.getUserId(message.user);
-        var chatId = message.room;
+        let userId = ChatTools.getUserId(message.user);
+        let chatId = message.room;
         return ChatTools.getChatUserKey(chatId, userId);
     }
 

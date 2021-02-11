@@ -1,6 +1,5 @@
 const Action = require('./action.js');
 const ChatTools = require('./../utils/chat-tools.js');
-const Logger = require('./../logger.js');
 
 class CheckUserAction extends Action {
     constructor(check) {
@@ -18,51 +17,51 @@ class CheckUserAction extends Action {
             return;
         }
 
-        var userId = ChatTools.getUserId(this.flow.msg.message.user);
+        let userId = ChatTools.getUserId(this.flow.msg.message.user);
         if(!userId || userId.length === 0) {
             this.onError("CheckUserAction::start() Invalid user id:", userId);
             this.done(null);
             return;
         }
 
-        var answers = this.flow.answers;
-        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+        let answers = this.flow.answers;
+        let overrideToken = this.getAnswerValue(this.overrideToken, answers);
 
         if(this.check === "BUSINESS") {
-            var json = await this.flow.control.messengerClient.getUser(userId, false, overrideToken);
+            let json = await this.flow.control.messengerClient.getUser(userId, false, overrideToken);
             if(!json) {
                 this.done(null);
                 return;
             }
-            var business = json["private_user"] === false;
+            let business = json["private_user"] === false;
             this.done(business);
         } else if(this.check === "COWORKER") {
-            var robotUser = this.flow.control.robotUser;
+            let robotUser = this.flow.control.robotUser;
             if(!robotUser) {
                 this.onError("CheckUserAction::start() Robot user invalid:", robotUser);
                 this.done(null);
                 return;
             }
-            var robotCompany = robotUser["company_id"];
+            let robotCompany = robotUser["company_id"];
             if(!robotCompany || robotCompany.length === 0) {
                 this.onError("CheckUserAction::start() Robot company id invalid:", robotCompany);
                 this.done(null);
                 return;
             }
-            var json = await this.flow.control.messengerClient.getUser(userId, false, overrideToken);
+            let json = await this.flow.control.messengerClient.getUser(userId, false, overrideToken);
             if(!json) {
                 this.done(null);
                 return;
             }
-            var coworker = json["company_id"] === robotCompany;
+            let coworker = json["company_id"] === robotCompany;
             this.done(coworker);
         } else if(this.check === "VERIFIED") {
-            var json = await this.flow.control.messengerClient.getUserVerifications(userId, overrideToken);
+            let json = await this.flow.control.messengerClient.getUserVerifications(userId, overrideToken);
             if(!json) {
                 this.done(null);
                 return;
             }
-            var userVerifications = json["user"];
+            let userVerifications = json["user"];
             if(!userVerifications || userVerifications.length === 0) {
                 this.done(false);
                 return;
@@ -71,15 +70,13 @@ class CheckUserAction extends Action {
                 this.done(true);
                 return;
             }
-            for(let i in userVerifications) {
-                var userVerification = userVerifications[i];
+            for(let userVerification of userVerifications) {
                 if(this.provider === userVerification["name"]) {
                     this.done(true);
                     return;
                 }
             }
             this.done(null);
-            return;
         } else {
             this.onError("CheckUserAction::start() Unknown check:", this.check);
             this.done(null);
@@ -87,7 +84,7 @@ class CheckUserAction extends Action {
     }
 
     done(value) {
-        var answerKey = this.getAnswerKey();
+        let answerKey = this.getAnswerKey();
         if(answerKey && value != null) {
             this.flow.answers.add(answerKey, value);
         }

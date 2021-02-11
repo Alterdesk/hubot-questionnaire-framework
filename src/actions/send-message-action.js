@@ -19,15 +19,15 @@ class SendMessageAction extends Action {
             flowCallback();
             return;
         }
-        var control = this.flow.control;
-        var messengerClient = control.messengerClient;
+        let control = this.flow.control;
+        let messengerClient = control.messengerClient;
 
-        var sendMessageData = new SendMessageData();
+        let sendMessageData = new SendMessageData();
 
-        var answers = this.flow.answers;
-        var chatId;
-        var isGroup;
-        var isAux;
+        let answers = this.flow.answers;
+        let chatId;
+        let isGroup;
+        let isAux;
         if(this.chatId) {
             chatId = this.getAnswerValue(this.chatId, answers);
             isGroup = this.getAnswerValue(this.isGroup, answers);
@@ -37,9 +37,8 @@ class SendMessageAction extends Action {
             sendMessageData.setHubotMessage(this.flow.msg.message);
         }
 
-        var messageText = this.getAnswerValue(this.messageText, answers, "");
-        for(let i in this.messageFormatters) {
-            var formatter = this.messageFormatters[i];
+        let messageText = this.getAnswerValue(this.messageText, answers, "");
+        for(let formatter of this.messageFormatters) {
             messageText = formatter.execute(messageText, this.flow);
         }
         if(!messageText || messageText === "") {
@@ -53,10 +52,10 @@ class SendMessageAction extends Action {
 
         if(this.attachmentPaths.length > 0) {
             Logger.debug("SendMessageAction::start() Got " + this.attachmentPaths.length + " attachments:", this.attachmentPaths);
-            var filePathRegex = RegexTools.getFilePathRegex();
+            let filePathRegex = RegexTools.getFilePathRegex();
             Logger.debug("SendMessageAction::start() Using file path regex:", filePathRegex);
-            for(let index in this.attachmentPaths) {
-                var attachmentPath = this.getAnswerValue(this.attachmentPaths[index], answers);
+            for(let path of this.attachmentPaths) {
+                let attachmentPath = this.getAnswerValue(path, answers);
                 Logger.debug("SendMessageAction::start() Got attachment path:", attachmentPath);
                 if(typeof attachmentPath !== "string") {
                     this.onError("SendMessageAction::start() Invalid attachment path:", attachmentPath);
@@ -71,12 +70,12 @@ class SendMessageAction extends Action {
             }
         }
 
-        var overrideToken = this.getAnswerValue(this.overrideToken, answers);
+        let overrideToken = this.getAnswerValue(this.overrideToken, answers);
         if(overrideToken) {
             sendMessageData.setOverrideToken(overrideToken);
         }
 
-        var json = await messengerClient.sendMessage(sendMessageData);
+        let json = await messengerClient.sendMessage(sendMessageData);
         if(json) {
             Logger.debug("SendMessageAction::start() Message sent successfully");
         } else {
@@ -87,6 +86,10 @@ class SendMessageAction extends Action {
 
     addMessageFormatter(formatter) {
         this.messageFormatters.push(formatter);
+    }
+
+    addMessageFormatters(formatters) {
+        this.messageFormatters = this.messageFormatters.concat(formatters);
     }
 
     addAttachmentPath(filePath) {
