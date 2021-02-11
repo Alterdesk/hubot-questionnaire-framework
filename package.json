@@ -1,6 +1,6 @@
 {
   "name": "hubot-questionnaire-framework",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Hubot Questionnaire Framework",
   "main": "src/questionnaire.js",
   "scripts": {
