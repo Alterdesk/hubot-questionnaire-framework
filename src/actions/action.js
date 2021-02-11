@@ -37,6 +37,18 @@ class Action extends Step {
     resetAskedQuestions() {
         this.askedQuestions = false;
     }
+
+    onError() {
+        let errorMessage = Logger.argumentsToString(arguments);
+        Logger.error(errorMessage);
+        if(this.errorCallback) {
+            this.errorCallback(errorMessage);
+        }
+    }
+
+    setErrorCallback(errorCallback) {
+        this.errorCallback = errorCallback;
+    }
 }
 
 module.exports = Action;

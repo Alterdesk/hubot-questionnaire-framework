@@ -12,20 +12,20 @@ class CloseGroupAction extends Action {
 
     async start(flowCallback) {
         if(!this.flow || !this.flow.msg || !this.flow.control) {
-            Logger.error("CloseGroupAction::start() Invalid Flow or Control");
+            this.onError("CloseGroupAction::start() Invalid Flow or Control");
             flowCallback();
             return;
         }
-        var answers = this.flow.answers;
-        var chatId;
-        var isAux;
+        let answers = this.flow.answers;
+        let chatId;
+        let isAux;
         if(this.chatId) {
             chatId = this.getAnswerValue(this.chatId, answers);
             isAux = this.getAnswerValue(this.isAux, answers);
         } else {
-            var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
+            let isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
-                Logger.error("CloseGroupAction::start() Not a group chat");
+                Logger.warn("CloseGroupAction::start() Not a group chat");
                 flowCallback();
                 return;
             }
@@ -33,14 +33,15 @@ class CloseGroupAction extends Action {
             isAux = false;
         }
         if(!chatId) {
-            Logger.error("CloseGroupAction::start() Invalid destination chat id");
+            this.onError("CloseGroupAction::start() Invalid chat id");
             flowCallback();
             return;
         }
 
-        var sendEmail = this.getAnswerValue(this.sendEmail, answers, true);
+        let sendEmail = this.getAnswerValue(this.sendEmail, answers, true);
+        let overrideToken = this.getAnswerValue(this.overrideToken, answers);
 
-        await this.flow.control.messengerClient.closeGroupChat(chatId, isAux, sendEmail, this.overrideToken);
+        await this.flow.control.messengerClient.closeGroupChat(chatId, isAux, sendEmail, overrideToken);
         flowCallback();
     }
 

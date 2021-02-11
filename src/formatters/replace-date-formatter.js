@@ -13,7 +13,7 @@ class ReplaceDateFormatter extends Formatter {
     }
 
     execute(text, flow) {
-        var date;
+        let date;
         if(!this.from || this.from.length === 0) {
             Logger.error("ReplaceDateFormatter::execute() Invalid from: \"" + this.from + "\"");
             return text;
@@ -22,7 +22,7 @@ class ReplaceDateFormatter extends Formatter {
             Logger.error("ReplaceDateFormatter::execute() Invalid format: \"" + this.format + "\"");
             return text;
         }
-        var answerKey = ChatTools.getAnswerKey(this.answerKey, flow);
+        let answerKey = ChatTools.getAnswerKey(this.answerKey, flow);
         if(answerKey && flow.answers.has(answerKey)) {
             date = flow.answers.get(answerKey);
         } else {
@@ -37,7 +37,7 @@ class ReplaceDateFormatter extends Formatter {
             return text;
         }
         Logger.debug("ReplaceDateFormatter::execute() Using from: \"" + this.from + "\" format: \"" + this.format + "\"" + " Date: " + date);
-        var formatted = DateTools.formatToLocal(date, this.format);
+        let formatted = DateTools.formatToLocal(date, this.format);
         if(this.prefixText && this.prefixText.length > 0) {
             formatted = this.prefixText + formatted;
         }

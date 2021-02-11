@@ -12,20 +12,20 @@ class RemoveGroupAction extends Action {
 
     async start(flowCallback) {
         if(!this.flow || !this.flow.msg || !this.flow.control) {
-            Logger.error("RemoveGroupAction::start() Invalid Flow or Control");
+            this.onError("RemoveGroupAction::start() Invalid Flow or Control");
             flowCallback();
             return;
         }
-        var answers = this.flow.answers;
-        var chatId;
-        var isAux;
+        let answers = this.flow.answers;
+        let chatId;
+        let isAux;
         if(this.chatId) {
             chatId = this.getAnswerValue(this.chatId, answers);
             isAux = this.getAnswerValue(this.isAux, answers);
         } else {
-            var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
+            let isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
-                Logger.error("RemoveGroupAction::start() Not a group chat");
+                Logger.warn("RemoveGroupAction::start() Not a group chat");
                 flowCallback();
                 return;
             }
@@ -33,14 +33,15 @@ class RemoveGroupAction extends Action {
             isAux = false;
         }
         if(!chatId) {
-            Logger.error("RemoveGroupAction::start() Invalid destination chat id");
+            this.onError("RemoveGroupAction::start() Invalid destination chat id");
             flowCallback();
             return;
         }
 
-        var sendEmail = this.getAnswerValue(this.sendEmail, answers, true);
+        let sendEmail = this.getAnswerValue(this.sendEmail, answers, true);
+        let overrideToken = this.getAnswerValue(this.overrideToken, answers);
 
-        await this.flow.control.messengerClient.removeGroupChat(chatId, isAux, sendEmail, this.overrideToken);
+        await this.flow.control.messengerClient.removeGroupChat(chatId, isAux, sendEmail, overrideToken);
         flowCallback();
     }
 

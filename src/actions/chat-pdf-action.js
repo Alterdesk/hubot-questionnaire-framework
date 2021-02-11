@@ -20,36 +20,35 @@ class ChatPdfAction extends Action {
             flowCallback();
             return;
         }
-        var answers = this.flow.answers;
-        var filename = this.getAnswerValue(this.filename, answers, "");
-        for(let i in this.filenameFormatters) {
-            var formatter = this.filenameFormatters[i];
+        let answers = this.flow.answers;
+        let filename = this.getAnswerValue(this.filename, answers, "");
+        for(let formatter of this.filenameFormatters) {
             filename = formatter.execute(filename, this.flow);
         }
         filename = StringTools.safeFilename(filename);
         if(!filename || filename.length === 0) {
-            Logger.error("ChatPdfAction::start() Invalid filename:", this.filename);
+            this.onError("ChatPdfAction::start() Invalid filename:", this.filename);
             if(this.errorMessage && this.errorMessage.length > 0) {
                 this.flow.msg.send(this.errorMessage);
             }
             flowCallback();
             return;
         }
-        var msg = this.flow.msg;
-        var control = this.flow.control;
-        var messengerClient = control.messengerClient;
+        let msg = this.flow.msg;
+        let control = this.flow.control;
+        let messengerClient = control.messengerClient;
 
-        var sourceChatId = msg.message.room;
-        var sourceIsGroup = ChatTools.isUserInGroup(msg.message.user);
+        let sourceChatId = msg.message.room;
+        let sourceIsGroup = ChatTools.isUserInGroup(msg.message.user);
         if(!sourceChatId) {
-            Logger.error("ChatPdfAction::start() Invalid source chat id");
+            this.onError("ChatPdfAction::start() Invalid source chat id");
             flowCallback();
             return;
         }
 
-        var destinationChatId;
-        var destinationIsGroup;
-        var destinationIsAux;
+        let destinationChatId;
+        let destinationIsGroup;
+        let destinationIsAux;
         if(this.chatId) {
             destinationChatId = this.getAnswerValue(this.chatId, answers);
             destinationIsGroup = this.getAnswerValue(this.isGroup, answers);
@@ -60,23 +59,22 @@ class ChatPdfAction extends Action {
             destinationIsAux = false;
         }
         if(!destinationChatId) {
-            Logger.error("ChatPdfAction::start() Invalid destination chat id");
+            this.onError("ChatPdfAction::start() Invalid destination chat id");
             flowCallback();
             return;
         }
 
-        var messageText = this.getAnswerValue(this.messageText, answers, "");
-        for(let i in this.messageFormatters) {
-            var formatter = this.messageFormatters[i];
+        let messageText = this.getAnswerValue(this.messageText, answers, "");
+        for(let formatter of this.messageFormatters) {
             messageText = formatter.execute(messageText, this.flow);
         }
 
-        var startDate = this.getAnswerValue(this.startDate, answers);
-        var endDate = this.getAnswerValue(this.endDate, answers);
+        let startDate = this.getAnswerValue(this.startDate, answers);
+        let endDate = this.getAnswerValue(this.endDate, answers);
 
-        var filePath = await messengerClient.downloadChatPdf(filename, startDate, endDate, sourceChatId, sourceIsGroup, false);
+        let filePath = await messengerClient.downloadChatPdf(filename, startDate, endDate, sourceChatId, sourceIsGroup, false);
         if(!filePath) {
-            Logger.error("ChatPdfAction::start() Unable to generate PDF");
+            this.onError("ChatPdfAction::start() Unable to generate PDF: chatId: " + sourceChatId + " isGroup: " + sourceIsGroup);
             if(this.answerKey) {
                 answers.add(this.answerKey, false);
             }
@@ -88,16 +86,17 @@ class ChatPdfAction extends Action {
         }
         Logger.debug("ChatPdfAction::start() Generated PDF: " + filePath);
 
-        var sendMessageData = new SendMessageData();
+        let sendMessageData = new SendMessageData();
         sendMessageData.setMessage(messageText);
         sendMessageData.setChat(destinationChatId, destinationIsGroup, destinationIsAux);
         sendMessageData.addAttachmentPath(filePath);
-        if(this.overrideToken) {
-            sendMessageData.setOverrideToken(this.overrideToken);
+        let overrideToken = this.getAnswerValue(this.overrideToken, answers);
+        if(overrideToken) {
+            sendMessageData.setOverrideToken(overrideToken);
         }
 
-        var json = await messengerClient.sendMessage(sendMessageData);
-        var messageSuccess = json != null;
+        let json = await messengerClient.sendMessage(sendMessageData);
+        let messageSuccess = json != null;
         if(this.answerKey) {
             answers.add(this.answerKey, messageSuccess);
             if(messageSuccess) {
@@ -107,7 +106,7 @@ class ChatPdfAction extends Action {
         if(messageSuccess) {
             Logger.debug("ChatPdfAction::start() PDF message sent successfully");
         } else {
-            Logger.error("ChatPdfAction::start() Unable to send PDF");
+            this.onError("ChatPdfAction::start() Unable to send PDF");
             if(this.errorMessage && this.errorMessage.length > 0) {
                 this.flow.msg.send(this.errorMessage);
             }
@@ -123,12 +122,20 @@ class ChatPdfAction extends Action {
         this.filenameFormatters.push(formatter);
     }
 
+    addFilenameFormatters(formatters) {
+        this.filenameFormatters = this.filenameFormatters.concat(formatters);
+    }
+
     setMessageText(messageText) {
         this.messageText = messageText;
     }
 
     addMessageFormatter(formatter) {
         this.messageFormatters.push(formatter);
+    }
+
+    addMessageFormatters(formatters) {
+        this.messageFormatters = this.messageFormatters.concat(formatters);
     }
 
     setStartDate(startDate) {

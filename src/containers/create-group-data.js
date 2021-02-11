@@ -26,9 +26,7 @@ class CreateGroupData {
     }
 
     addMemberIds(ids) {
-        for(var index in ids) {
-            this.addMemberId.push(ids[index]);
-        }
+        this.memberIds = this.memberIds.concat(ids);
     }
 
     addInvite(invite) {
@@ -36,9 +34,7 @@ class CreateGroupData {
     }
 
     addInvites(invites) {
-        for(var index in invites) {
-            this.addInvite.push(invites[index]);
-        }
+        this.inviteUsers = this.inviteUsers.concat(invites);
     }
 
     setGroupSettings(groupSettingsData) {
@@ -62,24 +58,22 @@ class CreateGroupData {
     }
 
     getPostData() {
-        var data = {};
+        let data = {};
 
         if(this.groupSettingsData) {
-            var settingsPostData = this.groupSettingsData.getPutData();
-            data["settings"] = settingsPostData;
+            data["settings"] = this.groupSettingsData.getPutData();
         }
 
-        var hasAuxMembers = false;
+        let hasAuxMembers = false;
 
         // Invite user data
-        var inviteUsersData = [];
+        let inviteUsersData = [];
 
-        for(let index in this.inviteUsers) {
-            var inviteUser = this.inviteUsers[index];
+        for(let inviteUser of this.inviteUsers) {
             if(inviteUser.getAuxId()) {
                 hasAuxMembers = true;
             }
-            var inviteUserData = inviteUser.getPostData(true);
+            let inviteUserData = inviteUser.getPostData(true);
             inviteUsersData.push(inviteUserData);
         }
 

@@ -13,14 +13,14 @@ class Answers {
         if(!object) {
             return;
         }
-        var keys = Object.keys(object);
+        let keys = Object.keys(object);
         if(!keys) {
             return;
         }
-        for(var index in keys) {
-            var key = keys[index];
-            var value = object[key];
-            var useKey = keyPrefix + "_" + key;
+        for(let index in keys) {
+            let key = keys[index];
+            let value = object[key];
+            let useKey = keyPrefix + "_" + key;
             if(typeof value === 'object') {
                 this.addObject(useKey, value);
             } else {
@@ -30,7 +30,7 @@ class Answers {
     }
 
     remove(key) {
-        var value = this.data[key];
+        let value = this.data[key];
         delete this.data[key];
         return value;
     }
@@ -56,10 +56,10 @@ class Answers {
     }
 
     getKeysWithPrefix(prefix) {
-        var result = [];
-        var keys = this.keys();
+        let result = [];
+        let keys = this.keys();
         for(let i in keys) {
-            var key = keys[i];
+            let key = keys[i];
             if(key.startsWith(prefix)) {
                 result.push(key);
             }
@@ -68,10 +68,10 @@ class Answers {
     }
 
     getKeysContaining(substring) {
-        var result = [];
-        var keys = this.keys();
+        let result = [];
+        let keys = this.keys();
         for(let i in keys) {
-            var key = keys[i];
+            let key = keys[i];
             if(key.indexOf(substring) !== -1) {
                 result.push(key);
             }
@@ -84,14 +84,14 @@ class Answers {
     }
 
     toObject() {
-        var answersObject = {};
-        var keys = this.keys();
+        let answersObject = {};
+        let keys = this.keys();
         if(!keys) {
             return answersObject;
         }
-        for(var index in keys) {
-            var key = keys[index];
-            var value = this.get(key);
+        for(let index in keys) {
+            let key = keys[index];
+            let value = this.get(key);
             if(value instanceof Answers) {
                 answersObject[key] = value.toObject();
             } else {
@@ -105,13 +105,12 @@ class Answers {
         if(!answers) {
             return;
         }
-        var keys = answers.keys();
-        for(let index in keys) {
-            var key = keys[index];
+        let keys = answers.keys();
+        for(let key of keys) {
             if(skipExistingKeys && this.has(key)) {
                 continue;
             }
-            var value = answers.get(key);
+            let value = answers.get(key);
             this.add(key, value);
         }
     }
@@ -124,14 +123,14 @@ class Answers {
         if(!object) {
             return null;
         }
-        var keys = Object.keys(object);
+        let keys = Object.keys(object);
         if(!keys) {
             return null;
         }
-        var answers = new Answers();
-        for(var index in keys) {
-            var key = keys[index];
-            var value = object[key];
+        let answers = new Answers();
+        for(let index in keys) {
+            let key = keys[index];
+            let value = object[key];
             if(typeof value === 'object') {
                 answers.add(key, Answers.fromObject(value));
             } else {

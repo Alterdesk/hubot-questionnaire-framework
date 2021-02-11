@@ -13,10 +13,11 @@ class JsonRestClient extends BaseRestClient {
     formatBody(data) {
         return new Promise(async (resolve) => {
             try {
-                var result = JSON.stringify(data);
+                let result = JSON.stringify(data);
                 resolve(result);
             } catch(err) {
                 Logger.error("JsonRestClient::formatBody()", err);
+                this.sendError(err);
                 resolve(null);
             }
         });
@@ -25,10 +26,11 @@ class JsonRestClient extends BaseRestClient {
     parse(body) {
         return new Promise(async (resolve) => {
             try {
-                var result = JSON.parse(body);
+                let result = JSON.parse(body);
                 resolve(result);
             } catch(err) {
                 Logger.error("JsonRestClient::parse()", err);
+                this.sendError(err);
                 resolve(null);
             }
         });

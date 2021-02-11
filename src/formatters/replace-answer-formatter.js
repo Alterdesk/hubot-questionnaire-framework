@@ -15,7 +15,7 @@ class ReplaceAnswerFormatter extends Formatter {
     }
 
     execute(text, flow) {
-        var answerKey = this.getAnswerKey(flow);
+        let answerKey = this.getAnswerKey(flow);
         if(!answerKey) {
             Logger.error("ReplaceAnswerFormatter::execute() Invalid answerKey: \"" + answerKey + "\"");
             return text;
@@ -33,7 +33,7 @@ class ReplaceAnswerFormatter extends Formatter {
             Logger.debug("ReplaceAnswerFormatter::execute() Answer not found: \"" + answerKey + "\"");
             if(this.fallbackText != null) {
                 Logger.debug("ReplaceAnswerFormatter::execute() Using fallback: \"" + this.fallbackText + "\" answerKey: \"" + answerKey + "\"");
-                var fallback = this.fallbackText;
+                let fallback = this.fallbackText;
                 if(this.escapeHtml) {
                     fallback = StringTools.escapeHtml(fallback);
                 }
@@ -41,18 +41,18 @@ class ReplaceAnswerFormatter extends Formatter {
             }
             return text;
         }
-        var answerValue = flow.answers.get(answerKey);
+        let answerValue = flow.answers.get(answerKey);
         if(answerValue == null) {
             Logger.error("ReplaceAnswerFormatter::execute() Invalid answer: \"" + answerKey + "\"");
             return text;
         }
         if(typeof answerValue === "object") {
-            var result = this.getTextForArray(answerValue);
+            let result = this.getTextForArray(answerValue);
             if(!result || result.length === 0) {
                 Logger.debug("ReplaceAnswerFormatter::execute() Answer is empty or invalid: key:\"" + answerKey + "\" value:", answerValue);
                 if(this.fallbackText != null) {
                     Logger.debug("ReplaceAnswerFormatter::execute() Using fallback: \"" + this.fallbackText + "\" answerKey: \"" + answerKey + "\"");
-                    var fallback = this.fallbackText;
+                    let fallback = this.fallbackText;
                     if(this.escapeHtml) {
                         fallback = StringTools.escapeHtml(fallback);
                     }
@@ -65,7 +65,7 @@ class ReplaceAnswerFormatter extends Formatter {
             }
             return text.replace(this.from, result);
         }
-        var result = this.getTextForAnswer(answerValue);
+        let result = this.getTextForAnswer(answerValue);
         if(this.prefixText && this.prefixText.length > 0) {
             result = this.prefixText + result;
         }
@@ -82,16 +82,16 @@ class ReplaceAnswerFormatter extends Formatter {
         if(!value || value.length === 0) {
             return null;
         }
-        var result = "";
+        let result = "";
         for(let i in value) {
-            var index = parseInt(i, 10);
-            var text = this.getTextForAnswer(value[i]);
+            let index = parseInt(i, 10);
+            let text = this.getTextForAnswer(value[i]);
             if(this.listMode === "LIST") {
-                var addText = text;
+                let addText = text;
                 if(this.bulletMode === "POINT") {
                     addText = this.bulletStyle + text;
                 } else if(this.bulletMode === "NUMBER") {
-                    var number = index + 1;
+                    let number = index + 1;
                     addText = number + ": " + text;
                 }
                 if(result.length === 0) {
@@ -113,7 +113,7 @@ class ReplaceAnswerFormatter extends Formatter {
     }
 
     getTextForAnswer(value) {
-        var text = this.textForAnswers[value];
+        let text = this.textForAnswers[value];
         if(text) {
             return text;
         }

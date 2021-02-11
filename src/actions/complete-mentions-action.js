@@ -13,28 +13,27 @@ class CompleteMentionsAction extends Action {
 
     async start(flowCallback) {
         if(!this.flow.msg || !this.flow.control) {
-            Logger.error("CompleteMentionsAction::start() Invalid Flow or Control");
+            this.onError("CompleteMentionsAction::start() Invalid Flow or Control");
             flowCallback();
             return;
         }
-        var answers = this.flow.answers;
-        var mentions = answers.get(this.answerKey);
+        let answers = this.flow.answers;
+        let mentions = answers.get(this.answerKey);
         if(this.onlyCompleteAll && (mentions.length > 1 || mentions[0]["id"] !== "@all")) {
             Logger.debug("CompleteMentionsAction::start() Set to only complete all and all tag is not used");
             flowCallback();
             return;
         }
-        var question = this.flow.getQuestion(this.answerKey);
-        var chatId = this.flow.msg.message.room;
-        var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
-        var excludeIds;
-
-        if(question && !question.robotAllowed) {
+        let question = this.flow.getQuestion(this.answerKey);
+        let chatId = this.flow.msg.message.room;
+        let isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
+        let excludeIds;
+        if(!question || !question.robotAllowed) {
             excludeIds = [];
             excludeIds.push(this.flow.control.robotUserId);
         }
         Logger.debug("CompleteMentionsAction::start() Completing mention data");
-        var mentionedMembers = await this.flow.control.messengerClient.completeMentions(mentions, excludeIds, chatId, isGroup, false);
+        let mentionedMembers = await this.flow.control.messengerClient.completeMentions(mentions, excludeIds, chatId, isGroup, false);
         if(mentionedMembers) {
             answers.add(this.answerKey, mentionedMembers);
         }

@@ -11,13 +11,13 @@ class AppendAnswerAction extends Action {
     }
 
     start(flowCallback) {
-        var answers = this.flow.answers;
-        var value = this.getAnswerValue(this.answerValue, answers);
+        let answers = this.flow.answers;
+        let value = this.getAnswerValue(this.answerValue, answers);
         if(value != null) {
             Logger.debug("AppendAnswerAction::start() Appending answer: key: " + this.answerKey + " value: " + value);
-            var list = answers.get(this.answerKey);
+            let list = answers.get(this.answerKey);
             if(!(list instanceof Object)) {
-                var previousValue = list;
+                let previousValue = list;
                 list = [];
                 if(previousValue != null) {
                     list.push(previousValue);

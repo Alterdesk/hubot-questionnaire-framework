@@ -14,20 +14,20 @@ class ChangeMembersAction extends Action {
 
     async start(flowCallback) {
         if(!this.flow || !this.flow.msg || !this.flow.control) {
-            Logger.error("ChangeMembersAction::start() Invalid Flow or Control");
+            this.onError("ChangeMembersAction::start() Invalid Flow or Control");
             flowCallback();
             return;
         }
-        var answers = this.flow.answers;
-        var chatId;
-        var isAux;
+        let answers = this.flow.answers;
+        let chatId;
+        let isAux;
         if(this.chatId) {
             chatId = this.getAnswerValue(this.chatId, answers);
             isAux = this.getAnswerValue(this.isAux, answers);
         } else {
-            var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
+            let isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
-                Logger.error("ChangeMembersAction::start() Not a group chat");
+                Logger.warn("ChangeMembersAction::start() Not a group chat");
                 flowCallback();
                 return;
             }
@@ -35,23 +35,24 @@ class ChangeMembersAction extends Action {
             isAux = false;
         }
         if(!chatId) {
-            Logger.error("ChangeMembersAction::start() Invalid chat id");
+            this.onError("ChangeMembersAction::start() Invalid chat id");
             flowCallback();
             return;
         }
 
-        var memberIds = [];
-        for(let index in this.memberIds) {
-            var memberId = this.getAnswerValue(this.memberIds[index], answers);
+        let memberIds = [];
+        for(let id of this.memberIds) {
+            let memberId = this.getAnswerValue(id, answers);
             if(memberId && memberId.length > 0) {
                 memberIds.push(memberId);
             }
         }
 
+        let overrideToken = this.getAnswerValue(this.overrideToken, answers);
         if(this.add) {
-            await this.flow.control.messengerClient.addGroupMembers(chatId, isAux, memberIds, this.overrideToken);
+            await this.flow.control.messengerClient.addGroupMembers(chatId, isAux, memberIds, overrideToken);
         } else {
-            await this.flow.control.messengerClient.removeGroupMembers(chatId, isAux, memberIds, this.overrideToken);
+            await this.flow.control.messengerClient.removeGroupMembers(chatId, isAux, memberIds, overrideToken);
         }
         flowCallback();
     }

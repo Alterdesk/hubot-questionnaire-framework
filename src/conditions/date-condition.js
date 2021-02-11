@@ -1,4 +1,3 @@
-const ChatTools = require('./../utils/chat-tools.js');
 const Condition = require('./condition.js');
 const DateTools = require('./../utils/date-tools.js');
 const Logger = require('./../logger.js');
@@ -10,14 +9,13 @@ class DateCondition extends Condition {
     }
 
     check(flow) {
-        var date = this.getAnswerValue(this.checkDate, flow.answers);
+        let date = this.getAnswerValue(this.checkDate, flow.answers);
         if(!date) {
             date = DateTools.utcDate();
         }
         Logger.debug("DateCondition::check() Checking date:", date);
-        var inverse = this.getAnswerValue(this.inverse, flow.answers, false);
-        for(let index in this.checks) {
-            var c = this.checks[index];
+        let inverse = this.getAnswerValue(this.inverse, flow.answers, false);
+        for(let c of this.checks) {
             if(c.check(date)) {
                 Logger.debug("DateCondition::check() Condition met: inverse: " + inverse + " check:", c);
                 return !inverse;
@@ -127,7 +125,7 @@ class WeekRange {
 
 class EvenWeek {
     constructor(even) {
-        this.even;
+        this.even = even;
     }
 
     check(date) {

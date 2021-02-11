@@ -1,5 +1,4 @@
 const Action = require('./action.js');
-const AnswerCondition = require('./../conditions/answer-condition.js');
 const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
 
@@ -17,11 +16,10 @@ class RepeatFlowAction extends Action {
         if(this.repeatFlow) {
             this.repeatFlow.finish(() => {
                 Logger.debug("RepeatFlowAction::finish() Iteration finished:", this.iteration);
-                var questions = this.repeatFlow.getSummaryQuestions(null, null, false);
+                let questions = this.repeatFlow.getSummaryQuestions(null, null, false);
                 if(questions && questions.length !== 0) {
-                    for(let i in questions) {
-                        var question = questions[i];
-                        var repeatKey = question.getRepeatKey();
+                    for(let question of questions) {
+                        let repeatKey = question.getRepeatKey();
                         if(!repeatKey || repeatKey === "") {
                             continue;
                         }
@@ -52,16 +50,15 @@ class RepeatFlowAction extends Action {
     checkRepeat() {
         Logger.debug("RepeatFlowAction::checkRepeat() Iteration:", this.iteration);
 
-        for(let i in this.conditions) {
-            var condition = this.conditions[i];
+        for(let condition of this.conditions) {
             if(!condition.check(this.flow)) {
                 Logger.debug("RepeatFlowAction::checkRepeat() Condition not met: ", condition);
                 this.flowCallback();
                 return;
             }
         }
-        var answers = this.flow.answers;
-        var minIterations = this.getAnswerValue(this.minIterations, answers);
+        let answers = this.flow.answers;
+        let minIterations = this.getAnswerValue(this.minIterations, answers);
         if(!minIterations) {
             Logger.error("RepeatFlowAction::checkRepeat() Invalid minimal iterations given:", minIterations);
             minIterations = 1;
@@ -78,7 +75,7 @@ class RepeatFlowAction extends Action {
             return;
         }
 
-        var previousIteration = this.iteration;
+        let previousIteration = this.iteration;
         previousIteration--;
         if(previousIteration < 0) {
             Logger.debug("RepeatFlowAction::checkRepeat() No value to check for repeat key");
@@ -86,8 +83,8 @@ class RepeatFlowAction extends Action {
             return;
         }
 
-        var repeatKey = ChatTools.getAnswerKey(this.repeatKey, this.flow, previousIteration);
-        var value = answers.get(repeatKey);
+        let repeatKey = ChatTools.getAnswerKey(this.repeatKey, this.flow, previousIteration);
+        let value = answers.get(repeatKey);
         if(value == null) {
             Logger.debug("RepeatFlowAction::checkRepeat() Repeat answer not given:", repeatKey, value);
             this.flowCallback();
@@ -105,16 +102,22 @@ class RepeatFlowAction extends Action {
     nextIteration() {
         Logger.debug("RepeatFlowAction::nextIteration() Iteration:", this.iteration);
         if(this.repeatKey && this.repeatKey !== "") {
-            var repeatKey = this.repeatKey.replace("#", "");    // TODO Replace with proper iterationKey as property of action
+            let repeatKey = this.repeatKey.replace("#", "");    // TODO Replace with proper iterationKey as property of action
             this.flow.answers.add(repeatKey + "iteration", this.iteration);
         }
         this.repeatFlow.setRepeatIteration(this.iteration);
         this.iteration++;
-        this.flow.startSubFlow(this.repeatFlow, false);
+        setImmediate(() => {
+            this.flow.startSubFlow(this.repeatFlow, false);
+        })
     }
 
     addCondition(condition) {
         this.conditions.push(condition);
+    }
+
+    addConditions(conditions) {
+        this.conditions = this.conditions.concat(conditions);
     }
 
     setRepeatAnswer(repeatKey, repeatValue) {
@@ -130,9 +133,9 @@ class RepeatFlowAction extends Action {
         if(!this.repeatFlow || !this.summaryQuestions) {
             return null;
         }
-        var questions = [];
-        for(let i in this.summaryQuestions) {
-            var question = this.summaryQuestions[i];
+        let questions = [];
+        for(let repeatKey in this.summaryQuestions) {
+            let question = this.summaryQuestions[repeatKey];
             if(ChatTools.filterSummaryQuestion(question, limitToTitles, excludeTitles)) {
                 questions.push(question);
             }

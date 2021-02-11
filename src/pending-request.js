@@ -14,7 +14,7 @@ class PendingRequest {
     // Called when an event was received for the request
     call(responseMessage) {
         Logger.debug("PendingRequest::call() \"" + responseMessage + "\"");
-        var userId;
+        let userId;
         if(responseMessage.id && responseMessage.id["user_id"]) {
             userId = responseMessage.id["user_id"];
         } else if(responseMessage.user.user_id) {
@@ -22,39 +22,39 @@ class PendingRequest {
         } else {
             userId = responseMessage.user.id;
         }
-        var questionId = this.question.getRequestMessageId(userId)
+        let questionId = this.question.getRequestMessageId(userId);
 
         if(!questionId) {
             Logger.error("PendingRequest::call() Request message id not set, retry count: " + this.retryCount);
             if(this.retryCount++ < 9) {
                 setTimeout(() => {
                     this.call(responseMessage);
-                }, 500)
+                }, 500);
                 return;
             }
         }
 
         // Check if this response if for the correct pending request message
-        var requestMessageId;
+        let requestMessageId;
         if(responseMessage.id && responseMessage.id["message_id"]) {
             requestMessageId = responseMessage.id["message_id"];
         } else {
             requestMessageId = responseMessage.id;
         }
 
-        var text;
+        let text;
 
         if(requestMessageId === questionId) {
-            var event = responseMessage.text;
+            let event = responseMessage.text;
             if(event === "conversation_question_answer" || event === "groupchat_question_answer") {
                 if(responseMessage.id && responseMessage.id["options"]) {
-                    var options = responseMessage.id["options"];
-                    var optionText = "";
-                    for(let index in options) {
+                    let options = responseMessage.id["options"];
+                    let optionText = "";
+                    for(let option of options) {
                         if(optionText.length > 0) {
                             optionText += "|";
                         }
-                        optionText += options[index];
+                        optionText += option;
                     }
                     text = optionText;
                 }

@@ -23,9 +23,8 @@ class MultiFormatter extends Formatter {
             return text;
         }
         Logger.debug("MultiFormatter::execute() Executing " + this.formatters.length + " formatters");
-        var result = "";
-        for(let i in this.formatters) {
-            var formatter = this.formatters[i];
+        let result = "";
+        for(let formatter of this.formatters) {
             formatter.setEscapeHtml(this.escapeHtml);
             result = formatter.execute(result, flow);
         }

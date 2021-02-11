@@ -12,11 +12,10 @@ class Information extends Step {
 
     // Execute this information message
     execute() {
-        var result = this.text;
+        let result = this.text;
 
         // Format text with formatters if set
-        for(let i in this.formatters) {
-            var formatter = this.formatters[i];
+        for(let formatter of this.formatters) {
             result = formatter.execute(result, this.flow);
         }
 
@@ -34,6 +33,10 @@ class Information extends Step {
 
     addFormatter(formatter) {
         this.formatters.push(formatter);
+    }
+
+    addFormatters(formatters) {
+        this.formatters = this.formatters.concat(formatters);
     }
 }
 

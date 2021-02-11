@@ -13,7 +13,7 @@ class BaseRestClient {
         this.loggerName = loggerName || "BaseRestClient";
         this.apiPort = parseInt(port);
         this.timeoutMs = 10000;
-        var domain;
+        let domain;
         if(url.startsWith("https://")) {
             domain = url.replace("https://", "");
             this.client = require('https');
@@ -27,7 +27,7 @@ class BaseRestClient {
             this.apiProtocol = "http:";
             this.client = require('http');
         }
-        var urlParts = domain.split("/");
+        let urlParts = domain.split("/");
         if(!urlParts || urlParts.length === 0) {
             Logger.error(this.loggerName + "::constructor() Invalid URL: " + url);
             return;
@@ -55,7 +55,7 @@ class BaseRestClient {
         this.apiBasicUsername = apiBasicUsername;
         this.apiBasicPassword = apiBasicPassword;
         if(this.apiBasicUsername && this.apiBasicPassword) {
-            var auth = this.apiBasicUsername + ":" + this.apiBasicPassword;
+            let auth = this.apiBasicUsername + ":" + this.apiBasicPassword;
             this.apiBasicAuth = Buffer.from(auth).toString('base64');
         }
     }
@@ -65,10 +65,20 @@ class BaseRestClient {
         this.customHeaders[key] = value;
     }
 
+    setErrorCallback(errorCallback) {
+        this.errorCallback = errorCallback;
+    }
+
+    sendError(err) {
+        if(this.errorCallback) {
+            this.errorCallback(err);
+        }
+    }
+
     http(path, method, data, overrideToken) {
         return new Promise(async (resolve) => {
             try {
-                var options = {};
+                let options = {};
                 options["hostname"] = this.apiDomain;
                 options["defaultPort"] = this.apiPort;
                 options["port"] = this.apiPort;
@@ -76,9 +86,9 @@ class BaseRestClient {
                 options["protocol"] = this.apiProtocol;
                 options["timeout"] = this.timeoutMs;
                 options["method"] = method;
-                var headers = {};
+                let headers = {};
                 headers["Content-Type"] = this.getContentType();
-                var formattedBody;
+                let formattedBody;
                 if(data) {
                     formattedBody= await this.formatBody(data);
                     if(formattedBody && formattedBody.length > 0) {
@@ -98,45 +108,45 @@ class BaseRestClient {
                         Logger.debug(this.loggerName + "::http() " + method + " >> " + path);
                     }
                 }
-                var auth = this.authHeader(overrideToken);
+                let auth = this.authHeader(overrideToken);
                 if(auth && auth.length > 0) {
                     headers["Authorization"] = auth;
                 }
                 for(let key in this.customHeaders) {
-                    var value = this.customHeaders[key];
+                    let value = this.customHeaders[key];
                     headers[key] = value;
                     Logger.debug(this.loggerName + "::http() Using custom header ", key, value);
                 }
                 options["headers"] = headers;
 
-                var request = this.client.request(options, (res) => {
-                    var status = res.statusCode;
-                    var encoding = this.getEncoding();
-                    if(encoding && encoding.length > 0) {
+                let request = this.client.request(options, (res) => {
+                    let status = res.statusCode;
+                    let encoding = this.getEncoding();
+                    if (encoding && encoding.length > 0) {
                         res.setEncoding(encoding);
                     }
 
-                    var body = "";
+                    let body = "";
                     res.on('data', (chunk) => {
-                        if(chunk != null) {
+                        if (chunk != null) {
                             body += chunk;
                         }
                     });
 
                     res.on('end', async () => {
-                        var result;
-                        if(body.length > 0) {
+                        let result;
+                        if (body.length > 0) {
                             result = await this.parse(body);
                         } else {
                             result = {};
                         }
-                        if(status === 302) {
+                        if (status === 302) {
                             Logger.debug(this.loggerName + "::http() " + method + " << " + path + ": " + status + ": " + body);
-                            var cookie = res.headers["set-cookie"];
-                            if(cookie) {
+                            let cookie = res.headers["set-cookie"];
+                            if (cookie) {
                                 Logger.debug(this.loggerName + "::http() " + method + " << Got cookie " + path + ": " + cookie);
-                                var cookieUrl;
-                                if(result && result["link"]) {
+                                let cookieUrl;
+                                if (result && result["link"]) {
                                     cookieUrl = result["link"];
                                 } else {
                                     cookieUrl = path;
@@ -144,7 +154,7 @@ class BaseRestClient {
                                 this.urlCookies[cookieUrl] = cookie;
                             }
                             resolve(result);
-                        } else if(status === 200 || status === 201 || status === 204 || status === 304) {
+                        } else if (status === 200 || status === 201 || status === 204 || status === 304) {
                             Logger.debug(this.loggerName + "::http() " + method + " << " + path + ": " + status + ": " + body);
                             resolve(result);
                         } else {
@@ -155,7 +165,8 @@ class BaseRestClient {
 
                     res.on('error', (err) => {
                         Logger.error(this.loggerName + "::http() << " + path + ":", err);
-                        resolve(result);
+                        this.sendError(err);
+                        resolve(null);
                     });
                 });
                 request.setTimeout(this.timeoutMs, () => {
@@ -165,6 +176,7 @@ class BaseRestClient {
                 });
                 request.on('error', (err) => {
                     Logger.error(this.loggerName + "::http() << " + path + ":", err);
+                    this.sendError(err);
                     request.destroy();
                     resolve(null);
                 });
@@ -174,6 +186,7 @@ class BaseRestClient {
                 request.end();
             } catch(err) {
                 Logger.error(this.loggerName + "::http() << " + path + ":", err);
+                this.sendError(err);
                 resolve(null);
             }
         });
@@ -181,21 +194,21 @@ class BaseRestClient {
 
     get(path, overrideToken) {
         return new Promise(async (resolve) => {
-            var result = await this.http(path, "GET", null, overrideToken);
+            let result = await this.http(path, "GET", null, overrideToken);
             resolve(result);
         });
     }
 
     put(path, data, overrideToken) {
         return new Promise(async (resolve) => {
-            var result = await this.http(path, "PUT", data, overrideToken);
+            let result = await this.http(path, "PUT", data, overrideToken);
             resolve(result);
         });
     }
 
     post(path, data, overrideToken) {
         return new Promise(async (resolve) => {
-            var result = await this.http(path, "POST", data, overrideToken);
+            let result = await this.http(path, "POST", data, overrideToken);
             resolve(result);
         });
     }
@@ -203,28 +216,27 @@ class BaseRestClient {
     postMultipart(path, data, fileParameter, filePaths, overrideToken) {
         return new Promise(async (resolve) => {
             try {
-                var postJson = await this.formatBody(data);
+                let postJson = await this.formatBody(data);
                 if(overrideToken) {
                     Logger.debug(this.loggerName + "::postMultipart() Using override token >> " + path + " formData: " + postJson + " filePaths: ", filePaths);
                 } else {
                     Logger.debug(this.loggerName + "::postMultipart() >> " + path + " formData: " + postJson + " filePaths: ", filePaths);
                 }
-                var formData = new FormData();
+                let formData = new FormData();
                 if(data) {
-                    for(var propName in data) {
+                    for(let propName in data) {
                         formData.append(propName, data[propName]);
                     }
                 }
                 if(fileParameter && filePaths) {
-                    for(var i in filePaths) {
-                        var filePath = filePaths[i];
+                    for(let filePath of filePaths) {
                         try {
                             if(!FileSystem.existsSync(filePath)) {
                                 Logger.error(this.loggerName + "::postMultipart() File does not exist: " + filePath);
                                 resolve(null);
                                 return;
                             }
-                            var stat = FileSystem.statSync(filePath);
+                            let stat = FileSystem.statSync(filePath);
                             if(stat["size"] === 0) {
                                 Logger.error(this.loggerName + "::postMultipart() File is empty: " + filePath);
                                 resolve(null);
@@ -239,13 +251,13 @@ class BaseRestClient {
                         }
                     }
                 }
-                var headers = formData.getHeaders();
-                var auth = this.authHeader(overrideToken);
+                let headers = formData.getHeaders();
+                let auth = this.authHeader(overrideToken);
                 if(auth && auth.length > 0) {
                     headers["Authorization"] = auth;
                 }
                 for(let key in this.customHeaders) {
-                    var value = this.customHeaders[key];
+                    let value = this.customHeaders[key];
                     headers[key] = value;
                     Logger.debug(this.loggerName + "::postMultipart() Using custom header ", key, value);
                 }
@@ -261,10 +273,10 @@ class BaseRestClient {
                         resolve(null);
                         return;
                     }
-                    var body = "";
+                    let body = "";
                     // Read incoming data
                     res.on('readable', () => {
-                        var chunk = res.read();
+                        let chunk = res.read();
                         if(chunk != null) {
                             body += chunk;
                         }
@@ -273,7 +285,7 @@ class BaseRestClient {
                     res.on('end', async () => {
                         if(res.statusCode === 200 || res.statusCode === 201 || res.statusCode === 204 || res.statusCode === 304) {
                             Logger.debug(this.loggerName + "::postMultipart() << " + path + ": " + res.statusCode + ": " + body);
-                            var result;
+                            let result;
                             if(body && body !== "") {
                                 result = await this.parse(body);
                             }
@@ -293,7 +305,7 @@ class BaseRestClient {
 
     delete(path, deleteData, overrideToken) {
         return new Promise(async (resolve) => {
-            var result = await this.http(path, "DELETE", deleteData, overrideToken);
+            let result = await this.http(path, "DELETE", deleteData, overrideToken);
             resolve(result);
         });
     }
@@ -301,24 +313,24 @@ class BaseRestClient {
     download(url, name, mime, overrideToken) {
         return new Promise(async (resolve) => {
             try {
-                var cookie = this.urlCookies[url];
+                let cookie = this.urlCookies[url];
                 if(overrideToken) {
                     Logger.debug(this.loggerName + "::download() Using override token >> " + url + " name: " + name + " mime: " + mime + " cookie: " + cookie);
                 } else {
                     Logger.debug(this.loggerName + "::download() >> " + url + " name: " + name + " mime: " + mime + " cookie: " + cookie);
                 }
-                var tmpDownloadPath = await this.getTmpDownloadPath();
+                let tmpDownloadPath = await this.getTmpDownloadPath();
                 if(!tmpDownloadPath) {
                     Logger.error(this.loggerName + "::download() Unable to create temporary folder: " + tmpDownloadPath)
                     resolve(null);
                     return;
                 }
-                var path = tmpDownloadPath + "/" + name;
-                var requestData = {};
+                let path = tmpDownloadPath + "/" + name;
+                let requestData = {};
                 requestData["uri"] = url;
                 requestData["method"] = "get";
-                var headers = {};
-                var auth = this.authHeader(overrideToken);
+                let headers = {};
+                let auth = this.authHeader(overrideToken);
                 if(auth && auth.length > 0) {
                     headers["Authorization"] = auth;
                 }
@@ -328,8 +340,8 @@ class BaseRestClient {
                 }
                 requestData["headers"] = headers;
 
-                var req = Request(requestData);
-                var res;
+                let req = Request(requestData);
+                let res;
                 req.on('response', (response) => {
                     res = response;
                 });
@@ -342,7 +354,7 @@ class BaseRestClient {
                 req.on('end', () => {
                     if(res == null) {
                         resolve(null);
-                    } else if(res.statusCode == 200) {
+                    } else if(res.statusCode === 200) {
                         Logger.debug(this.loggerName + "::download() << " + url + ": " + res.statusCode);
                         resolve(path);
                     } else {
@@ -362,7 +374,7 @@ class BaseRestClient {
     getTmpDownloadPath() {
         return new Promise(async (resolve) => {
             try {
-                var tmpDownloadPath = this.tmpDownloadDir + "/" + UuidV1();
+                let tmpDownloadPath = this.tmpDownloadDir + "/" + UuidV1();
                 Mkdirp(tmpDownloadPath, (mkdirError) => {
                     if(mkdirError != null) {
                         Logger.error(this.loggerName + "::getTmpDownloadPath() Unable to create temporary folder: " + tmpDownloadPath)
@@ -378,10 +390,10 @@ class BaseRestClient {
         });
     }
 
-    getTmpUploadPath(callback) {
+    getTmpUploadPath() {
         return new Promise(async (resolve) => {
             try {
-                var tmpUploadPath = this.tmpUploadDir + "/" + UuidV1();
+                let tmpUploadPath = this.tmpUploadDir + "/" + UuidV1();
                 Mkdirp(tmpUploadPath, (mkdirError) => {
                     if(mkdirError != null) {
                         Logger.error(this.loggerName + "::getTmpUploadPath() Unable to create temporary folder: " + tmpUploadPath)
@@ -399,16 +411,16 @@ class BaseRestClient {
 
     // Format data to encoded get parameters
     toGetParameters(data) {
-        var parameters = "";
-        var index = 0;
-        for(var field in data) {
-            if(index++ == 0) {
+        let parameters = "";
+        let index = 0;
+        for(let field in data) {
+            if(index++ === 0) {
                 parameters += "?";
             } else {
                 parameters += "&";
             }
             parameters += encodeURIComponent(field) + "=" + encodeURIComponent(data[field]);
-        };
+        }
         return parameters;
     }
 

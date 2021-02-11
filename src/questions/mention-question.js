@@ -34,7 +34,7 @@ class MentionQuestion extends Question {
         if(matches === null || message.text === null) {
             return null;
         }
-        var value = [];
+        let value = [];
 
         // Check for the mentioned all tag
         if(message.text.match(RegexTools.getMentionedAllRegex()) !== null) {
@@ -42,13 +42,13 @@ class MentionQuestion extends Question {
             if(!this.allAllowed) {
                 return null;
             }
-            var mention = {};
+            let mention = {};
             mention["id"] = "@all";
             value.push(mention);
             return value;
         }
 
-        var mentions;
+        let mentions;
 
         // Copy mention data if already parsed by gateway
         if(message.mentions !== null) {
@@ -57,38 +57,37 @@ class MentionQuestion extends Question {
         } else {
             // Not parsed yet
             mentions = [];
-            var mentionedUserRegex = RegexTools.getMentionedUserRegex();
-            var uuidRegex = RegexTools.getUuidRegex();
-            var mentionResult;
+            let mentionedUserRegex = RegexTools.getMentionedUserRegex();
+            let uuidRegex = RegexTools.getUuidRegex();
+            let mentionResult;
             while((mentionResult = mentionedUserRegex.exec(message.text)) !== null) {
-                var userResult = mentionResult[0].match(uuidRegex);
+                let userResult = mentionResult[0].match(uuidRegex);
                 if(userResult == null) {
                     continue;
                 }
-                var mention = {};
+                let mention = {};
                 mention["id"] = userResult[0];
                 mentions.push(mention);
             }
         }
 
         // Retrieve robot id if available
-        var robotId = null;
+        let robotId = null;
         if(this.flow.control.robot.user != null) {
             robotId = this.flow.control.robotUserId;
         }
 
         // Check for duplicates and robot mention
-        for(let index in mentions) {
-            var mention = mentions[index];
-            var userId = mention["id"];
+        for(let mention of mentions) {
+            let userId = mention["id"];
             // Skip robot mention if not allowed
             if(!this.robotAllowed && robotId !== null && userId === robotId) {
-                Logger.debug("MentionQuestion::checkAndParseAnswer() Removed robot mention")
+                Logger.debug("MentionQuestion::checkAndParseAnswer() Removed robot mention");
                 continue;
             }
-            var add = true;
-            for(let index in value) {
-                if(userId === value[index]["id"]) {
+            let add = true;
+            for(let user of value) {
+                if(userId === user["id"]) {
                     Logger.debug("MentionQuestion::checkAndParseAnswer() User id already mentioned: " + userId);
                     add = false;
                     break;
@@ -101,14 +100,13 @@ class MentionQuestion extends Question {
         }
 
         // If a valid answer has been given, add the include mention list
-        if(value.length != 0) {
+        if(value.length !== 0) {
             if(this.includeMentions != null) {
-                for(let index in this.includeMentions) {
-                    var includeMention = this.includeMentions[index];
-                    var userId = includeMention["id"];
-                    var add = true;
-                    for(let i in value) {
-                        if(userId === value[i]["id"]) {
+                for(let includeMention of this.includeMentions) {
+                    let userId = includeMention["id"];
+                    let add = true;
+                    for(let user of value) {
+                        if(userId === user["id"]) {
                             add = false;
                             break;
                         }

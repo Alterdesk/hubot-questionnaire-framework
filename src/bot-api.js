@@ -1,4 +1,4 @@
-const {User, Message, TextMessage} = require('hubot');
+const {User, TextMessage} = require('hubot');
 const FileSystem = require('fs');
 const Path = require('path');
 const UuidV1 = require('uuid/v1');
@@ -14,8 +14,9 @@ class BotApi {
         this.timers = {};
         this.overrideCallbacks = {};
         this.startDate = DateTools.utcDate();
+        this.customStatsData = {};
 
-        var useApi = parseInt(process.env.HUBOT_USE_API || 1);;
+        let useApi = parseInt(process.env.HUBOT_USE_API || 1);
         if(useApi === 0) {
             Logger.info("BotApi::constructor() API disabled");
             return;
@@ -27,67 +28,70 @@ class BotApi {
             Logger.info("BotApi::constructor() No token configured, set token to: " + this.token);
         }
 
-        var app;
+        let app;
         if(process.env.HUBOT_API_SERVER) {
-            var express = require('express');
+            let express = require('express');
             app = express();
             app.use(express.json());
 
-            var port = process.env.HUBOT_API_PORT || 8443;
-            var host = process.env.HUBOT_API_HOST || "0.0.0.0";
-            var keyPath = process.env.HUBOT_API_KEY_PATH;
-            var certPath = process.env.HUBOT_API_CERT_PATH;
+            let port = parseInt(process.env.HUBOT_API_PORT || 8443);
+            let host = process.env.HUBOT_API_HOST || "0.0.0.0";
+            let keyPath = process.env.HUBOT_API_KEY_PATH;
+            let certPath = process.env.HUBOT_API_CERT_PATH;
             if(keyPath && keyPath !== "" && certPath && certPath !== "") {
-                var options = {
-                   key: FileSystem.readFileSync(keyPath),
-                   cert: FileSystem.readFileSync(certPath),
-                   passphrase: process.env.HUBOT_API_CERT_PASS
+                let options = {
+                    key: FileSystem.readFileSync(keyPath),
+                    cert: FileSystem.readFileSync(certPath),
+                    passphrase: process.env.HUBOT_API_CERT_PASS
                 };
-                var https = require('https');
+                let https = require('https');
                 https.createServer(options, app).listen(port, host, () => {
-                    Logger.debug("BotApi::constructor() Started HTTPS schedule API server on port " + port);
+                    Logger.debug("BotApi::constructor() Started HTTPS bot API server on port " + port);
                 });
             } else {
-                var http = require('http');
+                let http = require('http');
                 http.createServer(app).listen(port, host, () => {
-                    Logger.debug("BotApi::constructor() Started HTTP schedule API server on port " + port);
+                    Logger.debug("BotApi::constructor() Started HTTP bot API server on port " + port);
                 });
             }
-        } else {
+        } else if(robot.router.use) {
             // Use Hubot default express instance
-            Logger.debug("BotApi::constructor() Using default Hubot HTTP server for schedule API");
+            Logger.debug("BotApi::constructor() Using default Hubot HTTP server for bot API");
             app = robot.router;
+        } else {
+            Logger.debug("BotApi::constructor() Not using HTTP server for bot API");
         }
 
-        app.get("/stats/configured", (req, res) => {this.getConfigured(req, res)});
-        app.get("/stats/connected", (req, res) => {this.getConnected(req, res)});
-        app.get("/stats/questionnaires", (req, res) => {this.getQuestionnaires(req, res)});
-        app.get("/stats/start_date", (req, res) => {this.getStartDate(req, res)});
-        app.get("/stats", (req, res) => {this.getStats(req, res)});
+        if(app) {
+            app.get("/stats/configured", (req, res) => {this.getConfigured(req, res)});
+            app.get("/stats/connected", (req, res) => {this.getConnected(req, res)});
+            app.get("/stats/questionnaires", (req, res) => {this.getQuestionnaires(req, res)});
+            app.get("/stats/start_date", (req, res) => {this.getStartDate(req, res)});
+            app.get("/stats", (req, res) => {this.getStats(req, res)});
 
-        app.get("/actions/stop", (req, res) => {this.getStop(req, res)});
-        app.get("/actions/kill", (req, res) => {this.getKill(req, res)});
+            app.get("/actions/stop", (req, res) => {this.getStop(req, res)});
+            app.get("/actions/kill", (req, res) => {this.getKill(req, res)});
 
-        app.get("/conversations/:chat_id/schedule/:event_id", (req, res) => {this.getEvent(req, res)});
-        app.get("/groupchats/:chat_id/schedule/:event_id", (req, res) => {this.getEvent(req, res)});
-        app.delete("/conversations/:chat_id/schedule/:event_id", (req, res) => {this.deleteEvent(req, res)});
-        app.delete("/groupchats/:chat_id/schedule/:event_id", (req, res) => {this.deleteEvent(req, res)});
-        app.post("/conversations/:chat_id/schedule", (req, res) => {this.postEvent(req, res)});
-        app.post("/groupchats/:chat_id/schedule", (req, res) => {this.postEvent(req, res)});
-        app.post("/conversations/:chat_id/trigger", (req, res) => {this.postTrigger(req, res)});
-        app.post("/groupchats/:chat_id/trigger", (req, res) => {this.postTrigger(req, res)});
+            app.get("/conversations/:chat_id/schedule/:event_id", (req, res) => {this.getEvent(req, res)});
+            app.get("/groupchats/:chat_id/schedule/:event_id", (req, res) => {this.getEvent(req, res)});
+            app.delete("/conversations/:chat_id/schedule/:event_id", (req, res) => {this.deleteEvent(req, res)});
+            app.delete("/groupchats/:chat_id/schedule/:event_id", (req, res) => {this.deleteEvent(req, res)});
+            app.post("/conversations/:chat_id/schedule", (req, res) => {this.postEvent(req, res)});
+            app.post("/groupchats/:chat_id/schedule", (req, res) => {this.postEvent(req, res)});
+            app.post("/conversations/:chat_id/trigger", (req, res) => {this.postTrigger(req, res)});
+            app.post("/groupchats/:chat_id/trigger", (req, res) => {this.postTrigger(req, res)});
+        }
 
         this.scheduleFilePath = process.env.HUBOT_ALTERDESK_FILE_PATH || Path.join(process.cwd(), 'schedule.json');
-        this.schedule;
         try {
             if (FileSystem.existsSync(this.scheduleFilePath)) {
                 this.schedule = JSON.parse(FileSystem.readFileSync(this.scheduleFilePath));
                 Logger.debug("BotApi::constructor() Loaded schedule:", this.schedule);
-                var eventIds = Object.keys(this.schedule);
+                let eventIds = Object.keys(this.schedule);
                 if(eventIds) {
-                    for(var index in eventIds) {
-                        var eventId = eventIds[index];
-                        var event = this.schedule[eventId];
+                    for(let index in eventIds) {
+                        let eventId = eventIds[index];
+                        let event = this.schedule[eventId];
                         this.setEventTimer(event);
                     }
                 }
@@ -105,7 +109,7 @@ class BotApi {
             Logger.error("BotApi::processData() Invalid data:", data);
             return;
         }
-        var parsed;
+        let parsed;
         try {
             parsed = JSON.parse(data);
         } catch(e) {
@@ -123,14 +127,14 @@ class BotApi {
     }
 
     processCommand(data) {
-        var command = data["command"];
+        let command = data["command"];
         Logger.debug("BotApi::processCommand() Command:", command);
-        var result = {};
-        var id = data["id"];
+        let result = {};
+        let id = data["id"];
         if(id) {
             result["id"] = id;
         }
-        var exitCode = -1;
+        let exitCode = -1;
 
         if(command === "stop") {
             if(this.control.armExitOnIdle(true)) {
@@ -163,21 +167,21 @@ class BotApi {
     }
 
     processTrigger(data) {
-        var param = data["param"];
+        let param = data["param"];
         if(!param) {
             Logger.error("BotApi::processTrigger() Invalid params:", data);
         }
-        var trigger = data["trigger"];
+        let trigger = data["trigger"];
         Logger.debug("BotApi::processTrigger() Trigger:", trigger, param);
 
-        var chatId = param["chat_id"];
-        var isGroup = param["is_group"];
-        var userId = param["user_id"];
-        var answers = Answers.fromObject(param["answers"]);
+        let chatId = param["chat_id"];
+        let isGroup = param["is_group"];
+        let userId = param["user_id"];
+        let answers = Answers.fromObject(param["answers"]);
         this.executeCommand(chatId, isGroup, userId, trigger, answers);
 
-        var result = {};
-        var id = data["id"];
+        let result = {};
+        let id = data["id"];
         if(id) {
             result["id"] = id;
         }
@@ -197,12 +201,19 @@ class BotApi {
     }
 
     getStatsData() {
-        var data = {};
+        let data = {};
         data["connected"] = this.isConnected();
         data["configured"] = this.isConfigured();
         data["questionnaires"] = this.control.getActiveQuestionnaires();
         data["start_date"] = this.startDate;
+        for(let key in this.customStatsData) {
+            data[key] = this.customStatsData[key];
+        }
         return data;
+    }
+
+    setCustomStat(key, value) {
+        this.customStatsData[key] = value;
     }
 
     getConfigured(req, res) {
@@ -210,7 +221,7 @@ class BotApi {
             if(!this.checkRequest(req, res)) {
                 return;
             }
-            var result = {};
+            let result = {};
             result["result"] = this.isConfigured();
             this.respondRequest(req, res, 200, JSON.stringify(result));
         } catch(error) {
@@ -224,7 +235,7 @@ class BotApi {
             if(!this.checkRequest(req, res)) {
                return;
             }
-            var result = {};
+            let result = {};
             result["result"] = this.isConnected();
             this.respondRequest(req, res, 200, JSON.stringify(result));
         } catch(error) {
@@ -238,7 +249,7 @@ class BotApi {
             if(!this.checkRequest(req, res)) {
                 return;
             }
-            var result = {};
+            let result = {};
             result["result"] = this.control.getActiveQuestionnaires();
             this.respondRequest(req, res, 200, JSON.stringify(result));
         } catch(error) {
@@ -252,7 +263,7 @@ class BotApi {
             if(!this.checkRequest(req, res)) {
                 return;
             }
-            var result = {};
+            let result = {};
             result["result"] = this.startDate;
             this.respondRequest(req, res, 200, JSON.stringify(result));
         } catch(error) {
@@ -266,7 +277,7 @@ class BotApi {
             if(!this.checkRequest(req, res)) {
                return;
             }
-            var result = {};
+            let result = {};
             result["result"] = this.getStatsData();
             this.respondRequest(req, res, 200, JSON.stringify(result));
         } catch(error) {
@@ -276,13 +287,13 @@ class BotApi {
     }
 
     getStop(req, res) {
-        var exitNow = false;
+        let exitNow = false;
         try {
             if(!this.checkRequest(req, res)) {
                 return;
             }
             exitNow = this.control.armExitOnIdle(true);
-            var result = {};
+            let result = {};
             result["result"] = true;
             this.respondRequest(req, res, 200, JSON.stringify(result));
         } catch(error) {
@@ -300,7 +311,7 @@ class BotApi {
             if(!this.checkRequest(req, res)) {
                 return;
             }
-            var result = {};
+            let result = {};
             result["result"] = true;
             this.respondRequest(req, res, 200, JSON.stringify(result));
         } catch(error) {
@@ -315,21 +326,21 @@ class BotApi {
             if(!this.checkRequest(req, res)) {
                 return;
             }
-            var chatId = req.params.chat_id;
+            let chatId = req.params.chat_id;
             if(!chatId) {
                 Logger.error("BotApi::getEvent() Invalid chat id");
                 this.respondRequest(req, res, 400, this.getJsonError("Invalid chat id"));
                 return;
             }
-            var eventId = req.params.event_id;
+            let eventId = req.params.event_id;
             if(!chatId) {
                 Logger.error("BotApi::getEvent() Invalid event id");
                 this.respondRequest(req, res, 400, this.getJsonError("Invalid event id"));
                 return;
             }
-            var isGroup = req.url.startsWith("/groupchats");
+            let isGroup = req.url.startsWith("/groupchats");
 
-            var event = this.getScheduledEvent(chatId, isGroup, eventId);
+            let event = this.getScheduledEvent(chatId, isGroup, eventId);
             if(!event) {
                 this.respondRequest(req, res, 404, this.getJsonError("Event not found"));
                 return;
@@ -347,21 +358,21 @@ class BotApi {
             if(!this.checkRequest(req, res)) {
                 return;
             }
-            var chatId = req.params.chat_id;
+            let chatId = req.params.chat_id;
             if(!chatId) {
                 Logger.error("BotApi::deleteEvent() Invalid chat id");
                 this.respondRequest(req, res, 400, this.getJsonError("Invalid chat id"));
                 return;
             }
-            var eventId = req.params.event_id;
+            let eventId = req.params.event_id;
             if(!chatId) {
                 Logger.error("BotApi::deleteEvent() Invalid event id");
                 this.respondRequest(req, res, 400, this.getJsonError("Invalid event id"));
                 return;
             }
-            var isGroup = req.url.startsWith("/groupchats");
+            let isGroup = req.url.startsWith("/groupchats");
 
-            var event = this.getScheduledEvent(chatId, isGroup, eventId);
+            let event = this.getScheduledEvent(chatId, isGroup, eventId);
             if(!event) {
                 this.respondRequest(req, res, 404, this.getJsonError("Event not found"));
                 return;
@@ -369,7 +380,7 @@ class BotApi {
 
             this.removeFromSchedule(eventId);
 
-            var result = {};
+            let result = {};
             result["success"] = true;
             this.respondRequest(req, res, 200, JSON.stringify(result));
         } catch(error) {
@@ -383,38 +394,38 @@ class BotApi {
             if(!this.checkRequest(req, res)) {
                 return;
             }
-            var chatId = req.params.chat_id;
+            let chatId = req.params.chat_id;
             if(!chatId) {
                 Logger.error("BotApi::postEvent() Invalid chat id");
                 this.respondRequest(req, res, 400, this.getJsonError("Invalid chat id"));
                 return;
             }
-            var body = req.body;
+            let body = req.body;
             if(!body) {
                 this.respondRequest(req, res, 400, this.getJsonError("Invalid body on postEvent"));
                 return;
             }
-            var isGroup = req.url.startsWith("/groupchats");
-            var userId = body["user_id"];
+            let isGroup = req.url.startsWith("/groupchats");
+            let userId = body["user_id"];
             if(isGroup && (!userId || userId === "")) {
                 Logger.error("BotApi::postEvent() Invalid user id: " + userId);
                 this.respondRequest(req, res, 400, this.getJsonError("Invalid user id"));
                 return;
             }
-            var command = body["command"];
+            let command = body["command"];
             if(!command || command === "") {
                 Logger.error("BotApi::postEvent() Invalid command: " + command);
                 this.respondRequest(req, res, 400, this.getJsonError("Invalid command"));
                 return;
             }
-            var answers = body["answers"];
+            let answers = body["answers"];
 
-            var eventId;
+            let eventId;
 
-            var date = body["date"];
-            var times = body["times"];
-            var days = body["week_days"];
-            var excludes = body["exclude_dates"];
+            let date = body["date"];
+            let times = body["times"];
+            let days = body["week_days"];
+            let excludes = body["exclude_dates"];
             if(date && date !== "") {
                 eventId = this.scheduleEvent(chatId, isGroup, userId, command, date, answers);
             } else if(times && times.length > 0) {
@@ -425,7 +436,7 @@ class BotApi {
                 return;
             }
 
-            var result = {};
+            let result = {};
             result["id"] = eventId;
             this.respondRequest(req, res, 201, JSON.stringify(result));
         } catch(error) {
@@ -439,20 +450,20 @@ class BotApi {
             if(!this.checkRequest(req, res)) {
                 return;
             }
-            var chatId = req.params.chat_id;
+            let chatId = req.params.chat_id;
             if(!chatId) {
                 Logger.error("BotApi::postTrigger() Invalid chat id");
                 this.respondRequest(req, res, 400, this.getJsonError("Invalid chat id"));
                 return;
             }
-            var body = req.body;
+            let body = req.body;
             if(!body) {
                 this.respondRequest(req, res, 400, this.getJsonError("Invalid body"));
                 return;
             }
-            var isGroup = req.url.startsWith("/groupchats");
+            let isGroup = req.url.startsWith("/groupchats");
 
-            var userId;
+            let userId;
             if(isGroup) {
                 userId = body["user_id"];
             } else {
@@ -463,16 +474,16 @@ class BotApi {
                 this.respondRequest(req, res, 400, this.getJsonError("Invalid user id"));
                 return;
             }
-            var command = body["command"];
+            let command = body["command"];
             if(!command || command === "") {
                 Logger.error("BotApi::postTrigger() Invalid command: " + command);
                 this.respondRequest(req, res, 400, this.getJsonError("Invalid command"));
                 return;
             }
-            var answers = Answers.fromObject(body["answers"]);
+            let answers = Answers.fromObject(body["answers"]);
             this.executeCommand(chatId, isGroup, userId, command, answers);
 
-            var result = {};
+            let result = {};
             result["success"] = true;
 
             this.respondRequest(req, res, 200, JSON.stringify(result));
@@ -491,18 +502,18 @@ class BotApi {
             Logger.error("BotApi::checkRequest() Invalid response object");
             return false;
         }
-        var requestText = "BotApi::" + req.method.toLowerCase() + "() << " + req.url + ":";
+        let requestText = "BotApi::" + req.method.toLowerCase() + "() << " + req.url + ":";
         if(req.body) {
             Logger.debug(requestText, req.body);
         } else {
             Logger.debug(requestText);
         }
-        var params = req.params;
+        let params = req.params;
         if(!params) {
             this.respondRequest(req, res, 400, this.getJsonError("Invalid parameters"));
             return false;
         }
-        var headers = req.headers;
+        let headers = req.headers;
         if(!headers) {
             this.respondRequest(req, res, 400, this.getJsonError("Invalid request headers"));
             return false;
@@ -511,7 +522,7 @@ class BotApi {
             Logger.error("BotApi::checkRequest() No token configured!");
             return true;
         }
-        var token = headers["authorization"];
+        let token = headers["authorization"];
         if(typeof token !== "string") {
             Logger.error("BotApi::checkRequest() Invalid bot API token: " + token);
             this.respondRequest(req, res, 403, this.getJsonError("Invalid authorization token"));
@@ -541,7 +552,7 @@ class BotApi {
         if(!this.schedule || !this.schedule[eventId]) {
             return null;
         }
-        var event = this.schedule[eventId];
+        let event = this.schedule[eventId];
         if(event["chat_id"] !== chatId || event["is_groupchat"] !== isGroup) {
             return null;
         }
@@ -552,7 +563,7 @@ class BotApi {
         Logger.debug("BotApi::scheduleEvent() chatId: " + chatId + " isGroup: " + isGroup + " userId: " + userId
             + " command: " + command + " date: " + date + " answers:", answers);
 
-        var event = {};
+        let event = {};
         event["chat_id"] = chatId;
         event["is_groupchat"] = isGroup;
         if(isGroup) {
@@ -568,7 +579,7 @@ class BotApi {
             }
         }
 
-        var eventId = UuidV1();
+        let eventId = UuidV1();
         event["id"] = eventId;
 
         this.addToSchedule(event);
@@ -580,7 +591,7 @@ class BotApi {
         Logger.debug("BotApi::scheduleEventInMs() chatId: " + chatId + " isGroup: " + isGroup + " userId: " + userId
             + " command: " + command + " ms: " + ms + " answers:", answers);
 
-        var date = DateTools.getUTCMoment(Date.now() + ms);
+        let date = DateTools.getUTCMoment(Date.now() + ms);
         this.scheduleEvent(chatId, isGroup, userId, command, date, answers);
     }
 
@@ -589,7 +600,7 @@ class BotApi {
             + " command: " + command + " times: " + times + " days: " + days + " excludes: " + excludes
             + " answers:", answers);
 
-        var event = {};
+        let event = {};
         event["chat_id"] = chatId;
         event["is_groupchat"] = isGroup;
         if(isGroup) {
@@ -611,7 +622,7 @@ class BotApi {
             }
         }
 
-        var eventId = UuidV1();
+        let eventId = UuidV1();
         event["id"] = eventId;
 
         this.addToSchedule(event);
@@ -621,18 +632,18 @@ class BotApi {
 
     executeEvent(eventId) {
         Logger.debug("BotApi::executeEvent() eventId: " + eventId);
-        var event = this.schedule[eventId];
+        let event = this.schedule[eventId];
         if(!event) {
             Logger.error("BotApi::executeEvent() No event found in schedule for id: " + eventId);
             return false;
         }
-        var isGroup = event["is_groupchat"];
-        var chatId = event["chat_id"];
+        let isGroup = event["is_groupchat"];
+        let chatId = event["chat_id"];
         if(!chatId || chatId === "") {
             Logger.error("BotApi::executeEvent() Invalid chat id: " + chatId);
             return false;
         }
-        var userId;
+        let userId;
         if(isGroup) {
             userId = event["user_id"]
         } else {
@@ -642,14 +653,14 @@ class BotApi {
             Logger.error("BotApi::executeEvent() Invalid user id: " + userId);
             return false;
         }
-        var command = event["command"];
+        let command = event["command"];
         if(!command || command === "") {
             Logger.error("BotApi::executeEvent() Invalid command: " + command);
             return false;
         }
-        var answers = Answers.fromObject(event["answers"]);
+        let answers = Answers.fromObject(event["answers"]);
         this.executeCommand(chatId, isGroup, userId, command, answers);
-        var times = event["times"];
+        let times = event["times"];
         if(times && times.length > 0) {
             // Repeated event, set next timer
             this.removeEventTimer(eventId);
@@ -667,15 +678,15 @@ class BotApi {
         Logger.debug("BotApi::executeCommand() chatId: " + chatId + " isGroup: " + isGroup + " userId: " + userId
             + " command: " + command + " answers: ", answers);
 
-        var callback = this.overrideCallbacks[command.toUpperCase()];
+        let callback = this.overrideCallbacks[command.toUpperCase()];
         if(callback) {
             Logger.debug("BotApi::executeCommand() Using override callback");
             callback(chatId, isGroup, userId, answers);
             return;
         }
-        var user = new User(userId);
+        let user = new User(userId);
         user.is_groupchat = isGroup;
-        var textMessage = new TextMessage(user);
+        let textMessage = new TextMessage(user);
         textMessage.room = chatId;
         textMessage.text = command;
         textMessage.answers = answers;
@@ -683,38 +694,37 @@ class BotApi {
     }
 
     getJsonError(errorText) {
-        var error = {};
+        let error = {};
         error["error"] = errorText;
         return JSON.stringify(error);
     }
 
     calculateNextDate(event) {
-        var date = event["date"];
+        let date = event["date"];
         if(date && date !== "") {
             // One-time event
             return date;
         }
-        var times = event["times"];
-        if(!times || times.length == 0) {
+        let times = event["times"];
+        if(!times || times.length === 0) {
             Logger.error("BotApi::calculateNextDate() Event has no valid time configuration", event);
             return null;
         }
-        var now = new Date();
-        var checkMoment = DateTools.getUTCMoment(now).utc();
+        let now = new Date();
+        let checkMoment = DateTools.getUTCMoment(now).utc();
         Logger.debug("BotApi::calculateNextDate() " + checkMoment.format("YYYY-MM-DDTHH:mm:ss") + "Z");
         if(this.checkDateForEvent(event, checkMoment)) {
-            var year = checkMoment.year();
-            var month = checkMoment.month();
-            var day = checkMoment.date();
-            for(var index in times) {
-                var time = times[index];
-                var timeSplit = time.split(":");
-                var hours = timeSplit[0];
-                var minutes = timeSplit[1];
-                var seconds = timeSplit[2];
-                var candidateDate = DateTools.getUTCMoment({y:year, M:month, d:day, h:hours, m:minutes, s:seconds}).utcOffset(0, true);
+            let year = checkMoment.year();
+            let month = checkMoment.month();
+            let day = checkMoment.date();
+            for(let time of times) {
+                let timeSplit = time.split(":");
+                let hours = timeSplit[0];
+                let minutes = timeSplit[1];
+                let seconds = timeSplit[2];
+                let candidateDate = DateTools.getUTCMoment({y:year, M:month, d:day, h:hours, m:minutes, s:seconds}).utcOffset(0, true);
                 Logger.debug("BotApi::calculateNextDate() Candidate date: " + candidateDate.format("YYYY-MM-DDTHH:mm:ss") + "Z");
-                var diff = candidateDate.diff(checkMoment);
+                let diff = candidateDate.diff(checkMoment);
                 // Check if time is in the future
                 if(diff >= 0) {
                     return candidateDate.format("YYYY-MM-DDTHH:mm:ss") + "Z";
@@ -729,23 +739,21 @@ class BotApi {
     }
 
     checkDateForEvent(event, checkMoment) {
-        var checkDate = checkMoment.format("YYYY-MM-DD");
+        let checkDate = checkMoment.format("YYYY-MM-DD");
         Logger.debug("BotApi::checkDateForEvent() " + checkDate);
-        var excludes = event["exclude_dates"];
+        let excludes = event["exclude_dates"];
         if(excludes && excludes.length > 0) {
-            for(var index in excludes) {
-                var exclude = excludes[index];
+            for(let exclude of excludes) {
                 if(checkDate === exclude) {
                     Logger.debug("BotApi::checkDateForEvent() Excluded date: " + exclude);
                     return false;
                 }
             }
         }
-        var days = event["week_days"];
+        let days = event["week_days"];
         if(days && days.length > 0) {
-            var checkDay = checkMoment.isoWeekday();
-            for(var index in days) {
-                var day = days[index];
+            let checkDay = checkMoment.isoWeekday();
+            for(let day of days) {
                 if(checkDay === day) {
                     Logger.debug("BotApi::checkDateForEvent() Accepted day of the week: " + day);
                     return true;
@@ -758,7 +766,7 @@ class BotApi {
     }
 
     setEventTimer(event) {
-        var eventId = event["id"];
+        let eventId = event["id"];
         if(!eventId || eventId === "") {
             Logger.error("BotApi::setEventTimer() Invalid event id: " + eventId);
             return false;
@@ -768,10 +776,10 @@ class BotApi {
             Logger.error("BotApi::setEventTimer() Timer already set for event: " + eventId);
             return false;
         }
-        var dateString;
-        var date = event["date"];
-        if(date && date !== "") {
-            dateString = date;
+        let dateString;
+        let eventDate = event["date"];
+        if(eventDate && eventDate !== "") {
+            dateString = eventDate;
         } else {
             dateString = this.calculateNextDate(event);
         }
@@ -780,8 +788,8 @@ class BotApi {
             return false;
         }
         Logger.debug("BotApi::setEventTimer() Setting event timer: eventId: " + eventId + " date: " + dateString);
-        var date = DateTools.getUTCMoment(dateString);
-        var ms = date - Date.now();
+        let date = DateTools.getUTCMoment(dateString);
+        let ms = date - Date.now();
         if(ms <= 0) {
             Logger.debug("BotApi::setEventTimer() Event past due by " + (-ms) + " milliseconds, executing now: eventId: " + eventId);
             this.executeEvent(eventId);
@@ -796,7 +804,7 @@ class BotApi {
 
     removeEventTimer(eventId) {
         Logger.debug("BotApi::removeEventTimer() eventId: " + eventId);
-        var timer = this.timers[eventId];
+        let timer = this.timers[eventId];
         if(!timer) {
             Logger.error("BotApi::removeEventTimer() No timer set for event: " + eventId);
             return;
@@ -806,7 +814,7 @@ class BotApi {
     }
 
     addToSchedule(event) {
-        var eventId = event["id"];
+        let eventId = event["id"];
         if(!eventId || eventId === "") {
             Logger.error("BotApi::addToSchedule() Invalid event id: " + eventId);
             return false;
@@ -820,11 +828,7 @@ class BotApi {
         if(!this.setEventTimer(event)) {
             return true;
         }
-        FileSystem.writeFileSync(this.scheduleFilePath, JSON.stringify(this.schedule), (error) => {
-            if(error) {
-                Logger.error("BotApi::addToSchedule() Unable to write schedule file", error);
-            }
-        });
+        FileSystem.writeFileSync(this.scheduleFilePath, JSON.stringify(this.schedule));
         return true;
     }
 
@@ -836,11 +840,7 @@ class BotApi {
         Logger.debug("BotApi::removeFromSchedule() eventId: " + eventId);
         this.removeEventTimer(eventId);
         delete this.schedule[eventId];
-        FileSystem.writeFileSync(this.scheduleFilePath, JSON.stringify(this.schedule), (error) => {
-            if(error) {
-                Logger.error("Schedule:removeFromSchedule() Unable to write schedule file", error);
-            }
-        });
+        FileSystem.writeFileSync(this.scheduleFilePath, JSON.stringify(this.schedule));
         return true;
     }
 
@@ -848,6 +848,6 @@ class BotApi {
         Logger.debug("BotApi::setOverrideCallback() trigger: " + trigger);
         this.overrideCallbacks[trigger.toUpperCase()] = callback;
     }
-};
+}
 
 module.exports = BotApi;

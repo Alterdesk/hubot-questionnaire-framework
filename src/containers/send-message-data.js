@@ -51,9 +51,7 @@ class SendMessageData {
     }
 
     addAttachmentPaths(paths) {
-        for(let index in paths) {
-            this.attachmentPaths.push(paths[index]);
-        }
+        this.attachmentPaths = this.attachmentPaths.concat(paths);
     }
 
     getAttachmentPaths() {
@@ -70,18 +68,16 @@ class SendMessageData {
     }
 
     addRequestUserIds(userIds) {
-        for(let index in userIds) {
-            this.requestUserIds.push(userIds[index]);
-        }
+        this.requestUserIds = this.requestUserIds.concat(userIds);
     }
 
     addQuestionButton(label, style) {
-        var name = StringTools.safeName(label, 32, true);
+        let name = StringTools.safeName(label, 32, true);
         this.addQuestionButtonWithName(name, label, style);
     }
 
     addQuestionButtonWithName(name, label, style) {
-        var option = {};
+        let option = {};
         option["name"] = name;
         option["label"] = label;
         if(style) {
@@ -107,7 +103,7 @@ class SendMessageData {
     }
 
     getPostUrl() {
-        var methodPrefix = "";
+        let methodPrefix = "";
         if(this.isAux) {
             methodPrefix += "aux/"
         }
@@ -124,14 +120,14 @@ class SendMessageData {
     }
 
     getPostData() {
-        var data = {};
+        let data = {};
         if(this.hasAttachments()) {
             data["message"] = this.message;
         } else {
             data["body"] = this.message;
 
             if(this.questionOptions.length > 0) {
-                var question = {};
+                let question = {};
                 question["multi_answer"] = this.multiAnswer || false;
                 question["style"] = this.requestStyle || "horizontal";
                 question["users"] = this.requestUserIds;

@@ -12,20 +12,20 @@ class RetrieveMembersAction extends Action {
     async start(flowCallback) {
         this.flowCallback = flowCallback;
         if(!this.flow || !this.flow.msg || !this.flow.control) {
-            Logger.error("RetrieveMembersAction::start() Invalid Flow or Control");
+            this.onError("RetrieveMembersAction::start() Invalid Flow or Control");
             this.done(null);
             return;
         }
-        var answers = this.flow.answers;
-        var chatId;
-        var isAux;
+        let answers = this.flow.answers;
+        let chatId;
+        let isAux;
         if(this.chatId) {
             chatId = this.getAnswerValue(this.chatId, answers);
             isAux = this.getAnswerValue(this.isAux, answers);
         } else {
-            var isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
+            let isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
-                Logger.error("RetrieveMembersAction::start() Not a group chat");
+                Logger.warn("RetrieveMembersAction::start() Not a group chat");
                 flowCallback();
                 return;
             }
@@ -33,29 +33,27 @@ class RetrieveMembersAction extends Action {
             isAux = false;
         }
         if(!chatId) {
-            Logger.error("RetrieveMembersAction::start() Invalid chat id");
+            this.onError("RetrieveMembersAction::start() Invalid chat id");
             this.done(null);
             return;
         }
+        let overrideToken = this.getAnswerValue(this.overrideToken, answers);
 
-        var json = await this.flow.control.messengerClient.getGroupMembers(chatId, isAux, this.overrideToken);
+        let json = await this.flow.control.messengerClient.getGroupMembers(chatId, isAux, overrideToken);
         this.done(json);
     }
 
     done(value) {
-        var answerKey = this.getAnswerKey();
+        let answerKey = this.getAnswerKey();
         if(answerKey && value != null) {
             this.flow.answers.add(answerKey, value);
             this.flow.answers.addObject(answerKey, value);
 
-            var memberIds = [];
-            for(let i in value) {
-                var member = value[i];
-                if(member) {
-                    var memberId = member["id"];
-                    if(memberId) {
-                        memberIds.push(memberId);
-                    }
+            let memberIds = [];
+            for(let member of value) {
+                let memberId = member["id"];
+                if(memberId) {
+                    memberIds.push(memberId);
                 }
             }
             this.flow.answers.add(answerKey + "_ids", memberIds);

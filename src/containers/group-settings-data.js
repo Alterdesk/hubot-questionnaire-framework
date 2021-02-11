@@ -49,7 +49,7 @@ class GroupSettingsData {
     }
 
     getPutData() {
-        var data = {};
+        let data = {};
 
         if(this.allowContacts != null) {
             data["allow_contacts"] = this.allowContacts;
