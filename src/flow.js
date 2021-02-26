@@ -471,6 +471,16 @@ class Flow {
     }
 
     // Mark this question as a checkpoint
+    resendOnInvalid(resend) {
+        if(this.lastAddedQuestion == null) {
+            Logger.error("Flow::checkpoint() No Question added to flow");
+            return this;
+        }
+        this.lastAddedQuestion.setResendOnInvalid(resend);
+        return this;
+    }
+
+    // Mark this question as a checkpoint
     checkpoint() {
         if(this.lastAddedQuestion == null) {
             Logger.error("Flow::checkpoint() No Question added to flow");
