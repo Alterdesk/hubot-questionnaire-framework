@@ -5,6 +5,8 @@ const Logger = require('./../logger.js');
 const RegexTools = require('./../utils/regex-tools.js');
 const StringTools = require('./../utils/string-tools.js');
 
+const MAX_OPTION_NAME_LENGTH = 32;
+
 class FuzzyAction extends Action {
     constructor(answerKey, questionText, invalidText, waitMs) {
         super((flowCallback) => {
@@ -81,8 +83,9 @@ class FuzzyAction extends Action {
                 return;
             }
             subFlowCallback();
+            let checkName = StringTools.safeName(answerValue, MAX_OPTION_NAME_LENGTH, true);
             for(let candidate of candidates) {
-                if(candidate.name === answerValue) {
+                if(candidate.name === checkName) {
                     this.done(candidate);
                     subFlowCallback();
                     return;
@@ -356,7 +359,8 @@ class FuzzyAction extends Action {
     }
 
     addCandidate(name, label, style, aliases, subFlow) {
-        let candidate = new FuzzyCandidate(name, label, style, subFlow);
+        let formattedName = StringTools.safeName(name, MAX_OPTION_NAME_LENGTH, true);
+        let candidate = new FuzzyCandidate(formattedName, label, style, subFlow);
         if(aliases && aliases.length > 0) {
             candidate.addAliases(aliases);
         }
