@@ -1,4 +1,5 @@
 const DateTools = require('./../utils/date-tools.js');
+const StringTools = require('./../utils/string-tools.js');
 const JsonRestClient = require('./json-rest-client.js');
 const Logger = require('./../logger.js');
 
@@ -38,6 +39,7 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            chatId = StringTools.removeDiacritics(chatId);
         }
         if(isGroup) {
             methodPrefix += "groupchats/";
@@ -60,6 +62,7 @@ class MessengerClient extends JsonRestClient {
                 let methodPrefix = "";
                 if(isAux) {
                     methodPrefix += "aux/"
+                    chatId = StringTools.removeDiacritics(chatId);
                 }
                 if(isGroup) {
                     methodPrefix += "groupchats/";
@@ -126,6 +129,7 @@ class MessengerClient extends JsonRestClient {
                 let methodPrefix = "";
                 if(isAux) {
                     methodPrefix += "aux/"
+                    chatId = StringTools.removeDiacritics(chatId);
                 }
                 if(isGroup) {
                     methodPrefix += "groupchats/";
@@ -166,6 +170,7 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            groupId = StringTools.removeDiacritics(groupId);
         }
         return this.get(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/members", overrideToken);
     }
@@ -174,6 +179,7 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            groupId = StringTools.removeDiacritics(groupId);
         }
         let memberPutData = {};
         memberPutData["members"] = userIds;
@@ -185,6 +191,7 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            groupId = StringTools.removeDiacritics(groupId);
         }
         let memberDeleteData = {};
         memberDeleteData["members"] = userIds;
@@ -196,6 +203,7 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            groupId = StringTools.removeDiacritics(groupId);
         }
         let subjectPutData = {};
         subjectPutData["subject"] = subject;
@@ -206,6 +214,7 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            groupId = StringTools.removeDiacritics(groupId);
         }
         let postUrl = methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/avatar";
         return this.postMultipart(postUrl, null, "avatar", [avatarPath], overrideToken);
@@ -218,6 +227,7 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            groupId = StringTools.removeDiacritics(groupId);
         }
         return this.delete(methodPrefix + "groupchats/" + encodeURIComponent(groupId), closePostData, overrideToken);
     }
@@ -230,6 +240,7 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            groupId = StringTools.removeDiacritics(groupId);
         }
         return this.delete(methodPrefix + "groupchats/" + encodeURIComponent(groupId), removePostData, overrideToken);
     }
@@ -238,6 +249,7 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            chatId = StringTools.removeDiacritics(chatId);
         }
         if(isGroup) {
             methodPrefix += "groupchats/";
@@ -251,6 +263,7 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            userId = StringTools.removeDiacritics(userId);
         }
         return this.get(methodPrefix + "users/" + encodeURIComponent(userId), overrideToken);
     }
@@ -267,6 +280,7 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            chatId = StringTools.removeDiacritics(chatId);
         }
         if(isGroup) {
             methodPrefix += "groupchats/";
