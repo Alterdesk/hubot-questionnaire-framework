@@ -170,7 +170,9 @@ class BaseRestClient {
                     });
                 });
                 request.setTimeout(this.timeoutMs, () => {
-                    Logger.error(this.loggerName + "::http() << " + path + ": Connection timeout: " + this.timeoutMs + " ms");
+                    let errorMessage = this.loggerName + "::http() << " + path + ": Connection timeout: " + this.timeoutMs + " ms";
+                    Logger.error(errorMessage);
+                    this.sendError(new Error(errorMessage));
                     request.destroy();
                     resolve(null);
                 });
