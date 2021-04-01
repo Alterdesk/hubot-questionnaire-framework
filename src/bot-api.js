@@ -107,6 +107,9 @@ class BotApi {
     processData(data) {
         if(!data) {
             Logger.error("BotApi::processData() Invalid data:", data);
+            let result = {};
+            result["error"] = "Invalid data";
+            console.log(JSON.stringify(result));
             return;
         }
         let parsed;
@@ -114,6 +117,9 @@ class BotApi {
             parsed = JSON.parse(data);
         } catch(e) {
             Logger.error("BotApi::processData() Invalid JSON:", data, e);
+            let result = {};
+            result["error"] = "Invalid JSON";
+            console.log(JSON.stringify(result));
             return;
         }
         Logger.debug("BotApi::processData()", parsed);
@@ -123,6 +129,9 @@ class BotApi {
             this.processTrigger(parsed);
         } else {
             Logger.error("BotApi::processData() Invalid data:", parsed);
+            let result = {};
+            result["error"] = "Invalid data";
+            console.log(JSON.stringify(result));
         }
     }
 
