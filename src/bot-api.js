@@ -197,7 +197,7 @@ class BotApi {
     }
 
     isConfigured() {
-        return this.control.acceptedCommands.length > 0;
+        return this.control.acceptedCommands.length > 0 || Object.keys(this.overrideCallbacks).length > 0;
     }
 
     getStatsData() {
