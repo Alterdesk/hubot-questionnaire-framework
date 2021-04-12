@@ -26,6 +26,7 @@ module.exports = {
     CaseFormatter : require('./formatters/case-formatter.js'),
     ChatPdfAction : require('./actions/chat-pdf-action.js'),
     ChangeGroupAvatarAction : require('./actions/change-group-avatar-action.js'),
+    ChangeGroupOwnerAction : require('./actions/change-group-owner-action.js'),
     ChangeGroupSettingsAction : require('./actions/change-group-settings-action.js'),
     ChangeMembersAction : require('./actions/change-members-action.js'),
     ChangeSubjectAction : require('./actions/change-subject-action.js'),
