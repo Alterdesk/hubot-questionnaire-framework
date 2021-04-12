@@ -84,6 +84,7 @@ class FuzzyAction extends Action {
             }
             subFlowCallback();
             let checkName = StringTools.safeName(answerValue, MAX_OPTION_NAME_LENGTH, true);
+            Logger.debug("FuzzyAction::action() Checking answer: " + answerValue + " name: " + checkName);
             for(let candidate of candidates) {
                 if(candidate.name === checkName) {
                     this.done(candidate);
@@ -91,7 +92,7 @@ class FuzzyAction extends Action {
                     return;
                 }
             }
-            this.onError("FuzzyAction::showCandidates() Unable to find matching candidate: ", answerValue);
+            this.onError("FuzzyAction::showCandidates() Unable to find matching candidate: answer: " + answerValue + " name: " + checkName);
             this.done(null);
             subFlowCallback();
         });
