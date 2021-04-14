@@ -107,6 +107,9 @@ class BotApi {
     processData(data) {
         if(!data) {
             Logger.error("BotApi::processData() Invalid data:", data);
+            let result = {};
+            result["error"] = "Invalid data";
+            console.log(JSON.stringify(result));
             return;
         }
         let parsed;
@@ -114,6 +117,9 @@ class BotApi {
             parsed = JSON.parse(data);
         } catch(e) {
             Logger.error("BotApi::processData() Invalid JSON:", data, e);
+            let result = {};
+            result["error"] = "Invalid JSON";
+            console.log(JSON.stringify(result));
             return;
         }
         Logger.debug("BotApi::processData()", parsed);
@@ -123,6 +129,9 @@ class BotApi {
             this.processTrigger(parsed);
         } else {
             Logger.error("BotApi::processData() Invalid data:", parsed);
+            let result = {};
+            result["error"] = "Invalid data";
+            console.log(JSON.stringify(result));
         }
     }
 
@@ -167,25 +176,30 @@ class BotApi {
     }
 
     processTrigger(data) {
-        let param = data["param"];
-        if(!param) {
-            Logger.error("BotApi::processTrigger() Invalid params:", data);
-        }
         let trigger = data["trigger"];
-        Logger.debug("BotApi::processTrigger() Trigger:", trigger, param);
+        Logger.debug("BotApi::processTrigger() Trigger:", trigger);
 
-        let chatId = param["chat_id"];
-        let isGroup = param["is_group"];
-        let userId = param["user_id"];
-        let answers = Answers.fromObject(param["answers"]);
-        this.executeCommand(chatId, isGroup, userId, trigger, answers);
+        let chatId = data["chat_id"];
+        let isGroup = data["is_group"];
+        let userId;
+        if(isGroup) {
+            userId = chatId;
+        } else {
+            userId = data["user_id"];
+        }
 
         let result = {};
         let id = data["id"];
         if(id) {
             result["id"] = id;
         }
-        result["result"] = trigger;
+        if(!chatId || chatId.length === 0 || !userId || userId.length === 0) {
+            result["error"] = "Invalid trigger data";
+            console.log(JSON.stringify(result));
+            return;
+        }
+        let answers = Answers.fromObject(data["answers"]);
+        result["result"] = this.executeCommand(chatId, isGroup, userId, trigger, answers);
         console.log(JSON.stringify(result));
     }
 
@@ -197,7 +211,7 @@ class BotApi {
     }
 
     isConfigured() {
-        return this.control.acceptedCommands.length > 0;
+        return this.control.acceptedCommands.length > 0 || Object.keys(this.overrideCallbacks).length > 0;
     }
 
     getStatsData() {
@@ -682,7 +696,7 @@ class BotApi {
         if(callback) {
             Logger.debug("BotApi::executeCommand() Using override callback");
             callback(chatId, isGroup, userId, answers);
-            return;
+            return true;
         }
         let user = new User(userId);
         user.is_groupchat = isGroup;
@@ -691,6 +705,7 @@ class BotApi {
         textMessage.text = command;
         textMessage.answers = answers;
         this.robot.receive(textMessage);
+        return true;
     }
 
     getJsonError(errorText) {

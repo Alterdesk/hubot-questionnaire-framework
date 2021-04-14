@@ -210,6 +210,17 @@ class MessengerClient extends JsonRestClient {
         return this.put(methodPrefix + "groupchats/" + encodeURIComponent(groupId), subjectPutData, overrideToken);
     }
 
+    changeGroupOwner(groupId, isAux, userId, overrideToken) {
+        let methodPrefix = "";
+        if(isAux) {
+            methodPrefix += "aux/"
+            groupId = StringTools.removeDiacritics(groupId);
+        }
+        let ownerPutData = {};
+        ownerPutData["user_id"] = userId;
+        return this.put(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/owner", ownerPutData, overrideToken);
+    }
+
     changeGroupAvatar(groupId, isAux, avatarPath, overrideToken) {
         let methodPrefix = "";
         if(isAux) {
