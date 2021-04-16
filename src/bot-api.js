@@ -183,9 +183,9 @@ class BotApi {
         let isGroup = data["is_group"];
         let userId;
         if(isGroup) {
-            userId = chatId;
-        } else {
             userId = data["user_id"];
+        } else {
+            userId = chatId;
         }
 
         let result = {};
