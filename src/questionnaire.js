@@ -25,6 +25,7 @@ module.exports = {
     CalculateNumberAction : require('./actions/calculate-number-action.js'),
     CaseFormatter : require('./formatters/case-formatter.js'),
     ChatPdfAction : require('./actions/chat-pdf-action.js'),
+    ChangeGroupAdminsAction : require('./actions/change-group-admins-action.js'),
     ChangeGroupAvatarAction : require('./actions/change-group-avatar-action.js'),
     ChangeGroupOwnerAction : require('./actions/change-group-owner-action.js'),
     ChangeGroupSettingsAction : require('./actions/change-group-settings-action.js'),
