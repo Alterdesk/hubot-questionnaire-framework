@@ -183,7 +183,9 @@ class MessengerClient extends JsonRestClient {
         }
         let memberPutData = {};
         memberPutData["members"] = userIds;
-//        memberPutData["aux_members"] = false; TODO
+        if(isAux) {
+            memberPutData["aux_members"] = false;
+        }
         return this.put(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/members", memberPutData, overrideToken);
     }
 
@@ -195,7 +197,9 @@ class MessengerClient extends JsonRestClient {
         }
         let memberDeleteData = {};
         memberDeleteData["members"] = userIds;
-//        memberDeleteData["aux_members"] = false; TODO
+        if(isAux) {
+            memberDeleteData["aux_members"] = false;
+        }
         return this.delete(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/members", memberDeleteData, overrideToken);
     }
 
