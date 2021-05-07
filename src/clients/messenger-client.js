@@ -183,7 +183,9 @@ class MessengerClient extends JsonRestClient {
         }
         let memberPutData = {};
         memberPutData["members"] = userIds;
-//        memberPutData["aux_members"] = false; TODO
+        if(isAux) {
+            memberPutData["aux_members"] = false;
+        }
         return this.put(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/members", memberPutData, overrideToken);
     }
 
@@ -195,7 +197,9 @@ class MessengerClient extends JsonRestClient {
         }
         let memberDeleteData = {};
         memberDeleteData["members"] = userIds;
-//        memberDeleteData["aux_members"] = false; TODO
+        if(isAux) {
+            memberDeleteData["aux_members"] = false;
+        }
         return this.delete(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/members", memberDeleteData, overrideToken);
     }
 
@@ -219,6 +223,21 @@ class MessengerClient extends JsonRestClient {
         let ownerPutData = {};
         ownerPutData["user_id"] = userId;
         return this.put(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/owner", ownerPutData, overrideToken);
+    }
+
+    changeGroupAdmins(groupId, isAux, admin, memberIds, overrideToken) {
+        let methodPrefix = "";
+        if(isAux) {
+            methodPrefix += "aux/"
+            groupId = StringTools.removeDiacritics(groupId);
+        }
+        let adminPutData = {};
+        adminPutData["admins"] = memberIds;
+        if(admin) {
+            return this.put(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/admins", adminPutData, overrideToken);
+        } else {
+            return this.delete(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/admins", adminPutData, overrideToken);
+        }
     }
 
     changeGroupAvatar(groupId, isAux, avatarPath, overrideToken) {

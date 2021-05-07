@@ -50,13 +50,23 @@ class RetrieveMembersAction extends Action {
             this.flow.answers.addObject(answerKey, value);
 
             let memberIds = [];
+            let ownerId = "";
+            let adminIds = [];
             for(let member of value) {
                 let memberId = member["id"];
                 if(memberId) {
                     memberIds.push(memberId);
+                    if(member["owner"]) {
+                        ownerId = memberId;
+                    }
+                    if(member["admin"]) {
+                        adminIds.push(memberId);
+                    }
                 }
             }
             this.flow.answers.add(answerKey + "_ids", memberIds);
+            this.flow.answers.add(answerKey + "_owner_id", ownerId);
+            this.flow.answers.add(answerKey + "_admin_ids", adminIds);
         }
         if(value) {
             if(this.positiveSubFlow) {

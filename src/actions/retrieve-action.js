@@ -65,6 +65,8 @@ class RetrieveAction extends Action {
                 let members = value["members"];
                 if(members) {
                     let memberIds = [];
+                    let ownerId = "";
+                    let adminIds = [];
                     for(let i in members) {
                         let member = members[i];
                         let memberId = member["id"];
@@ -84,10 +86,22 @@ class RetrieveAction extends Action {
                         if(memberCompanyId) {
                             answers.add(answerKey + "_member_company_id_" + i, memberCompanyId);
                         }
+                        let memberOwner = member["owner"];
+                        if(memberOwner) {
+                            answers.add(answerKey + "_member_owner_" + i, memberOwner);
+                            ownerId = memberId;
+                        }
+                        let memberAdmin = member["admin"];
+                        if(memberAdmin) {
+                            answers.add(answerKey + "_member_admin_" + i, memberAdmin);
+                            adminIds.push(memberId);
+                        }
                         answers.add(answerKey + "_member_" + i, member);
                     }
                     answers.add(answerKey + "_members", members.length);
                     answers.add(answerKey + "_member_ids", memberIds);
+                    answers.add(answerKey + "_owner_id", ownerId);
+                    answers.add(answerKey + "_admin_ids", adminIds);
                 }
                 let dialInInfo = value["dial_in_info"];
                 if(dialInInfo) {
