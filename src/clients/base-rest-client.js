@@ -8,11 +8,13 @@ const OS = require('os');
 
 const Logger = require('./../logger.js');
 
+const MAX_TIMEOUT_RETRIES = 3;
+
 class BaseRestClient {
     constructor(url, port, loggerName) {
         this.loggerName = loggerName || "BaseRestClient";
         this.apiPort = parseInt(port);
-        this.timeoutMs = 10000;
+        this.timeoutMs = 30000;
         let domain;
         if(url.startsWith("https://")) {
             domain = url.replace("https://", "");
@@ -119,6 +121,19 @@ class BaseRestClient {
                 }
                 options["headers"] = headers;
 
+                let result = await this.request(method, path, options, formattedBody, 1);
+                resolve(result);
+            } catch(err) {
+                Logger.error(this.loggerName + "::http() << " + path + ":", err);
+                this.sendError(err);
+                resolve(null);
+            }
+        });
+    }
+
+    request(method, path, options, formattedBody, attempt) {
+        return new Promise(async (resolve) => {
+            try {
                 let request = this.client.request(options, (res) => {
                     let status = res.statusCode;
                     let encoding = this.getEncoding();
@@ -164,21 +179,38 @@ class BaseRestClient {
                     });
 
                     res.on('error', (err) => {
-                        Logger.error(this.loggerName + "::http() << " + path + ":", err);
-                        this.sendError(err);
+                        let errorMessage = this.loggerName + "::http() << " + path + ": " + err;
+                        Logger.error(errorMessage);
+                        this.sendError(errorMessage);
                         resolve(null);
                     });
                 });
-                request.setTimeout(this.timeoutMs, () => {
+                let timedOut = false;
+                request.setTimeout(this.timeoutMs, async () => {
+                    timedOut = true;
                     let errorMessage = this.loggerName + "::http() << " + path + ": Connection timeout: " + this.timeoutMs + " ms";
                     Logger.error(errorMessage);
                     this.sendError(new Error(errorMessage));
                     request.destroy();
-                    resolve(null);
+                    if(attempt < MAX_TIMEOUT_RETRIES) {
+                        attempt++;
+                        Logger.debug(this.loggerName + "::http() << " + path + ": Timeout retry " + attempt);
+                        let result = await this.request(method, path, options, formattedBody, attempt);
+                        resolve(result);
+                    } else {
+                        let errorMessage = this.loggerName + "::http() << " + path + ": Max timeout retries reached: " + MAX_TIMEOUT_RETRIES;
+                        Logger.error(errorMessage);
+                        this.sendError(new Error(errorMessage));
+                        resolve(null);
+                    }
                 });
                 request.on('error', (err) => {
-                    Logger.error(this.loggerName + "::http() << " + path + ":", err);
-                    this.sendError(err);
+                    let errorMessage = this.loggerName + "::http() << " + path + ": " + err;
+                    Logger.error(errorMessage);
+                    if(timedOut) {
+                        return;
+                    }
+                    this.sendError(errorMessage);
                     request.destroy();
                     resolve(null);
                 });
