@@ -30,7 +30,7 @@ class CompleteMentionsAction extends Action {
         let excludeIds;
         if(!question || !question.robotAllowed) {
             excludeIds = [];
-            excludeIds.push(this.flow.control.robotUserId);
+            excludeIds.push(this.flow.control.robot.user.id);
         }
         Logger.debug("CompleteMentionsAction::start() Completing mention data");
         let mentionedMembers = await this.flow.control.messengerClient.completeMentions(mentions, excludeIds, chatId, isGroup, false);

@@ -37,7 +37,7 @@ class LeaveGroupAction extends Action {
             flowCallback();
             return;
         }
-        let robotUserId = this.flow.control.robotUserId;
+        let robotUserId = this.flow.control.robot.user.id;
         let overrideToken = this.getAnswerValue(this.overrideToken, answers);
 
         await this.flow.control.messengerClient.removeGroupMembers(chatId, isAux, [robotUserId], overrideToken);
