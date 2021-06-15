@@ -37,7 +37,6 @@ class Control {
         this.backRegex = null;//new RegExp(/^[ \n\r\t]*back[ \n\r\t]*$/, 'gi');
         this.checkpointRegex = null;//new RegExp(/^[ \n\r\t]*checkpoint[ \n\r\t]*$/, 'gi');
         this.helpRegex = new RegExp(/^[ \n\r\t]*help[ \n\r\t]*$/, 'gi');
-        this.robotUserId = null;
         this.robotMentionRegex = null;
 
         // Response timeout milliseconds
@@ -102,11 +101,6 @@ class Control {
         // Override receive function
         robot.receive = (message) => {
             Logger.debug("Control::receive() Message:", message);
-
-            if(this.robotUserId == null && robot.user != null) {
-                this.robotUser = robot.user;
-                this.robotUserId = robot.user.id;
-            }
 
             if(this.robotMentionRegex == null && robot.user != null) {
                 // Set the robot mention tag regex
@@ -874,8 +868,8 @@ class Control {
             return;
         }
         let id = user["id"];
-        if(id !== this.robotUserId) {
-            Logger.warn("Control::checkCommandButton() User id is not robot id on checkCommandButton:", this.robotUserId, messageJson);
+        if(id !== this.robot.user.id) {
+            Logger.warn("Control::checkCommandButton() User id is not robot id on checkCommandButton:", this.robot.user.id, messageJson);
             return;
         }
         if(helpCommand) {

@@ -74,7 +74,7 @@ class MentionQuestion extends Question {
         // Retrieve robot id if available
         let robotId = null;
         if(this.flow.control.robot.user != null) {
-            robotId = this.flow.control.robotUserId;
+            robotId = this.flow.control.robot.user.id;
         }
 
         // Check for duplicates and robot mention
