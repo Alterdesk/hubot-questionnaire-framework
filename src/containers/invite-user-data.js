@@ -1,3 +1,5 @@
+const StringTools = require('./../utils/string-tools.js');
+
 class InviteUserData {
     constructor() {
         this.createConversation = false;
@@ -87,7 +89,7 @@ class InviteUserData {
             data["send_email"] = this.sendEmail;
         }
         if(this.auxId) {
-            data["aux_id"] = this.auxId;
+            data["aux_id"] = StringTools.removeDiacritics(this.auxId);
         }
         if(isGroupInvite) {
             data["invite_type"] = this.inviteType;
