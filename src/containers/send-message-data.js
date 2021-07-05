@@ -103,9 +103,11 @@ class SendMessageData {
     }
 
     getPostUrl() {
+        let chatId = this.chatId;
         let methodPrefix = "";
         if(this.isAux) {
             methodPrefix += "aux/"
+            chatId = StringTools.removeDiacritics(chatId);
         }
         if(this.isGroup) {
             methodPrefix += "groupchats/";
@@ -113,9 +115,9 @@ class SendMessageData {
             methodPrefix += "conversations/";
         }
         if(this.hasAttachments()) {
-            return methodPrefix + encodeURIComponent(this.chatId) + "/attachments";
+            return methodPrefix + encodeURIComponent(chatId) + "/attachments";
         } else {
-            return methodPrefix + encodeURIComponent(this.chatId) + "/messages";
+            return methodPrefix + encodeURIComponent(chatId) + "/messages";
         }
     }
 
