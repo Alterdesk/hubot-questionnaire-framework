@@ -1,3 +1,5 @@
+const StringTools = require('./../utils/string-tools.js');
+
 class GroupSettingsData {
     constructor() {
         this.allowContacts = null; //true;
@@ -42,7 +44,8 @@ class GroupSettingsData {
 
     getPutUrl() {
         if(this.isAux) {
-            return "aux/groupchats/" + encodeURIComponent(this.chatId) + "/settings";
+            let chatId = StringTools.removeDiacritics(this.chatId);
+            return "aux/groupchats/" + encodeURIComponent(chatId) + "/settings";
         } else {
             return "groupchats/" + encodeURIComponent(this.chatId) + "/settings";
         }

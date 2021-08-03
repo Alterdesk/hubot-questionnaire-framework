@@ -1,4 +1,5 @@
 const DateTools = require('./../utils/date-tools.js');
+const StringTools = require('./../utils/string-tools.js');
 const JsonRestClient = require('./json-rest-client.js');
 const Logger = require('./../logger.js');
 
@@ -38,6 +39,7 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            chatId = StringTools.removeDiacritics(chatId);
         }
         if(isGroup) {
             methodPrefix += "groupchats/";
@@ -60,6 +62,7 @@ class MessengerClient extends JsonRestClient {
                 let methodPrefix = "";
                 if(isAux) {
                     methodPrefix += "aux/"
+                    chatId = StringTools.removeDiacritics(chatId);
                 }
                 if(isGroup) {
                     methodPrefix += "groupchats/";
@@ -126,6 +129,7 @@ class MessengerClient extends JsonRestClient {
                 let methodPrefix = "";
                 if(isAux) {
                     methodPrefix += "aux/"
+                    chatId = StringTools.removeDiacritics(chatId);
                 }
                 if(isGroup) {
                     methodPrefix += "groupchats/";
@@ -166,6 +170,7 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            groupId = StringTools.removeDiacritics(groupId);
         }
         return this.get(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/members", overrideToken);
     }
@@ -174,10 +179,13 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            groupId = StringTools.removeDiacritics(groupId);
         }
         let memberPutData = {};
         memberPutData["members"] = userIds;
-//        memberPutData["aux_members"] = false; TODO
+        if(isAux) {
+            memberPutData["aux_members"] = false;
+        }
         return this.put(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/members", memberPutData, overrideToken);
     }
 
@@ -185,10 +193,13 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            groupId = StringTools.removeDiacritics(groupId);
         }
         let memberDeleteData = {};
         memberDeleteData["members"] = userIds;
-//        memberDeleteData["aux_members"] = false; TODO
+        if(isAux) {
+            memberDeleteData["aux_members"] = false;
+        }
         return this.delete(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/members", memberDeleteData, overrideToken);
     }
 
@@ -196,16 +207,44 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            groupId = StringTools.removeDiacritics(groupId);
         }
         let subjectPutData = {};
         subjectPutData["subject"] = subject;
         return this.put(methodPrefix + "groupchats/" + encodeURIComponent(groupId), subjectPutData, overrideToken);
     }
 
+    changeGroupOwner(groupId, isAux, userId, overrideToken) {
+        let methodPrefix = "";
+        if(isAux) {
+            methodPrefix += "aux/"
+            groupId = StringTools.removeDiacritics(groupId);
+        }
+        let ownerPutData = {};
+        ownerPutData["user_id"] = userId;
+        return this.put(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/owner", ownerPutData, overrideToken);
+    }
+
+    changeGroupAdmins(groupId, isAux, admin, memberIds, overrideToken) {
+        let methodPrefix = "";
+        if(isAux) {
+            methodPrefix += "aux/"
+            groupId = StringTools.removeDiacritics(groupId);
+        }
+        let adminPutData = {};
+        adminPutData["admins"] = memberIds;
+        if(admin) {
+            return this.put(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/admins", adminPutData, overrideToken);
+        } else {
+            return this.delete(methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/admins", adminPutData, overrideToken);
+        }
+    }
+
     changeGroupAvatar(groupId, isAux, avatarPath, overrideToken) {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            groupId = StringTools.removeDiacritics(groupId);
         }
         let postUrl = methodPrefix + "groupchats/" + encodeURIComponent(groupId) + "/avatar";
         return this.postMultipart(postUrl, null, "avatar", [avatarPath], overrideToken);
@@ -218,6 +257,7 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            groupId = StringTools.removeDiacritics(groupId);
         }
         return this.delete(methodPrefix + "groupchats/" + encodeURIComponent(groupId), closePostData, overrideToken);
     }
@@ -230,6 +270,7 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            groupId = StringTools.removeDiacritics(groupId);
         }
         return this.delete(methodPrefix + "groupchats/" + encodeURIComponent(groupId), removePostData, overrideToken);
     }
@@ -238,6 +279,7 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            chatId = StringTools.removeDiacritics(chatId);
         }
         if(isGroup) {
             methodPrefix += "groupchats/";
@@ -251,6 +293,7 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            userId = StringTools.removeDiacritics(userId);
         }
         return this.get(methodPrefix + "users/" + encodeURIComponent(userId), overrideToken);
     }
@@ -267,6 +310,7 @@ class MessengerClient extends JsonRestClient {
         let methodPrefix = "";
         if(isAux) {
             methodPrefix += "aux/"
+            chatId = StringTools.removeDiacritics(chatId);
         }
         if(isGroup) {
             methodPrefix += "groupchats/";

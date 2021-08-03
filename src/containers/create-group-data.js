@@ -1,3 +1,5 @@
+const StringTools = require('./../utils/string-tools.js');
+
 class CreateGroupData {
     constructor() {
         // Members to add
@@ -83,7 +85,7 @@ class CreateGroupData {
         data["send_email"] = this.sendEmail;
 
         if(this.auxId != null) {
-            data["aux_id"] = this.auxId;
+            data["aux_id"] = StringTools.removeDiacritics(this.auxId);
             data["aux_members"] = hasAuxMembers;
         }
 

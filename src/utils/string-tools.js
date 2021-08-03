@@ -76,6 +76,9 @@ class StringTools {
         if(typeof string !== "string" || string.length === 0) {
             return string;
         }
+
+        string = string.trim();
+
         string = StringTools.removeDiacritics(string);
 
         string = string.replace(/★/gi, "1");

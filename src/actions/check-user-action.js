@@ -36,7 +36,7 @@ class CheckUserAction extends Action {
             let business = json["private_user"] === false;
             this.done(business);
         } else if(this.check === "COWORKER") {
-            let robotUser = this.flow.control.robotUser;
+            let robotUser = this.flow.control.robot.user;
             if(!robotUser) {
                 this.onError("CheckUserAction::start() Robot user invalid:", robotUser);
                 this.done(null);

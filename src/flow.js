@@ -471,6 +471,16 @@ class Flow {
     }
 
     // Mark this question as a checkpoint
+    resendOnInvalid(resend) {
+        if(this.lastAddedQuestion == null) {
+            Logger.error("Flow::checkpoint() No Question added to flow");
+            return this;
+        }
+        this.lastAddedQuestion.setResendOnInvalid(resend);
+        return this;
+    }
+
+    // Mark this question as a checkpoint
     checkpoint() {
         if(this.lastAddedQuestion == null) {
             Logger.error("Flow::checkpoint() No Question added to flow");
@@ -1427,17 +1437,16 @@ class Flow {
         Logger.debug("Flow::previous()", this.name);
         while(this.currentStep > 0) {
             this.currentStep--;
-            let stepIndex = this.currentStep;
-            let step = this.steps[stepIndex];
+            let step = this.steps[this.currentStep];
             if(!step) {
-                Logger.error("Flow::previous() Invalid step: ", stepIndex, step, this.steps);
+                Logger.error("Flow::previous() Invalid step: ", this.currentStep, step, this.steps);
                 continue;
             }
             let className = "";
             if(step && step.constructor) {
                 className = step.constructor.name;
             }
-            Logger.info("Flow::previous() Step " + stepIndex + " \"" + className + "\"");
+            Logger.info("Flow::previous() Step " + this.currentStep + " \"" + className + "\"");
             if(step instanceof Question) {
                 let question = step;
                 let answerKey = question.getAnswerKey();
@@ -1467,6 +1476,9 @@ class Flow {
                     Logger.debug("Flow::previous() Calling next()");
                     this.next();
                     return true;
+                } else if(question.isCheckpoint) {
+                    Logger.info("Flow::previous() Current question is a checkpoint, not going back: key: \"" + answerKey);
+                    return false;
                 }
             } else if(step instanceof Action) {
                 let action = step;

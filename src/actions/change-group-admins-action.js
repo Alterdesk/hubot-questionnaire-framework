@@ -2,21 +2,25 @@ const Action = require('./action.js');
 const ChatTools = require('./../utils/chat-tools.js');
 const Logger = require('./../logger.js');
 
-class LeaveGroupAction extends Action {
-    constructor() {
+class ChangeGroupAdminsAction extends Action {
+    constructor(admin, memberIds) {
         super((flowCallback) => {
             this.start(flowCallback);
         }, 0);
-        this.isAux = false;
+        this.admin = admin;
+        this.memberIds = memberIds;
     }
 
     async start(flowCallback) {
         if(!this.flow || !this.flow.msg || !this.flow.control) {
-            this.onError("LeaveGroupAction::start() Invalid Flow or Control");
+            this.onError("ChangeGroupAdminsAction::start() Invalid Flow or Control");
             flowCallback();
             return;
         }
         let answers = this.flow.answers;
+
+        let admin = this.getAnswerValue(this.admin, answers, false);
+
         let chatId;
         let isAux;
         if(this.chatId) {
@@ -25,7 +29,7 @@ class LeaveGroupAction extends Action {
         } else {
             let isGroup = ChatTools.isUserInGroup(this.flow.msg.message.user);
             if(!isGroup) {
-                Logger.warn("LeaveGroupAction::start() Not a group chat");
+                Logger.warn("ChangeGroupAdminsAction::start() Not a group chat");
                 flowCallback();
                 return;
             }
@@ -33,14 +37,21 @@ class LeaveGroupAction extends Action {
             isAux = false;
         }
         if(!chatId) {
-            this.onError("LeaveGroupAction::start() Invalid chat id");
+            this.onError("ChangeGroupAdminsAction::start() Invalid chat id");
             flowCallback();
             return;
         }
-        let robotUserId = this.flow.control.robot.user.id;
-        let overrideToken = this.getAnswerValue(this.overrideToken, answers);
 
-        await this.flow.control.messengerClient.removeGroupMembers(chatId, isAux, [robotUserId], overrideToken);
+        let memberIds = [];
+        for(let id of this.memberIds) {
+            let memberId = this.getAnswerValue(id, answers);
+            if(memberId && memberId.length > 0) {
+                memberIds.push(memberId);
+            }
+        }
+
+        let overrideToken = this.getAnswerValue(this.overrideToken, answers);
+        await this.flow.control.messengerClient.changeGroupAdmins(chatId, isAux, admin, memberIds, overrideToken);
         flowCallback();
     }
 
@@ -55,6 +66,7 @@ class LeaveGroupAction extends Action {
     setOverrideToken(overrideToken) {
         this.overrideToken = overrideToken;
     }
+
 }
 
-module.exports = LeaveGroupAction;
+module.exports = ChangeGroupAdminsAction;

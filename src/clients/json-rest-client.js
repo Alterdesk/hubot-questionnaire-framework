@@ -29,7 +29,7 @@ class JsonRestClient extends BaseRestClient {
                 let result = JSON.parse(body);
                 resolve(result);
             } catch(err) {
-                Logger.error("JsonRestClient::parse()", err);
+                Logger.error("JsonRestClient::parse()", body, err);
                 this.sendError(err);
                 resolve(null);
             }
